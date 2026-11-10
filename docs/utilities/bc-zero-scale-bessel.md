@@ -75,7 +75,8 @@ These checks pass against the accepted baseline before implementation.
 The portable source now implements those strict comparisons; the uncertain
 bracket and every excluded regime continue through the accepted code.
 
-Seventeen focused mathematical/source/image/oracle CTests pass, including 664
+At the earlier numerical head ca75c979, seventeen focused
+mathematical/source/image/oracle CTests passed, including 664
 certified instrumented results and 22 exact truncation models. All 28 outcomes
 of the new cell/precision decisions are observed; overall coverage is 221/232
 observed and 230/232 observed or fault-modeled, with the same two infeasible
@@ -92,6 +93,15 @@ build metadata, with their missing-image limitation explicit.
 Any elapsed study must be separately declared after all original PR #712
 observations have been retained and reviewed, with its exposed cases kept
 as controls and the approved regression/Howard/startup rules unchanged.
+
+The adaptive residual-budget revision expands the interpreted corpus to 870
+certified results. It observes 231/242 decision outcomes and reaches 240/242
+with the separate working-scale clamp models; the same two exponential sign
+outcomes remain infeasible. These are interpreted decisions, not compiler
+MC/DC. The additional 206 independently enclosed cases cover conditioning,
+normalization, guard boundaries, signs and stored-width changes. Current
+source and embedded images require their own hosted correctness and elapsed
+qualification; the earlier head's results do not transfer.
 
 ## Correctness-only publication
 
@@ -165,10 +175,11 @@ The accepted ascending budget includes D=length(x), which counts the entire
 fractional coefficient. That can make every recurrence operation much wider
 than its output needs. For positive entry scale S, use
 M=max(length(x)-scale(x),1) and T=S+G+M+1, where G=floor(7*x/16)+1.
-The implemented W=S+G+M+2*d(T)+32 retains the same growth and quadratic guards.
+The implemented W=S+G+M+2*d(T)+10 retains the same growth and quadratic guards.
 At scale zero retain the old coefficient-length formula, preserving the
 accepted arithmetic inside the certified-cell fallback brackets. The Hankel
-selector and its precision formula remain unchanged.
+selector remains unchanged; its evaluation uses the separate 16-place
+residual budget documented in bc-portable-math.md.
 
 This substitution does not weaken the accepted step-count argument. After
 the tiny-result branches, n<max(3*x,4*(S+1))<7*(W+1). Also
@@ -188,7 +199,7 @@ has the accepted bound 10^6*(W+1)^2*exp(x)*u. Their sum is below
 
 The exact inequalities e<87/32 and 87^16<10^7*32^16 imply exp(x)<10^G.
 With T<10^d(T), M>=1 and W+1<=19*T, the pre-rounding error in output
-units is below 2*19^2*10^-27<1/2. Final rounding adds at most half an output
+units is below 2*19^2*10^-5<1/2. Final rounding adds at most half an output
 unit. This proves the same one-decimal-ULP contract for this budget;
 correct rounding of arbitrary near-midpoint positive-scale inputs is not
 claimed. Working-scale readback and ordinary resource errors remain required.
@@ -206,7 +217,8 @@ Expanded exact tests use bounded deadlines appropriate to those larger vectors;
 no benchmark acceptance threshold changes.
 
 For a 256-place argument just below four at S=100, the source budget is
-397 places with coefficient length and 141 with integer magnitude. This is
+397 places with the old coefficient-length budget and 119 with the revised
+integer-magnitude/residual budget. This is
 a proved working-precision difference, not an elapsed measurement. The
 caller retains the original 256-place argument; clipping affects only the
 function parameter. Both broad reference cases and the caller-value tests

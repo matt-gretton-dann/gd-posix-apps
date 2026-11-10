@@ -138,6 +138,38 @@ class CertifiedFixtures(unittest.TestCase):
                     self.assertEqual(ORACLE.classify(candidate + 3 * ulp, lower, upper,
                                                     case['scale']), 'fail')
 
+    def test_adaptive_reference_identities_and_enclosures(self):
+        source = ROOT / 'fixtures/math-adaptive-budget-cases.json'
+        report = json.loads((ROOT / 'fixtures/math-adaptive-budget-oracles.json').read_text())
+        specification = json.loads(source.read_text())
+        self.assertEqual(report['case_file_sha256'], hashlib.sha256(source.read_bytes()).hexdigest())
+        for key, name in [('generator_sha256', 'generate-math-case-list-oracles.py'),
+                          ('underlying_generator_sha256', 'generate-math-oracles.py')]:
+            path = ROOT / 'scripts' / name
+            self.assertEqual(report[key], hashlib.sha256(path.read_bytes()).hexdigest())
+            self.assertNotIn(b'\r', path.read_bytes())
+        self.assertNotIn(b'\r', source.read_bytes())
+        self.assertEqual(report['python_flint_version'], '0.9.0')
+        self.assertEqual(report['flint_version'], '3.6.0')
+        by_id = {case['id']: case for case in specification['cases']}
+        self.assertEqual(len(by_id), 206)
+        self.assertEqual(len(report['cases']), len(by_id))
+        self.assertEqual({case['id'] for case in report['cases']}, set(by_id))
+        for case in report['cases']:
+            with self.subTest(case=case['id']):
+                for key in ('function', 'arguments', 'scale', 'caller_base'):
+                    self.assertEqual(case[key], by_id[case['id']][key])
+                lower, upper = Fraction(case['lower']), Fraction(case['upper'])
+                ulp = ORACLE.decimal_ulp(case['scale'])
+                self.assertLessEqual(lower, upper)
+                self.assertLessEqual(upper-lower, ulp/10**report['guard_digits'])
+                for endpoint in (lower, upper):
+                    self.assertEqual(endpoint.denominator & (endpoint.denominator-1), 0)
+                value = Fraction(ORACLE.nearest_decimal(lower, upper, case['scale']))
+                self.assertEqual(ORACLE.classify(value, lower, upper, case['scale']), 'pass')
+                self.assertEqual(ORACLE.classify(value+3*ulp, lower, upper, case['scale']), 'fail')
+
+
     def test_imported_decisions_account_for_computed_arguments(self):
         spec = importlib.util.spec_from_file_location('imported_math', ROOT / 'test-math-imported.py')
         adapter = importlib.util.module_from_spec(spec)

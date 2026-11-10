@@ -85,6 +85,43 @@ class LibraryCli(unittest.TestCase):
                 self.assertEqual(lines[4 * index + 1:4 * index + 4],
                                  [str(case['scale']), '10', str(case['scale'])])
 
+    def test_adaptive_precision_boundaries_and_caller_state(self):
+        report = json.loads((ROOT / 'fixtures/math-adaptive-budget-oracles.json').read_text())
+        cases = report['cases']
+        program = []
+        for case in cases:
+            order = case['arguments'][0] if case['function'] == 'j' else '0'
+            call = case['function'] + ('(n,x)' if case['function'] == 'j' else '(x)')
+            # Parse input literals in decimal before changing the caller base.
+            # Using variables also checks that local clipping cannot mutate them.
+            program += ['ibase=A', 'scale=' + str(case['scale']),
+                        'x= ' + case['arguments'][-1], 'n= ' + order,
+                        'ibase=' + str(case['caller_base']), 'r=' + call,
+                        'r', 'scale', 'ibase', 'scale(r)', 'x', 'n', 'scale(x)', 'scale(n)']
+        recipes = [('embedded', dict()),
+                   ('ordinary source', dict(options=(), files=(SOURCE,)))]
+        if OTHER_BC is not None:
+            recipes.append(('other source interpreter',
+                            dict(options=(), files=(SOURCE,), binary=OTHER_BC)))
+        for label, options in recipes:
+            lines = self.checked_lines('\n'.join(program) + '\n', timeout=300, **options)
+            self.assertEqual(len(lines), 8 * len(cases), label)
+            for index, case in enumerate(cases):
+                with self.subTest(recipe=label, case=case['id']):
+                    values = lines[8 * index:8 * index + 8]
+                    result = ORACLE.decimal_fraction(values[0])
+                    self.assertEqual(ORACLE.classify(result, Fraction(case['lower']),
+                                     Fraction(case['upper']), case['scale']), 'pass')
+                    self.assertEqual(values[1:4], [str(case['scale']),
+                                     str(case['caller_base']), str(case['scale'])])
+                    argument = case['arguments'][-1]
+                    self.assertEqual(Fraction(values[4]), Fraction(argument))
+                    order = case['arguments'][0] if case['function'] == 'j' else '0'
+                    self.assertEqual(Fraction(values[5]), Fraction(order))
+                    fraction = len(argument.split('.')[1]) if '.' in argument else 0
+                    self.assertEqual(values[6:], [str(fraction), '0'])
+
+
     def test_exponential_reconstruction(self):
         cases = [(2, '-.125'), (20, '-.125000000001'), (100, '-200'),
                  (300, '-125.00000001'), (1000, '-1000'), (1000, '-2000'),

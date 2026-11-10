@@ -23,6 +23,20 @@ define a(x) {
      q/t/u are ratio, power and term. */
   b=ibase
   ibase=A
+  /* The rounded unit results already have the default decimal scale.
+     Return before sign reduction and the general unit precision checks. */
+  if (scale==20) {
+    if (x==1) {
+      r=.78539816339744830962
+      ibase=b
+      return(r)
+    }
+    if (x== -1) {
+      r= -.78539816339744830962
+      ibase=b
+      return(r)
+    }
+  }
   s=scale
   n=0
   if (x<0) {
@@ -34,13 +48,6 @@ define a(x) {
      needs neither magnitude-dependent working scale nor reduction. */
   if (s<=144) {
     if (x==1) {
-      /* The rounded unit value already has the POSIX default scale. */
-      if (s==20) {
-        r=.78539816339744830962
-        if (n==1) r= -r
-        ibase=b
-        return(r)
-      }
       scale=s+1
       r=.7853981633974483096156608458198757210492923498437764552437361480769541015715522496570087063355292669955370216283205766617734611523876455579313398520321202793625
       r+=10^(-s)/2
@@ -52,7 +59,7 @@ define a(x) {
     }
   }
   scale=0
-  w=s+2*length(s+scale(x)+length(x)+1)+24
+  w=s+2*length(s+scale(x)+length(x)+1)+12
   scale=w
   if (scale!=w) return(1/0)
   v=0
@@ -128,9 +135,11 @@ define e(x) {
   /* For positive x, e^x < 10^(x/2). At scale zero, floor(floor(x)/2)+1
      exceeds x/2. Negative reconstruction needs no magnitude guard. */
   w=x/1
-  w=s+(1-n)*(w/2+1)+2*length(s+scale(x)+w+1)+24
+  w=s+(1-n)*(w/2+1)+2*length(s+scale(x)+w+1)+12
   scale=w
   if (scale!=w) return(1/0)
+  /* Charge a single excess-input truncation to the derivative bound. */
+  if (scale(x)>w) x=x/1
   k=0
   while (x>.125) {
     x=x/2
@@ -178,15 +187,18 @@ define l(x) {
   m=length(x)
   u=scale(x)
   t=s+u+m+1
-  w=t-1+2*length(t)+24
   m-=u+1
+  /* Only a negative decimal exponent amplifies input truncation.
+     Keep stored width in the digit-count guard for reconstruction. */
+  w=s+2*length(t)+12
+  if (m<0) w-=m
   v=m
   if (v<0) v= -v
   h=0
   if (v>=64) {
     if (v>=64+s/2) {
       q=10^v
-      w=s+2*length(t)+24
+      w=s+2*length(t)+12
       h=1
     }
   }
@@ -198,6 +210,8 @@ define l(x) {
     if (m>0) x=x/q
     h=m*l(10)
   }
+  /* Normalize tiny values before clipping to the working precision. */
+  if (scale(x)>w) x=x/1
   /* Divide by two in this band to enter [.8,1.2] without roots.
      The 80-place lower bound is sufficient at working scales up to 64. */
   if (w<=64) {
@@ -283,7 +297,7 @@ define s(x) {
   /* Integer magnitude controls reduction; fractional width does not. */
   v=length(x)-scale(x)
   if (v<1) v=1
-  w=u+v+2*length(u+v+scale(x)+1)+24
+  w=u+v+2*length(u+v+scale(x)+1)+12
   scale=w
   if (scale!=w) return(1/0)
   /* Coerce only excess input precision, keeping short factors short. */
@@ -338,7 +352,7 @@ define c(x) {
   /* Integer magnitude controls reduction; fractional width does not. */
   v=length(x)-scale(x)
   if (v<1) v=1
-  w=u+v+2*length(u+v+scale(x)+1)+24
+  w=u+v+2*length(u+v+scale(x)+1)+12
   scale=w
   if (scale!=w) return(1/0)
   /* Coerce only excess input precision, keeping short factors short. */
@@ -460,7 +474,7 @@ define j(n,x) {
       }
     }
   }
-  w=s+scale(x)+length(x)+2*length(s+scale(x)+length(x)+length(n)+1)+32
+  w=s+scale(x)+length(x)+2*length(s+scale(x)+length(x)+length(n)+1)+16
   /* DLMF 10.17.14-15 bounds the Hankel remainder by less than three
      first-omitted coefficients here. Abort if recurrence contraction is
      lost before the working-scale truncation budget is met. */
@@ -469,7 +483,8 @@ define j(n,x) {
      building a long asymptotic prefix that may be discarded. The
      contraction check still decides whether an attempted prefix is usable. */
   g=8*(n*n+1)
-  if (g<w) g=w
+  /* Preserve the original selector while reducing evaluation precision. */
+  if (g<w+16) g=w+16
   if (x>g) {
     scale=w
     if (scale!=w) return(1/0)
@@ -525,7 +540,10 @@ define j(n,x) {
     h-=scale(x)
     if (h<1) h=1
   }
-  w=s+g+h+2*length(s+g+h+1)+32
+  /* Ten residual digits cover positive-scale recurrence error.
+     Retain all 32 in the certified scale-zero fallback. */
+  w=s+g+h+2*length(s+g+h+1)+10
+  if (s==0) w+=22
   scale=w
   if (scale!=w) return(1/0)
   if (scale(x)>w) x=x/1

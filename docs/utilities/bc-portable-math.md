@@ -66,11 +66,13 @@ path uses the same final rounding step and an independently certified literal.
 Let D = length(x) and F = scale(x), before changing x. D is at least one
 and can be smaller than F for numbers with leading fractional zeros.
 Let d(T) be the decimal digit count of a positive integer T. The formulas below use nonnegative integer quantities computed at
-scale zero. For T >= 1, W <= 27T for the 24-digit formulas (and <= 35T for the
-32-digit formulas). Thus the two extra d(T) terms dominate quadratic working-
-precision factors: T < 10^d(T). The remaining 24 or 32 digits leave a large
-explicit margin for the conservative constants below. They are not a fixed
-S+10 accuracy assumption.
+scale zero. The two extra d(T) terms dominate quadratic working-precision
+factors because T < 10^d(T). The residual precision is path specific: 12
+places for elementary functions, 10 for positive-scale ascending Bessel,
+16 for Hankel evaluation and 32 for the scale-zero Bessel fallback. Magnitude,
+conditioning and digit-count guards remain in addition to those residuals.
+The conservative estimates W+1<=29T, W+10<=37T and Bessel W+1<=19T used below
+remain valid at the smaller budgets; they are not fixed S+10 assumptions.
 
 ## Arctangent
 
@@ -95,8 +97,9 @@ truncation preserves nearest rounding for -1. Tests check the literal and both
 reference endpoints round identically at every entry scale through 144.
 
 At the POSIX default S = 20, return the independently certified rounded
-literal directly, applying the original sign. The enclosure test certifies
-the literal at that scale. Other bounded unit inputs use a working scale
+positive or negative literal directly before general sign reduction. Evaluate
+the literal while ibase is decimal, then restore the caller's base. The
+enclosure test certifies both signed literals at that scale. Other bounded unit inputs use a working scale
 of at most 145. All other inputs and S >= 145
 retain the dynamic calculation and its working-scale readback guard. Literal identity, threshold neighbors, representations
 and caller bases are checked independently. No retained state or VM recognition
@@ -117,7 +120,7 @@ Term propagation contracts; each multiplication/division
 introduces less than u, and summation is exact. The loop takes fewer than W+2
 terms. Allowing one additional working ULP for the truncated near-one constant,
 a conservative pre-rounding bound is 301*(N+1)*u. This includes transforms,
-constant reconstruction and N terms. Use W = S + 2*d(S+F+D+1) + 24. The bound
+constant reconstruction and N terms. Use W = S + 2*d(S+F+D+1) + 12. The bound
 is far below U/2 by the digit-count inequality above. Term disappearance is a
 termination event under this contraction bound, not the accuracy justification.
 
@@ -143,7 +146,7 @@ Rounding the square perturbs its square root by less than u/2; square-root
 truncation adds less than u. Both division denominators are at least two,
 so a stored half angle differs from exact H by less than `(11/8)*u < 2u`.
 The initial transformed-argument error is at most u. Three half angles
-therefore leave less than `(29/8)*u < 4u` argument error. At W >= 26,
+therefore leave less than `(29/8)*u < 4u` argument error. At W >= 14,
 rational square-root bounds also give the stored upper-bound chain
 `1 -> .415 -> .2 -> .1`; hence at most three steps and multiplier eight.
 Negative corrections use no half-angle steps and remain bounded by 1/9.
@@ -152,10 +155,10 @@ The arctangent is one-Lipschitz. Reconstruction therefore contributes at
 most 32u argument error and 2u constant error, in addition to eight times
 the series error. The total is below `(17*N+50)*u`, which is bounded by
 the existing `301*(N+1)*u` budget for every N >= 0. With
-T = S+F+D+1 and d = d(T), the unchanged W = S+2d+24 satisfies W+2 <= 29T.
+T = S+F+D+1 and d = d(T), the revised W = S+2d+12 satisfies W+2 <= 29T.
 Since T < 10^d and d >= 1, the pre-rounding error is below
-`8729*10^(-25)*U < U/2`. The final nearest rounding adds at most U/2.
-The corrected ratio bound thus requires no precision or runtime change.
+`8729*10^(-13)*U < U/2`. The final nearest rounding adds at most U/2.
+The corrected ratio bound thus remains valid with twelve residual places.
 
 The [exact rational proof checks](bc-atan-ratio-proof/test-proof.py) cover
 the endpoint counterexample, source reduction premises, power/term/tail
@@ -175,19 +178,23 @@ bounded conservatively by `2^k * exp(x) * (3N+6) * u` before taking a reciprocal
 For x > .125, 2^k < 16x; otherwise k=0.
 
 Let T = S + F + floor(x) + 1. For positive arguments use
-W = S + G + 2*d(T) + 24, where G = floor(floor(x)/2) + 1. Since e < 3,
+W = S + G + 2*d(T) + 12, where G = floor(floor(x)/2) + 1. Since e < 3,
 e^2 < 10, and G > x/2, we have exp(x)*10^-G < 1. The remaining
 reconstruction factor is at most 16T. With N < 2W+2 and W+1 <= 29T,
-the two digit-count guards and 24 extra places keep the error below U/2.
+the two digit-count guards and 12 extra places keep the error below U/2.
+If F>W, truncate the input once before halving. For positive arguments the
+mean-value theorem bounds this additional error by exp(x)*u; for negative
+arguments it is below u. Including that coercion, the residual bound is
+less than 6000*10^-12 output units.
 
-For negative arguments use W = S + 2*d(T) + 24. Before inversion, the reduced Taylor error and
+For negative arguments use W = S + 2*d(T) + 12. Before inversion, the reduced Taylor error and
 argument-reduction error total at most (3N+6)u: halving truncations sum
 to less than 2u at the reduced argument, and exp on [0,.125] has derivative
 below two. Both reduced exponential values are at least one, so inversion
 does not amplify that error and adds at most u. The squaring map on [0,1]
 is 2-Lipschitz, giving total error at most 2^k*(3N+8)u after squaring.
 Here 2^k is at most 16T, N < 2W+2, and W+1 <= 29T. As T < 10^d(T),
-the two digit-count guards and 24 extra places keep the error below U/2,
+the two digit-count guards and 12 extra places keep the error below U/2,
 even if a stored value underflows to zero. Final rounding adds at most
 another U/2.
 
@@ -239,7 +246,7 @@ division by the integer power truncates directly. The normalized argument
 stays at least one, where the derivative of log is at most one. Its
 truncation therefore adds less than one working unit of error.
 
-Let T = S + F + D + 1. Use W = S + 2*d(T) + 24 on the normalized path.
+Let T = S + F + D + 1. Use W = S + 2*d(T) + 12 on the normalized path.
 The square-root reduction of an argument in [1,10) needs at most six
 roots, including at high precision. Each root truncation is below u and later roots on [1,10)
 contract the perturbation. Add m*l(10) evaluated at scale W after
@@ -249,22 +256,38 @@ adds at most abs(m)*u. The series and reduction cost at most
 10^6*(W+10)*u with the bounded root count. These bounds leave less than
 U/2 before final rounding.
 
-The ordinary path uses W = S + F + D + 2*d(T) + 24 and retains the original
-input precision through reduction. When x is tiny, the first exact root
-is at least 10^(-F/2). Its truncated value is at least half that bound
-because W includes F. Subsequent roots of small arguments stay above that
-same lower bound. Taking the logarithm of each truncated root therefore
-introduces at most 2*10^(F/2)*u error. The reconstruction multiplier is at
-most 128*(D+F+1), using the tighter reduction interval for the bound. The geometric sum of intermediate multipliers is below
-twice the final multiplier, so the root errors and the bounded atanh series
-together cost at most 10^7*(W+10)*(D+F+1)*10^F*u. The two digit-count guards
-cover the quadratic factor even when F exceeds D. The remaining margin
-keeps the pre-rounding error below U/2, including near one.
+The ordinary path uses K=max(-m,0) and W=S+K+2*d(T)+12. The exact
+decimal representation gives x>=10^-K. After any extreme normalization,
+truncate x to W only when F>W. Since W>=K, downward truncation cannot cross
+the exactly representable lower bound 10^-K. Its logarithmic error is
+therefore below 10^K*u by the mean-value theorem. Clipping must follow
+normalization: clipping a tiny argument first could replace it with zero.
+
+The first small-argument exact root is at least 10^(-K/2); its truncated
+value is at least half this bound. Subsequent roots preserve that lower
+bound. Each logarithmic root perturbation is below 2*10^(K/2)*u.
+Since W>=K+14, their geometrically accumulated perturbation is below
+4*10^-14<1/1000. Immediately before the last lower root, the value is
+below .95, so its exact log divided by the reconstruction multiplier is
+less than log(.95)+1/1000<-1/25. The final multiplier is consequently
+below 50*K*log(10)<128*(D+F+1), using log(10)<7/3. Upper-root truncation
+only accelerates reaching the upper threshold; log(1.05)>=1/21 similarly
+gives a multiplier below 42*log(x)<128*(D+F+1). The ln(2) shortcut needs
+no roots in its permitted band. The original root-count estimate thus
+survives the revised working scale.
+
+Including initial clipping, the root and series error is below
+2*10^7*(W+10)*(D+F+1)*10^K*u. With T>=2, K<=T and W+10<=37T, the
+pre-rounding error in output units is below 74*10^7*10^-12=.00074<1/2.
+The normalized path retains its original estimate, now bounded by
+(37*10^6+1)*10^-13 output units. The recursive public l(10) uses the same
+ordinary-path argument at its nested entry scale. These are absolute-error
+bounds; arbitrary near-midpoint inputs are not claimed to round correctly.
 
 ## Sine and cosine
 
 Let M = max(D-F,1) and T = S+M+F+1. Use
-W = S + M + 2*d(T) + 24. Since abs(x) < 10^M, the integer magnitude,
+W = S + M + 2*d(T) + 12. Since abs(x) < 10^M, the integer magnitude,
 rather than the stored fractional width, determines the reduction budget.
 If F>W, truncate the input once to W; this changes its exact value by less
 than u. Sine and cosine are globally one-Lipschitz, so the resulting
@@ -300,8 +323,8 @@ intermediates within the derivative interval.
 
 Here W<=27T. Dividing the aggregate bound, including input coercion and
 period reduction, by U gives at most
-`[16*10^M + 10^6*(27T+10) + 1] * 10^(-M-2*d(T)-24)`.
-Since M>=1, T>=2 and T<10^d(T), this is below 10^-18. The final rounding
+`[16*10^M + 10^6*(27T+10) + 1] * 10^(-M-2*d(T)-12)`.
+Since M>=1, T>=2 and T<10^d(T), this is below 10^-6. The final rounding
 step adds at most U/2, preserving the one-decimal-ULP contract for arbitrary
 supported magnitudes and fractional widths. Odd/even symmetry handles
 negative input exactly. The certified +/-3 boundary fixtures and equivalent
@@ -345,7 +368,8 @@ monotonicity and tail certificates. Restricting x to eight preserves the
 large-argument path's public a/c/s calls and user-redefinition semantics.
 Other orders/scales and larger arguments keep the existing regimes.
 
-For x > max(8*(n*n+1), W), attempt the real large-argument expansion from
+Let B=S+D+F+2*d(S+D+F+length(n)+1). For
+x > max(8*(n*n+1), B+32), attempt the real large-argument expansion from
 [NIST DLMF 10.17](https://dlmf.nist.gov/10.17). Coefficients satisfy
 `b_0=1; b_k=b_(k-1)*(4*n*n-(2*k-1)^2)/(8*k*x)`.
 Split their alternating even/odd sums and reconstruct with phase
@@ -354,28 +378,32 @@ DLMF 10.17.14-15 bounds the Hankel remainder by
 `2*abs(b_k)*exp(abs(n*n-1/4)/x)`, less than `3*abs(b_k)` in this regime.
 Taking the real part preserves that bound.
 
-Use W = S + D + F + 2*d(S+D+F+length(n)+1) + 32. The W cutoff avoids
-building a long asymptotic prefix when working precision approaches the
-argument. It only selects a series. Before each Hankel coefficient,
+Evaluate at W=B+16, but retain B+32 for selection: the source compares
+against W+16, exactly preserving the original selector and public a/c/s
+binding behavior. The selection cutoff avoids building a long asymptotic
+prefix when working precision approaches the argument. It only selects a series. Before each Hankel coefficient,
 check its exact recurrence ratio against one half. If contraction is lost
 before the budget is met, abandon this regime and use the ascending series.
 While contracted, truncation propagation is below 2u. When a stored next
 coefficient vanishes its exact magnitude is below 2u, giving remainder below
 6u (amplitude is below one). Sum and reconstruction errors are polynomial in
 W; phase precision includes D and covers multiplication by the order. A
-conservative aggregate bound `10^6*(W+1)^2*10^D*u` remains below U/2. No
+conservative aggregate bound `10^6*(W+1)^2*10^D*u` is below
+361*10^-10 output units and hence below U/2. No
 unbounded divergent series is treated as convergent merely because a term grew.
 
 Otherwise, evaluate the ascending recurrence, including the initial
 `(x/2)^n/n!`, with G = floor(7*x/16) + 1. Let H=D at S=0, retaining the
 accepted fallback arithmetic inside the integer-cell brackets. At positive S
 use H=max(D-F,1), the integer magnitude guard, and set
-W = S + G + H + 2*d(S+G+H+1) + 32. Fractional coefficient length does not
+W = S + G + H + 2*d(S+G+H+1) + C, with C=10 at positive scale and
+C=32 at scale zero. Fractional coefficient length does not
 inflate the positive-scale budget. Truncate the argument only beyond W
 fractional places. The convergent-series derivative identities and absolute
 weights give `|J_n'(t)| <= exp(x)` for 0<=t<=x, so this clipping costs at most
 exp(x)*u. The [complete guard argument](bc-zero-scale-bessel.md) derives this
-bound and preserves the Hankel selector/precision formula unchanged.
+bound. Hankel selection remains unchanged; its separate evaluation budget
+uses sixteen residual places.
 The extra G covers cancellation and propagation through the absolute
 recurrence. Write a = x/2. An error introduced at initial coefficient j
 reaches ascending term k with absolute weight at most
@@ -405,17 +433,27 @@ Each stored term is bounded by its exact absolute term, which is at most
 exp(x). Since x < 16*W/7, the term loop takes fewer than 8*(W+1) steps
 before truncation makes its term zero.
 The tail and all truncation propagation are bounded by
-`10^6*(W+1)^2*exp(x)*u`. The exponential series gives
+`10^6*(W+1)^2*exp(x)*u`. Including input clipping, the coarse bound
+`2*10^6*(W+1)^2*exp(x)*u` applies. The exponential series gives
 `e < 87/32`, and `87^16 < 10^7 * 32^16`. Thus
 `exp(x)*10^(-G) < 1` for the nonnegative argument. The remaining
-guards keep the total error below half an output unit. Including argument
-clipping, use the conservative total `2*10^6*(W+1)^2*exp(x)*u`. With
+guards keep the total error below half an output unit. With
 `T = S + G + H + 1 >= 2`, H>=1, `W+1 <= 19*T` and `T < 10^d(T)`.
-The bound in output units is below `2*19^2*10^-27`. Rounding to the requested scale adds at
+At positive scale the bound in output units is below
+`2*10^6*19^2*10^-11 = .00722 < 1/2`. Scale zero retains the original
+32-place residual and its larger margin. Rounding to the requested scale adds at
 most half an output unit, so the total is below one decimal ULP.
 An underflowed initial factor or term is therefore
 covered by the error budget even if later exact recurrence terms would grow.
 The forward recurrence reuses terms; it does not rebuild powers/factorials.
+
+Exact rational checks in `src/bc/test-math-budget-proof.py` bind these
+residual formulas, the unchanged Hankel selector and the root-count
+inequalities to the source. The existing arctangent proof checks the
+half-angle contraction at W>=14. The Bessel truncation model checks every
+multiplication/division for 22 directed cases at the revised positive-scale
+budget. These checks extend the stated algorithm estimates; they are not
+a mechanized proof of the parser, interpreter or complete math library.
 
 ## Resource limits and validation scope
 

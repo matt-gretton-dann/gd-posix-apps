@@ -396,6 +396,9 @@ if(RUN_INTEGRATION_TESTS)
   add_test(NAME bc/bessel-precision-proof COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-bessel-precision-proof.py")
   set_tests_properties(bc/bessel-precision-proof PROPERTIES TIMEOUT 60)
+  add_test(NAME bc/math-budget-proof COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-math-budget-proof.py")
+  set_tests_properties(bc/math-budget-proof PROPERTIES TIMEOUT 20)
   add_test(NAME bc/bessel-zero-evidence COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-bessel-zero-evidence.py")
   set_tests_properties(bc/bessel-zero-evidence PROPERTIES TIMEOUT 10)
