@@ -367,11 +367,15 @@ conservative aggregate bound `10^6*(W+1)^2*10^D*u` remains below U/2. No
 unbounded divergent series is treated as convergent merely because a term grew.
 
 Otherwise, evaluate the ascending recurrence, including the initial
-`(x/2)^n/n!`, with G = floor(7*x/16) + 1 and
-W = S + G + D + 2*d(S+G+D+1) + 32. Truncate the argument only if it has more
-than W fractional places. Differentiating the real integer-order
-[Bessel integral](https://dlmf.nist.gov/10.9.E2) gives `|J_n'(x)| <= 1`,
-so truncating the argument adds less than one working unit of error.
+`(x/2)^n/n!`, with G = floor(7*x/16) + 1. Let H=D at S=0, retaining the
+accepted fallback arithmetic inside the integer-cell brackets. At positive S
+use H=max(D-F,1), the integer magnitude guard, and set
+W = S + G + H + 2*d(S+G+H+1) + 32. Fractional coefficient length does not
+inflate the positive-scale budget. Truncate the argument only beyond W
+fractional places. The convergent-series derivative identities and absolute
+weights give `|J_n'(t)| <= exp(x)` for 0<=t<=x, so this clipping costs at most
+exp(x)*u. The [complete guard argument](bc-zero-scale-bessel.md) derives this
+bound and preserves the Hankel selector/precision formula unchanged.
 The extra G covers cancellation and propagation through the absolute
 recurrence. Write a = x/2. An error introduced at initial coefficient j
 reaches ascending term k with absolute weight at most
@@ -404,10 +408,10 @@ The tail and all truncation propagation are bounded by
 `10^6*(W+1)^2*exp(x)*u`. The exponential series gives
 `e < 87/32`, and `87^16 < 10^7 * 32^16`. Thus
 `exp(x)*10^(-G) < 1` for the nonnegative argument. The remaining
-guards keep the total error below half an output unit. With
-`T = S + G + D + 1 >= 2`, `W+1 <= 19*T` and `T < 10^d(T)`.
-The bound in output units is below `19^2*10^-25`, leaving room for the
-argument truncation error. Rounding to the requested scale adds at
+guards keep the total error below half an output unit. Including argument
+clipping, use the conservative total `2*10^6*(W+1)^2*exp(x)*u`. With
+`T = S + G + H + 1 >= 2`, H>=1, `W+1 <= 19*T` and `T < 10^d(T)`.
+The bound in output units is below `2*19^2*10^-27`. Rounding to the requested scale adds at
 most half an output unit, so the total is below one decimal ULP.
 An underflowed initial factor or term is therefore
 covered by the error budget even if later exact recurrence terms would grow.

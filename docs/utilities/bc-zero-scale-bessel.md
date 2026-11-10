@@ -75,15 +75,15 @@ These checks pass against the accepted baseline before implementation.
 The portable source now implements those strict comparisons; the uncertain
 bracket and every excluded regime continue through the accepted code.
 
-Eight focused local CTests pass, including 628 certified instrumented results.
-All ten outcomes of the five new decisions are observed; overall coverage is
-203/214 observed, 212/214 observed or fault-modeled, with the same two
-mathematically infeasible exponential outcomes. Eleven additional compact
-outward enclosures are reproducible using the committed rational generator.
-The new boundary/state and public-binding tests also pass with Howard bc
-7.0.3 loading this exact source as ordinary input. These are functional
-checks, with no local production elapsed benchmark or CPU sampling.
-Hosted native loader/platform checks remain required for the implementation.
+Eleven focused mathematical/source/image/oracle CTests pass, including 664
+certified instrumented results and 22 exact truncation models. All 28 outcomes
+of the new cell/precision decisions are observed; overall coverage is 221/232
+observed and 230/232 observed or fault-modeled, with the same two infeasible
+exponential outcomes. The separate reference fixture contains 47 additional
+exact enclosures. Caller-value/base/scale and zero-cell/public-binding tests
+also pass with Howard bc 7.0.3 loading this exact source as ordinary input.
+These are functional checks, with no local production elapsed benchmark or
+CPU sampling. Hosted native loader/platform checks remain required.
 Any elapsed study must be separately declared after all original PR #712
 observations have been retained and reviewed, with its exposed cases kept
 as controls and the approved regression/Howard/startup rules unchanged.
@@ -148,13 +148,13 @@ argument, caller bases/state and the scope boundary. Additional exact
 reference cases include the excluded order two. Large-argument binding tests
 require the ordinary a/c/s calls for orders zero, one and minus one.
 
-## Positive-scale magnitude guards: proof and tests first
+## Positive-scale magnitude guards
 
 The accepted ascending budget includes D=length(x), which counts the entire
 fractional coefficient. That can make every recurrence operation much wider
 than its output needs. For positive entry scale S, use
 M=max(length(x)-scale(x),1) and T=S+G+M+1, where G=floor(7*x/16)+1.
-The proposed W=S+G+M+2*d(T)+32 retains the same growth and quadratic guards.
+The implemented W=S+G+M+2*d(T)+32 retains the same growth and quadratic guards.
 At scale zero retain the old coefficient-length formula, preserving the
 accepted arithmetic inside the certified-cell fallback brackets. The Hankel
 selector and its precision formula remain unchanged.
@@ -178,7 +178,7 @@ has the accepted bound 10^6*(W+1)^2*exp(x)*u. Their sum is below
 The exact inequalities e<87/32 and 87^16<10^7*32^16 imply exp(x)<10^G.
 With T<10^d(T), M>=1 and W+1<=19*T, the pre-rounding error in output
 units is below 2*19^2*10^-27<1/2. Final rounding adds at most half an output
-unit. This proves the same one-decimal-ULP contract for the proposed budget;
+unit. This proves the same one-decimal-ULP contract for this budget;
 correct rounding of arbitrary near-midpoint positive-scale inputs is not
 claimed. Working-scale readback and ordinary resource errors remain required.
 
@@ -193,3 +193,10 @@ are added before the production formula changes. Reference values are reused
 across scales in the test generator; every exact enclosure remains identical.
 Expanded exact tests use bounded deadlines appropriate to those larger vectors;
 no benchmark acceptance threshold changes.
+
+For a 256-place argument just below four at S=100, the source budget is
+397 places with coefficient length and 141 with integer magnitude. This is
+a proved working-precision difference, not an elapsed measurement. The
+caller retains the original 256-place argument; clipping affects only the
+function parameter. Both broad reference cases and the caller-value tests
+exercise the changed path.

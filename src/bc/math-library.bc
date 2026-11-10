@@ -384,7 +384,8 @@ define j(n,x) {
      In the Hankel path: m=4*n*n, p/q are even/odd sums, t the coefficient,
      k its index, h its four-step sign cycle, i/g signed/absolute factors,
      f the contraction flag, u the phase and d the amplitude. r holds pi
-     temporarily and then the result. The ascending path reuses t/k/r. */
+     temporarily and then the result. Ascending reuses t/k/r and h for
+     its coefficient-length or integer-magnitude guard. */
   b=ibase
   ibase=A
   s=scale
@@ -512,13 +513,19 @@ define j(n,x) {
     }
   }
   scale=0
-  /* Try the ascending series without guards for every input place.
-     DLMF 10.9.2 gives |J_n'(x)|<=1 for real x and integer n, so
-     truncating x at working precision adds less than one working unit. */
+  /* Clip only beyond working precision. Derivative/absolute-series
+     bounds charge that perturbation to the same exponential guard. */
   /* Absolute recurrence weights sum to at most exp(x).
      exp(x) < 10^(7*x/16) for x>0. Round the digit budget up. */
   g=(7*x)/16+1
-  w=s+g+length(x)+2*length(s+g+length(x)+1)+32
+  /* Positive-scale guards need integer magnitude, not every fractional
+     coefficient digit. Keep the exact old scale-zero fallback arithmetic. */
+  h=length(x)
+  if (s>0) {
+    h-=scale(x)
+    if (h<1) h=1
+  }
+  w=s+g+h+2*length(s+g+h+1)+32
   scale=w
   if (scale!=w) return(1/0)
   if (scale(x)>w) x=x/1

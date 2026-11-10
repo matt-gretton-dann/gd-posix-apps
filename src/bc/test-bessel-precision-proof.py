@@ -91,10 +91,17 @@ def certify():
     assert partial+F(1, factorial(11))/(1-F(1, 12)) < F(87, 32)
     assert 87**16 < 10**7*32**16
     assert F(2*19**2, 10**25) < F(1, 2)
+    source = (Path(__file__).parent/'math-library.bc').read_text(encoding='utf-8')
+    # Bind the modeled budget to the implemented positive-scale guard; the
+    # caller-state tests independently exercise its actual arithmetic paths.
+    assert 'h=length(x)\n  if (s>0) {\n    h-=scale(x)\n    if (h<1) h=1' in source
+    assert 'w=s+g+h+2*length(s+g+h+1)+32' in source
     reports = [check_model(n, argument, scale) for n, argument, scale in cases()]
     return dict(kind='Exact rational truncation model; no production elapsed observations',
                 source_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
-                cases=len(reports), reports=reports, qualified=False)
+                cases=len(reports), reports=reports,
+                math_source_normalized_sha256=hashlib.sha256(source.encode('utf-8')).hexdigest(),
+                qualified=False)
 
 
 if __name__ == '__main__':
