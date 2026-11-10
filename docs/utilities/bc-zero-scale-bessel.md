@@ -75,7 +75,7 @@ These checks pass against the accepted baseline before implementation.
 The portable source now implements those strict comparisons; the uncertain
 bracket and every excluded regime continue through the accepted code.
 
-Eleven focused mathematical/source/image/oracle CTests pass, including 664
+Seventeen focused mathematical/source/image/oracle CTests pass, including 664
 certified instrumented results and 22 exact truncation models. All 28 outcomes
 of the new cell/precision decisions are observed; overall coverage is 221/232
 observed and 230/232 observed or fault-modeled, with the same two infeasible
@@ -83,7 +83,12 @@ exponential outcomes. The separate reference fixture contains 47 additional
 exact enclosures. Caller-value/base/scale and zero-cell/public-binding tests
 also pass with Howard bc 7.0.3 loading this exact source as ordinary input.
 These are functional checks, with no local production elapsed benchmark or
-CPU sampling. Hosted native loader/platform checks remain required.
+CPU sampling. Exact head `ca75c979` subsequently passed all 44 original hosted
+checks. All 33 original archives and seven decoded core/proof logs were retained
+and reviewed; Linux/macOS core builds passed 503 tests and Windows passed 441,
+with four additional enabled-profile checks. Dedicated native archives retain
+actual tested images; narrower historical support archives retain logs and
+build metadata, with their missing-image limitation explicit.
 Any elapsed study must be separately declared after all original PR #712
 observations have been retained and reviewed, with its exposed cases kept
 as controls and the approved regression/Howard/startup rules unchanged.
@@ -109,7 +114,13 @@ reproduces all four generator/fixture LF/CRLF combinations (three failures).
 The generator now records normalized source identity and compares normalized
 fixture text; the eleven rational cases and their bounds are unchanged. Native
 archives still retain and hash the actual physical bytes separately. This
-correction requires its own hosted checks and establishes no elapsed benefit.
+correction passed its own hosted checks and establishes no elapsed benefit.
+
+The subsequent [prospective qualification](bc-certified-bessel/qualification.md)
+retains all exposed #712 inputs as controls and adds fresh validation for both
+cell and precision paths, with new arithmetic/startup and matched resource
+evidence. Its generic collector/input changes do not alter this numerical
+implementation or integrate the separate function-storage prototype.
 
 ## Order-one cells
 
