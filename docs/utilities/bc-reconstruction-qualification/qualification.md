@@ -51,6 +51,13 @@ fractional inputs. The seed is the bounded-rational candidate revision
 case file and independent FLINT/Arb enclosures supply 76 fresh one-shot and
 repeated records, kept separate from the previous 300 inputs.
 
+The original sine case `s(17130.754553927474)` at scale 20 runs in a
+separate shard in both modes. A local correctness check reproduced the
+pinned Howard result outside the one-decimal-ULP bound. Its program, oracle,
+role set and hard accuracy gate are unchanged. The separate shard lets the
+other records complete when this workload fails calibration. A failed result
+keeps this workload and the full qualification unqualified.
+
 On each platform, split the original arithmetic and startup job into five
 jobs. Full and holdout retain their complete arithmetic workloads, sparse
 latency and throughput, and preset resource diagnostics. The fixed integer
@@ -61,7 +68,7 @@ partition retains its original sample counts, seeds, roles and confirmation
 rules. Broad arithmetic stages have a 14,400-second command deadline.
 The startup job independently rebuilds the same three declared roles, keeps
 their recipes and exact ordinary images before collection, and runs the
-original calibration schedule. This matrix has 177 jobs across the three
+original calibration schedule. This matrix has 180 jobs across the three
 platforms. Every job retains its own original archives and results.
 
 The successor incorporates accepted PRs #718 and #719: the versioned cold-latency

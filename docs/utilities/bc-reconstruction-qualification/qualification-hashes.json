@@ -1,11 +1,11 @@
 {
   "arithmetic_samples": 151,
   "base": "b2b98ec1629c9aa98a3abbde01744f4bb95ac444",
-  "declared_jobs": 177,
+  "declared_jobs": 180,
   "files": {
     ".github/workflows/bc-bessel-zero-correctness.yml": "40acefcf679e65af41f1468ad9670d3d3bf166def89f35fbcea74eebad2f0ba4",
     ".github/workflows/bc-certified-bessel-qualification.yml": "0367aa890fe81c0f93a4eb86ab2db3f619721fe8cdba1fe1ae04fa19a2e7041a",
-    ".github/workflows/bc-reconstruction-qualification.yml": "7483305923aa0c2ff9cc744029183671b6396aeeb5e948254d91a9da18a871ce",
+    ".github/workflows/bc-reconstruction-qualification.yml": "dcdfb28878f3d71dd7d9734c453870e06e5959145235ec2a0e40e251d9602067",
     "CMakeLists.txt": "974eaa9b4444e5c74d30a04663a2f6dc383ae726c064a12ad9c692a431c938d2",
     "docs/utilities/bc-bounded-rational-kernels.md": "1d98efae70da4c54912a28a725b39f0ad27a215580c8e8ccefd3801065a09134",
     "docs/utilities/bc-certified-bessel/qualification.md": "2538ae9c820bc9b4bc365cf8c8fe33299e524186f5b73cde46f8935ada1cf59c",
@@ -13,7 +13,7 @@
     "docs/utilities/bc-native-functions.md": "6486440af345bf3fc997a7ff1bd1c0dcc2cbc39480a8655c20305628b1ba7a3b",
     "docs/utilities/bc-performance-acceptance.md": "dd3eedf473d5d9e07ba19e4d3bb0ca6d5da3eadbda104f3842a1a30af0a291d2",
     "docs/utilities/bc-portable-math.md": "ab564f2a47daa0208133d000e559304248a20457b8f3011a08d5c0b21dec1d96",
-    "docs/utilities/bc-reconstruction-qualification/qualification.md": "c8f03c8073577acac1b91b1463706c215dc6c5c57081b5b44b755936953a426c",
+    "docs/utilities/bc-reconstruction-qualification/qualification.md": "67c508b1bce48355eb49281cfb88065dc1c52a1bf21eac9708524905fb81b71a",
     "src/bc/CMakeLists.txt": "cf268db68d7d9807914a9988302ad4fe193ccdf54e1d3af1fbbbf0a6796355dc",
     "src/bc/bc.hh": "4fc67c5eeca4016a6d5905c194ebc6a98c9930a124aaf98dcbabeef7bb9280be",
     "src/bc/digit-storage.hh": "3e94c8a5ee76309a0bbf42aa56bcc0df31441ddce7e84198d5474cedb051f812",
@@ -53,13 +53,13 @@
     "src/bc/scripts/compare-bc-resources.py": "cb7eb196e6ddc87ff050b4f059e1c37720752fc23644d02ec5bc8b1169cc675c",
     "src/bc/scripts/generate-math-case-list-oracles.py": "4cd6983beed69638da08f729bda054c4dc536a60e6991628ce1ac4b35168910d",
     "src/bc/scripts/generate-math-oracles.py": "e8f664c9604a2db7e3ce6b0f9af8fc92219d79f72fd088b535103a5bda2def9d",
-    "src/bc/scripts/generate-reconstruction-declaration.py": "537af2ab08184a345e18df7404f6b7a87e7e8f2f37b1db9e78eca8cd6423811f",
+    "src/bc/scripts/generate-reconstruction-declaration.py": "8f32fab71114e8e43428e95b3eefb69795dc40d7e98065944dc370fabfdaf75f",
     "src/bc/scripts/integer-qualification-inputs.py": "1b8a0668bf2ab4c084ce813219f39b6bc2e2e1fa79de851aa90f54f60526f2a2",
     "src/bc/scripts/math-qualification-inputs.py": "1af1e1203809f03894c7abcbcfd8ed1ab2959e2be684ca6eae94d4e0dffb4482",
     "src/bc/scripts/math_library_coverage.py": "0020433eca6e55f6f018cec66369ba115ce8446814879f1c966045977f6e4b61",
     "src/bc/scripts/math_oracle.py": "addc5373f2b61b6a237b0d7b9d320a184bd10ad87a9149f6b26eb3fccb0ae37e",
     "src/bc/scripts/profile-bc.py": "bf5f4c80c49eeb8fbff58ab32c34b79d55334f01fa20ae37d7267a811fde93b3",
-    "src/bc/scripts/reconstruction-qualification-inputs.py": "66213316257fd4324b5bdb817751bb0268a885ca49ab8412cca600039d516f18",
+    "src/bc/scripts/reconstruction-qualification-inputs.py": "d91b2247c9014bd7568e37604380bc3bd512f99f81f706b8d7e496cca25d3f29",
     "src/bc/scripts/startup-calibration.py": "9ac1596095057f1653547d4a4a78702d6b3ef95d66984d53010dff6129a9a166",
     "src/bc/scripts/verify-bessel-zero-evidence.py": "b27ccbb4fbf69ebd47e5721f77f8c15015ac0fe6d9b915163512434061156303",
     "src/bc/test-benchmark-ci.py": "ec57f06eeedcf8232d1ff35fba4c84c03b946b686214f740a408db28642ce333",
@@ -81,7 +81,7 @@
     "src/bc/test-rational-kernel-proof.py": "8a2e9956bf38703fcf6cecf86327ffc486bf04cd030cbee042c7496a30963bf7",
     "src/bc/test-reconstruction-declaration.py": "bf11359d0e1876dbd91d3c9c5ef1a5dc18eb282a0c899c7a5a47a5a6ba8cff8f",
     "src/bc/test-reconstruction-hosted-limits.py": "bbcead2244770e84eb92656431c015b9955a6e2e91b8359020edcbe3294bc1e8",
-    "src/bc/test-reconstruction-inputs.py": "e8b99692a7fea8586ae337cdca1b7fe0da124ab7ad19ebc73cbdb7a882b88105",
+    "src/bc/test-reconstruction-inputs.py": "4e6320a8ba3c465600ebe82dbddd686e37b484ec50d0ecc229234509b8c3c1e6",
     "src/bc/test-resource-comparison.py": "ae02986ab555bf377f8c1e8280468bd748619b146e9e8e803bd375b281ec84d3",
     "src/bc/test-startup-calibration.py": "c0b965d95bf783ea43aa11a2fd4fdceaa375f0691882dedb51b630048cfa0f25",
     "src/bc/test-vm-lifetime.cc": "a2ccd9faffe322c128166c22172120ffe933511017fed0e649abab3f0f8f737b",
@@ -264,7 +264,7 @@
       "records": 5
     },
     "fresh-high-0": {
-      "manifest_sha256": "f4c991683fab91fb9ecd0e79f62fb7dbc3b6774c40b89fea8eece136544a5863",
+      "manifest_sha256": "5c1d23f864db0153599e3f6e798f3744253b8f0588b3e03eb4e1c5da3edc2a3f",
       "names": [
         "math_rational_validation_03_one_shot_x1",
         "math_rational_validation_03_repeated_x2",
@@ -278,7 +278,7 @@
       "records": 8
     },
     "fresh-high-1": {
-      "manifest_sha256": "227fa667176d58dc7aa227bbb59503ab1f105f181889844af032b9cae94de61d",
+      "manifest_sha256": "4eb2557a05d2a0c4c35ff0a472fc909dee8e1e4ee6bd9eaf081fdec7d13a4ffa",
       "names": [
         "math_rational_validation_07_one_shot_x1",
         "math_rational_validation_07_repeated_x2",
@@ -290,7 +290,7 @@
       "records": 6
     },
     "fresh-high-2": {
-      "manifest_sha256": "fb46e9cb0e5659c313cb80b1f9d011116a5f649c0b44cb56ebc484550a048405",
+      "manifest_sha256": "a83515491fa166c218dee0c6e77ae84026b82de14b0da368f9d840daaadca4b9",
       "names": [
         "math_rational_validation_11_one_shot_x1",
         "math_rational_validation_11_repeated_x2",
@@ -302,7 +302,7 @@
       "records": 6
     },
     "fresh-low-0": {
-      "manifest_sha256": "a19c9bad5e14034f9b0cb9b179b948d88536b223446ac5c46ec65b39f5397121",
+      "manifest_sha256": "80be346b67d705e1367ff97d81f3f5d53be34ce4901d09e2b14bdba5c685d942",
       "names": [
         "math_rational_validation_00_one_shot_x1",
         "math_rational_validation_00_repeated_x2",
@@ -324,7 +324,7 @@
       "records": 16
     },
     "fresh-low-1": {
-      "manifest_sha256": "388c01a5504f852e33d4bea531cb10aa64caad93b45f24427600f88fec69eab9",
+      "manifest_sha256": "6b86126b3da2eac944d5355617aed0edcd1f6b3f9f1130c0149e3df51941cb09",
       "names": [
         "math_rational_validation_01_one_shot_x1",
         "math_rational_validation_01_repeated_x2",
@@ -344,7 +344,7 @@
       "records": 14
     },
     "fresh-low-2": {
-      "manifest_sha256": "2d95308605c27cb1eae76279e74de47b25b026e098741f4d5bca39863b0c80bc",
+      "manifest_sha256": "2a17f0815454896818500f0200924c6a6d6d46b559466ed5cff286efb73ff66f",
       "names": [
         "math_rational_validation_04_one_shot_x1",
         "math_rational_validation_04_repeated_x2",
@@ -364,7 +364,7 @@
       "records": 14
     },
     "fresh-middle-0": {
-      "manifest_sha256": "bb002de3dd0c42c9f2ffc7e02cde394af784633caa0955e103df999061147fbc",
+      "manifest_sha256": "e5ce74fa704c4b49da7a8a42897dd8f8e5bdc421c061c55ec45d01684990c73f",
       "names": [
         "math_rational_validation_02_one_shot_x1",
         "math_rational_validation_02_repeated_x2",
@@ -374,7 +374,7 @@
       "records": 4
     },
     "fresh-middle-1": {
-      "manifest_sha256": "90e1cfc15d4a3a03de0fdf8dcde60ef43722fd1c11bd61018ddd307698573397",
+      "manifest_sha256": "08a92a6ac9ebbe8430fad6cc04a46fd686220182508f9fdf1f298632ea8ae5c5",
       "names": [
         "math_rational_validation_06_one_shot_x1",
         "math_rational_validation_06_repeated_x2",
@@ -384,7 +384,7 @@
       "records": 4
     },
     "fresh-middle-2": {
-      "manifest_sha256": "3bdf498d5698e6e2dfadcabc4200b430e1d26c74f631c030f44af643ac351f6f",
+      "manifest_sha256": "7d0e9b15dbd563c87e3ea0670cb4309116a4a301732e7501a810bce0eb65db5e",
       "names": [
         "math_rational_validation_10_one_shot_x1",
         "math_rational_validation_10_repeated_x2",
@@ -394,7 +394,7 @@
       "records": 4
     },
     "full-high-0": {
-      "manifest_sha256": "610deeaf7af756d037cc09f61bed4f5e3ec8bf78bb4db2080528ca99cefebd5b",
+      "manifest_sha256": "0037539a9929461c2d7f3f1c8760004bcfa3a3a2dca322b9921c0332bd69d925",
       "names": [
         "math_regular_a-one_scale1000_one_shot_x1",
         "math_regular_a-one_scale1000_repeated_x3",
@@ -406,7 +406,7 @@
       "records": 6
     },
     "full-high-1": {
-      "manifest_sha256": "221b13a704f845f2f8b5f252bde4d355b01ef02ae519a39011d6522143fb831f",
+      "manifest_sha256": "3f5b0793876d8f69918acbdb73295d418eb33d811304d6a4ab6d7691f91fa0e4",
       "names": [
         "math_regular_c-one_scale1000_one_shot_x1",
         "math_regular_c-one_scale1000_repeated_x3",
@@ -418,7 +418,7 @@
       "records": 6
     },
     "full-high-2": {
-      "manifest_sha256": "742c00889e55dcf61bc0b40111fc7a70110a1215cc1f82f3ddf1945d1306dac1",
+      "manifest_sha256": "58ef6a893fe7de9025d9e627822b2b44d55c19deab80142b656f87e2baa31ecd",
       "names": [
         "math_regular_s-one_scale1000_one_shot_x1",
         "math_regular_s-one_scale1000_repeated_x3",
@@ -430,7 +430,7 @@
       "records": 6
     },
     "full-high-3": {
-      "manifest_sha256": "0e7dd76883431e5f1c1e83b329697cb2977c38c29e7bd716b9d07da792a39d3c",
+      "manifest_sha256": "a34c8d4c21ed5a8d14cc89de3eebc03bdea10f74d2f54a2aac9dc162f71866b6",
       "names": [
         "math_argument_dominates_j-argument-dominates_scale1000_one_shot_x1",
         "math_argument_dominates_j-argument-dominates_scale1000_repeated_x3",
@@ -440,7 +440,7 @@
       "records": 4
     },
     "full-high-4": {
-      "manifest_sha256": "9e80806b163fabad86e6516716cbadfd1f37a231e127fd92afb9ac2a32b02f90",
+      "manifest_sha256": "c03263656ffd2c45c1c1909de69f307f2135265b0c038a93d37afc88828eb8e1",
       "names": [
         "math_order_dominates_j-order-dominates_scale1000_one_shot_x1",
         "math_order_dominates_j-order-dominates_scale1000_repeated_x3",
@@ -450,7 +450,7 @@
       "records": 4
     },
     "full-high-5": {
-      "manifest_sha256": "7cd8b9d898cb3731d43062170348ad0bbccddf569766401323e3ebfc317a3392",
+      "manifest_sha256": "b77bb0ff5f025448f84821fa3c268a658304fb7457bc44e9dab32cacbcb74596",
       "names": [
         "math_regular_j-zero-one_scale1000_one_shot_x1",
         "math_regular_j-zero-one_scale1000_repeated_x3",
@@ -460,7 +460,7 @@
       "records": 4
     },
     "full-low-0": {
-      "manifest_sha256": "56670f484ad832f5423e625afca92ebf38c8bd4f933ea05c023f92f20ea1bdf2",
+      "manifest_sha256": "724e23374851c4477ea94d4795465199fdbcafbeaf4e6ce254dfae8d7040b2fa",
       "names": [
         "math_regular_a-one_scale20_one_shot_x1",
         "math_regular_a-one_scale20_repeated_x50",
@@ -472,7 +472,7 @@
       "records": 6
     },
     "full-low-1": {
-      "manifest_sha256": "c969101d3d0d1202e1909a80d31dc09de5ed9999433c4b20b3677a8d615d949a",
+      "manifest_sha256": "f77c1d2bfd7c749290b6c2fdffe082e95b38e91cd14d85148ffa88de2f3d10e6",
       "names": [
         "math_regular_c-one_scale20_one_shot_x1",
         "math_regular_c-one_scale20_repeated_x50",
@@ -484,7 +484,7 @@
       "records": 6
     },
     "full-low-2": {
-      "manifest_sha256": "92c2d327f0be8d3e8ecb0e58a484a07b05aae700e3eae1fe57ef0608f9e5df6a",
+      "manifest_sha256": "e2713e999ae339bc0cede50b8e811002f007505bd9e105d365cefc8908e29d29",
       "names": [
         "math_regular_e-one_scale20_one_shot_x1",
         "math_regular_e-one_scale20_repeated_x50",
@@ -496,7 +496,7 @@
       "records": 6
     },
     "full-low-3": {
-      "manifest_sha256": "d2972969b3edd50bea773c294de69ff464165ffa4f185cd56388270baf5b842e",
+      "manifest_sha256": "4f96067c68715eefb50d9f4415a2c781a9d2de4ef680531f213392047cb22120",
       "names": [
         "math_regular_l-two_scale20_one_shot_x1",
         "math_regular_l-two_scale20_repeated_x50",
@@ -508,7 +508,7 @@
       "records": 6
     },
     "full-low-4": {
-      "manifest_sha256": "1edfd86a61d7a288bb7c487bf864d5c28c5b055d3f56fea4b1380af77683587a",
+      "manifest_sha256": "8279ad12371c0db17dfb1ff1e42c86606c772774c818e50b493df0cee8653155",
       "names": [
         "math_regular_s-one_scale20_one_shot_x1",
         "math_regular_s-one_scale20_repeated_x50",
@@ -520,7 +520,7 @@
       "records": 6
     },
     "full-low-5": {
-      "manifest_sha256": "7af8effb2145974c7eee57f2528b05bcbc65e3548cffcbc4cc5b751a9c1f0c7e",
+      "manifest_sha256": "57ef977d1973109a334b7aab658e14b200abc7d2a49923756cf58163ecf833c7",
       "names": [
         "math_near_root_j-near-root_scale20_one_shot_x1",
         "math_near_root_j-near-root_scale20_repeated_x50",
@@ -530,7 +530,7 @@
       "records": 4
     },
     "full-middle-0": {
-      "manifest_sha256": "f2167813378bce9ba62074862c0336643a8af93bad0f32e15759af08aded4fc3",
+      "manifest_sha256": "489dcc15308e781c699305d5a2861fc39578bea801134ac483142ee5d4520fe1",
       "names": [
         "math_regular_a-one_scale100_one_shot_x1",
         "math_regular_a-one_scale100_repeated_x20",
@@ -542,7 +542,7 @@
       "records": 6
     },
     "full-middle-1": {
-      "manifest_sha256": "8662b14ce2069ab08820ca649923e966f8ac19daad14543367f49ab8693bfb85",
+      "manifest_sha256": "5a47ed6aa5039f795312fa7196250e96ab4c79ba9fd27e1bb0fc4ed76abc340d",
       "names": [
         "math_regular_c-one_scale100_one_shot_x1",
         "math_regular_c-one_scale100_repeated_x20",
@@ -554,7 +554,7 @@
       "records": 6
     },
     "full-middle-2": {
-      "manifest_sha256": "bc1633a48fc0df8b6729b89565b85b317de2a321f3000a521d926cbca34ca39e",
+      "manifest_sha256": "d60f5870133419003bf6093aa10ef0d85b3946651cbf9b61214243c1407a403f",
       "names": [
         "math_regular_s-one_scale100_one_shot_x1",
         "math_regular_s-one_scale100_repeated_x20",
@@ -566,7 +566,7 @@
       "records": 6
     },
     "full-middle-3": {
-      "manifest_sha256": "3810761419dbe7fcc211f99ac9b28d14aeaca2125632802eee120b7b007da736",
+      "manifest_sha256": "75101205bfe7f09c6412d660871ea43083fb1673aa16ce0669f6f291b93f4102",
       "names": [
         "math_argument_dominates_j-argument-dominates_scale100_one_shot_x1",
         "math_argument_dominates_j-argument-dominates_scale100_repeated_x20",
@@ -576,7 +576,7 @@
       "records": 4
     },
     "full-middle-4": {
-      "manifest_sha256": "6d96f1d2a7d9a179363e8cccc1257d5652cc592affe5078b32d9a6d2686636c6",
+      "manifest_sha256": "25e274e771b13c213a283298b26eb67bdcff6358925c35cd8d7e92d7083b3199",
       "names": [
         "math_order_dominates_j-order-dominates_scale100_one_shot_x1",
         "math_order_dominates_j-order-dominates_scale100_repeated_x20",
@@ -586,7 +586,7 @@
       "records": 4
     },
     "full-middle-5": {
-      "manifest_sha256": "8512e69e94a44dbb7b751741afe402fe91f156682645def1061f464c6affd5b0",
+      "manifest_sha256": "2c68bbe0aaf25ec7e22f4b4cf1af98a9efed3245bbc623542b937cf48abf42b4",
       "names": [
         "math_regular_j-zero-one_scale100_one_shot_x1",
         "math_regular_j-zero-one_scale100_repeated_x20",
@@ -596,7 +596,7 @@
       "records": 4
     },
     "holdout-high-0": {
-      "manifest_sha256": "43789553ae368f985c84bd4af889b9b6c2152a6558c40b8ee6648863f17080df",
+      "manifest_sha256": "55b3a3fe6215fdfb2ea675eb88ff4aeefb698404d5943d2e30dce090f6c421b1",
       "names": [
         "math_regular_held-s-nine-eighths_scale1000_one_shot_x1",
         "math_regular_held-s-nine-eighths_scale1000_repeated_x2",
@@ -610,7 +610,7 @@
       "records": 8
     },
     "holdout-high-1": {
-      "manifest_sha256": "77160d0cac83bc7d3a38a4b3654041ddc6acbf6185c6ee42b981623b25070637",
+      "manifest_sha256": "0e803ef49d41256379e4b4e1a7dccb0a7ceb333c47367e2be89dbf823d6263e4",
       "names": [
         "math_regular_held-c-nine-eighths_scale1000_one_shot_x1",
         "math_regular_held-c-nine-eighths_scale1000_repeated_x2",
@@ -622,7 +622,7 @@
       "records": 6
     },
     "holdout-high-2": {
-      "manifest_sha256": "7de79918c0b1845439d1da5a6660ba11db602b99ce1810160830002305a3f329",
+      "manifest_sha256": "44d8354c243d76dab28a92c5a87944d9edc0dea620a9b3c550309c6f076211b5",
       "names": [
         "math_regular_held-e-nine-eighths_scale1000_one_shot_x1",
         "math_regular_held-e-nine-eighths_scale1000_repeated_x2",
@@ -634,7 +634,7 @@
       "records": 6
     },
     "holdout-high-3": {
-      "manifest_sha256": "4df3e7aff53866063209f0eef41b4b99280c56defa17eb6e2690ac741ec5ed95",
+      "manifest_sha256": "ceffe5df16d123c397d7113cbb3aea5ad664e35ba19dfdedabc783d292ca335a",
       "names": [
         "math_regular_held-j-one-nine-eighths_scale1000_one_shot_x1",
         "math_regular_held-j-one-nine-eighths_scale1000_repeated_x2",
@@ -646,7 +646,7 @@
       "records": 6
     },
     "holdout-high-4": {
-      "manifest_sha256": "04bbf5d111f8dfa42e9ab919fda05298c3e24aef781d57a5bacc88030132cdc6",
+      "manifest_sha256": "a8cb7fbd635b921288bbbe3716687e74cd952d90ad5241c99d135318b4bc623d",
       "names": [
         "math_turning_held-j-turning23_scale1000_one_shot_x1",
         "math_turning_held-j-turning23_scale1000_repeated_x2",
@@ -658,7 +658,7 @@
       "records": 6
     },
     "holdout-high-5": {
-      "manifest_sha256": "1ab6e23bdff02fbd5aa965a985e7bd0cc00bfe9ad495cd282fc3d4212b69a982",
+      "manifest_sha256": "6fcfedc0a7e31811dd22ccccbb8d3ad2b352c648dcb41408a8f354625e2467ee",
       "names": [
         "math_regular_held-l-nine-fourths_scale1000_one_shot_x1",
         "math_regular_held-l-nine-fourths_scale1000_repeated_x2",
@@ -670,7 +670,7 @@
       "records": 6
     },
     "holdout-low-0": {
-      "manifest_sha256": "a4e21e4fabda097db1b0ec5738ac35c484b19eda746eca13b4c5e8f4260829c2",
+      "manifest_sha256": "d7ecba642ceb3495d858e4022aad022bc8938523310941a7046a93cc90868ca1",
       "names": [
         "math_regular_held-a-nine-eighths_scale20_one_shot_x1",
         "math_regular_held-a-nine-eighths_scale20_repeated_x44",
@@ -686,7 +686,7 @@
       "records": 10
     },
     "holdout-low-1": {
-      "manifest_sha256": "c5c850fd4a3108b82aa6fdb06978e1fa45f2ba496fdb31ad8f9b4bdd2587338e",
+      "manifest_sha256": "69d6a07218a01502e588d23484890c268b08a0979ba7b1243631f03834f8d722",
       "names": [
         "math_regular_held-s-nine-eighths_scale20_one_shot_x1",
         "math_regular_held-s-nine-eighths_scale20_repeated_x44",
@@ -702,7 +702,7 @@
       "records": 10
     },
     "holdout-low-2": {
-      "manifest_sha256": "2e7b3c670610a10a754a838068015749e0d523cedaad9dfe33a8cb2b0008948a",
+      "manifest_sha256": "4e0802d8aad041e6cfa86cf6e00ff967b7b7c4cadac192888b1d49a356e51a08",
       "names": [
         "math_regular_held-e-nine-eighths_scale20_one_shot_x1",
         "math_regular_held-e-nine-eighths_scale20_repeated_x44",
@@ -716,7 +716,7 @@
       "records": 8
     },
     "holdout-low-3": {
-      "manifest_sha256": "56eadfc1b4f8da3dc55f88a55f7e6c4faec4b95163d56d3fa2ad09d42621fbf4",
+      "manifest_sha256": "d0cf6088f3a1b5bcac7264cac32d5b2144972f2e09f45e402925818b4262bfb5",
       "names": [
         "math_order_dominates_held-j-order113_scale20_one_shot_x1",
         "math_order_dominates_held-j-order113_scale20_repeated_x44",
@@ -730,7 +730,7 @@
       "records": 8
     },
     "holdout-low-4": {
-      "manifest_sha256": "80ff9f99bd487e3b596e2eb597a1fbcc00617622475a4f4004a20940cd07a64d",
+      "manifest_sha256": "3a89c7b4745dbd8cb1ea0eeaf89abbce1874da39725417fa69ecf3a66baa6109",
       "names": [
         "math_regular_held-j-one-nine-eighths_scale20_one_shot_x1",
         "math_regular_held-j-one-nine-eighths_scale20_repeated_x44",
@@ -744,7 +744,7 @@
       "records": 8
     },
     "holdout-low-5": {
-      "manifest_sha256": "afb2de8d173bfe19a15678f07c3e7f098e47e9950dfbe173e8c1399cd616e4b5",
+      "manifest_sha256": "739eb1d86ea40eb49b7843b8c5e83d943df02a104094d7fa621a3ba5b3c4b8c2",
       "names": [
         "math_turning_held-j-turning23_scale20_one_shot_x1",
         "math_turning_held-j-turning23_scale20_repeated_x44",
@@ -758,7 +758,7 @@
       "records": 8
     },
     "holdout-middle-0": {
-      "manifest_sha256": "451c269404028f896fcfab73edb333fd89cd112cd686d49918833078f7b68236",
+      "manifest_sha256": "832f9e083c96b01dececc41488696a0e8ce2b38ad2f2cb4768a1e473cab3b9cd",
       "names": [
         "math_regular_held-a-nine-eighths_scale100_one_shot_x1",
         "math_regular_held-a-nine-eighths_scale100_repeated_x18",
@@ -772,7 +772,7 @@
       "records": 8
     },
     "holdout-middle-1": {
-      "manifest_sha256": "704b3cc180a5fe271d1692119d22e467b795884beb7832556e4f5a48d674507d",
+      "manifest_sha256": "c83a0a19ccc42bbf3f4dc19f26e4bd1a915c105ee86d3d1b2f7c4cb9ec4bc7af",
       "names": [
         "math_regular_held-s-nine-eighths_scale100_one_shot_x1",
         "math_regular_held-s-nine-eighths_scale100_repeated_x18",
@@ -786,7 +786,7 @@
       "records": 8
     },
     "holdout-middle-2": {
-      "manifest_sha256": "f5959c6cb8c0d527fc80d11c763bdd82cba73e909c622e13999f1faec6d9e66e",
+      "manifest_sha256": "cca92fc3d8e729b8f6cd6b509daab3ca872fc53317695e019df50cc696f11b79",
       "names": [
         "math_regular_held-e-nine-eighths_scale100_one_shot_x1",
         "math_regular_held-e-nine-eighths_scale100_repeated_x18",
@@ -798,7 +798,7 @@
       "records": 6
     },
     "holdout-middle-3": {
-      "manifest_sha256": "76d31d92a4e5e43715b713fb1da13a0b55d9e1cf9f2441237cc3f37c660851bd",
+      "manifest_sha256": "c9e5a012e644ceb4a371bb585e94ff776ba406aa6cae05db1027f177296bfc66",
       "names": [
         "math_order_dominates_held-j-order113_scale100_one_shot_x1",
         "math_order_dominates_held-j-order113_scale100_repeated_x18",
@@ -810,7 +810,7 @@
       "records": 6
     },
     "holdout-middle-4": {
-      "manifest_sha256": "267bebfcc5f53b640521ba77483652844da154da839b73625b03394d390625e4",
+      "manifest_sha256": "77c971a16e6c58d32ab819ead2a7232927b337bd67d79fad6668b200559c31e9",
       "names": [
         "math_regular_held-j-one-nine-eighths_scale100_one_shot_x1",
         "math_regular_held-j-one-nine-eighths_scale100_repeated_x18",
@@ -822,7 +822,7 @@
       "records": 6
     },
     "holdout-middle-5": {
-      "manifest_sha256": "d9ede6e092991c3189b2c34ece12bbd736ed697c3091fa6ac8fa72a93515ae5c",
+      "manifest_sha256": "d79ad695442bac3b1365e2d631cbdcdcc98308de87ea69a43bd2187d53280df3",
       "names": [
         "math_turning_held-j-turning23_scale100_one_shot_x1",
         "math_turning_held-j-turning23_scale100_repeated_x18",
@@ -839,7 +839,7 @@
       "records": 0
     },
     "validation-high-0": {
-      "manifest_sha256": "eb33e7ba1d6f61123532a337de668a480d78808c1bb5017219ba5176c5fb6c02",
+      "manifest_sha256": "cbaccac075393d782aa51a225866a477118931ec86efc2385f2a3b63a82c89ad",
       "names": [
         "math_reconstruction_validation_03_one_shot_x1",
         "math_reconstruction_validation_03_repeated_x2",
@@ -853,7 +853,7 @@
       "records": 8
     },
     "validation-high-1": {
-      "manifest_sha256": "13436ac9df4649f046fa4f0664e83faec1cdd5f528bd5ce8c332b2f8d87d9cee",
+      "manifest_sha256": "d098a12ea191230478acbac638d8651acf2cfc4933ab7912ad737b555986cbc9",
       "names": [
         "math_reconstruction_validation_07_one_shot_x1",
         "math_reconstruction_validation_07_repeated_x2",
@@ -865,7 +865,7 @@
       "records": 6
     },
     "validation-high-2": {
-      "manifest_sha256": "8b2f3a4ebcf56ebb5beb0aa4d813228bc47bdc97456a0413370ada38f2223821",
+      "manifest_sha256": "0358f408b1feba264aaeb5c874f38267ae8c0cc7bd66722b87507c55a24f62b7",
       "names": [
         "math_reconstruction_validation_11_one_shot_x1",
         "math_reconstruction_validation_11_repeated_x2",
@@ -877,7 +877,7 @@
       "records": 6
     },
     "validation-low-0": {
-      "manifest_sha256": "bc6413002e12de2cdeab981489d746d34f665e3975eb2419a20b6b4751778520",
+      "manifest_sha256": "493b47be60b67b9a1138beb96df36361756d1f9e1eb039951e939ac5cb06329c",
       "names": [
         "math_reconstruction_validation_00_one_shot_x1",
         "math_reconstruction_validation_00_repeated_x2",
@@ -899,7 +899,7 @@
       "records": 16
     },
     "validation-low-1": {
-      "manifest_sha256": "afbfecd93219448b7bc0281a8a35de7f5485112a955d8e31200351edfa87cb16",
+      "manifest_sha256": "3b0a58111d2786f6ad26cf2419c7d7cae5f9c0b02694263f666a771ca3673de7",
       "names": [
         "math_reconstruction_validation_01_one_shot_x1",
         "math_reconstruction_validation_01_repeated_x2",
@@ -919,7 +919,7 @@
       "records": 14
     },
     "validation-low-2": {
-      "manifest_sha256": "9d35cad7644e3edc6f047a83043ee67f013978985a2f27cd3e3b5e845bf2cbf4",
+      "manifest_sha256": "e3bf197bb03cafddcec5db27f9f56a3470cdf1e0e677e07dc2ca2b65ffc8af38",
       "names": [
         "math_reconstruction_validation_04_one_shot_x1",
         "math_reconstruction_validation_04_repeated_x2",
@@ -932,14 +932,12 @@
         "math_reconstruction_validation_28_one_shot_x1",
         "math_reconstruction_validation_28_repeated_x2",
         "math_reconstruction_validation_31_one_shot_x1",
-        "math_reconstruction_validation_31_repeated_x2",
-        "math_reconstruction_validation_34_one_shot_x1",
-        "math_reconstruction_validation_34_repeated_x2"
+        "math_reconstruction_validation_31_repeated_x2"
       ],
-      "records": 14
+      "records": 12
     },
     "validation-middle-0": {
-      "manifest_sha256": "0180f509c5911ff3a9b4cb4acd815b0cb1a06151d594461c257bf44385cfb04f",
+      "manifest_sha256": "cd4a7eb6150232c4763c4b206f0ad40b2d16211b06eeaa51f40a839dcd1775b2",
       "names": [
         "math_reconstruction_validation_02_one_shot_x1",
         "math_reconstruction_validation_02_repeated_x2",
@@ -949,7 +947,7 @@
       "records": 4
     },
     "validation-middle-1": {
-      "manifest_sha256": "1588e0328f3b0ea96aafd08d88974e04ad4d70e219c72382e390400740acba67",
+      "manifest_sha256": "19aa320644d0014847b54c2d3ebbacea9dc2a64e81601ee3a6c1c31b4c5a3c6d",
       "names": [
         "math_reconstruction_validation_06_one_shot_x1",
         "math_reconstruction_validation_06_repeated_x2",
@@ -959,7 +957,7 @@
       "records": 4
     },
     "validation-middle-2": {
-      "manifest_sha256": "6a284c33717e0fe6b9c8e18c95619767842cf5fe5f54856335cab2dd93024bd0",
+      "manifest_sha256": "53572c65ca25dc6ff88f528536529c4cff671b8f5ccee728c6c4a68fdb9ba414",
       "names": [
         "math_reconstruction_validation_10_one_shot_x1",
         "math_reconstruction_validation_10_repeated_x2",
@@ -967,6 +965,14 @@
         "math_reconstruction_validation_22_repeated_x2"
       ],
       "records": 4
+    },
+    "validation-sine-0": {
+      "manifest_sha256": "c7e2ce95f4a65f2d79ddee51677185e3c17a28a5e10c57294917b4f72ee96c10",
+      "names": [
+        "math_reconstruction_validation_34_one_shot_x1",
+        "math_reconstruction_validation_34_repeated_x2"
+      ],
+      "records": 2
     }
   },
   "source_identity": "Exact immutable PR head recorded by each original job"

@@ -65,14 +65,16 @@ def declaration():
         for family,preset,shards in (('controls','full',6),('controls','holdout',6),
                                       ('validation','holdout',3),('fresh','holdout',3)):
             rows=inputs.controls(preset) if family=='controls' else inputs.validation(fresh=family == 'fresh')
-            for band in inputs.OLD.BANDS:
-                for shard in range(shards):
-                    name='{}-{}-{}'.format(preset if family=='controls' else family,band,shard)
-                    path=Path(tmp)/name
-                    chosen=inputs.OLD.select(rows,band,shard,shards)
-                    inputs.write(chosen,family,preset,band,shard,shards,path)
-                    selected[name]=dict(manifest_sha256=digest(path/'manifest.json'),
-                        records=len(chosen),names=[r['name'] for r in chosen])
+            partitions = [(band, shard) for band in inputs.OLD.BANDS for shard in range(shards)]
+            if family == 'validation':
+                partitions.append(('sine', 0))
+            for band, shard in partitions:
+                name='{}-{}-{}'.format(preset if family=='controls' else family,band,shard)
+                path=Path(tmp)/name
+                chosen=inputs.select(rows,family,band,shard,shards)
+                inputs.write(chosen,family,preset,band,shard,shards,path)
+                selected[name]=dict(manifest_sha256=digest(path/'manifest.json'),
+                    records=len(chosen),names=[r['name'] for r in chosen])
         for label, successor in (('validation', False), ('fresh', True)):
             name = 'arithmetic-integer-' + label
             path = Path(tmp) / name
@@ -80,7 +82,7 @@ def declaration():
             cases = integers.cases(successor=successor)
             selected[name] = dict(manifest_sha256=digest(path/'manifest.json'),
                 records=len(cases), names=[r['name'] for r in cases])
-    assert len(selected)==56
+    assert len(selected)==57
     arithmetic = module('benchmark-ci')
     bench = module('bench-bc')
     for preset in ('full', 'holdout'):
@@ -93,7 +95,7 @@ def declaration():
         source_identity='Exact immutable PR head recorded by each original job',
         files={name:digest(ROOT/name) for name in sorted(files)},selected_inputs=selected,
         mathematical_controls=224,previous_validation_math_records=76,fresh_math_records=76,previous_validation_integer_workloads=5,fresh_integer_workloads=5,
-        declared_jobs=177,math_samples=dict(aa=151,paired=31),arithmetic_samples=151,
+        declared_jobs=180,math_samples=dict(aa=151,paired=31),arithmetic_samples=151,
         scope='Prospective canonical hashes only; excludes this manifest to avoid self-reference.')
 
 
@@ -108,4 +110,4 @@ if __name__=='__main__':
         assert args.output.read_bytes().replace(b'\r\n',b'\n')==raw,'prospective declaration differs from source or inputs'
     else:
         args.output.write_bytes(raw)
-    print('Verified prospective source and 59 input partitions; no implementation executed')
+    print('Verified prospective source and 60 input partitions; no implementation executed')

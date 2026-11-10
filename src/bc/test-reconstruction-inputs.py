@@ -36,24 +36,32 @@ class ReconstructionInputs(unittest.TestCase):
                                      ('fresh','holdout',self.fresh)]:
             union=[]
             shards=6 if family=='controls' else 3
-            for band in INPUTS.OLD.BANDS:
-                for shard in range(shards):
-                    selected=INPUTS.OLD.select(rows,band,shard,shards)
-                    union+=selected
-                    modes={}
-                    for r in selected:
-                        modes.setdefault(INPUTS.OLD.pair_key(r),set()).add(r['parameters']['mode'])
-                    self.assertTrue(all(v=={'one_shot','repeated'} for v in modes.values()))
-                    with tempfile.TemporaryDirectory() as tmp:
-                        directory=Path(tmp)/'inputs'
-                        INPUTS.write(selected,family,preset,band,shard,shards,directory)
-                        restored,_=self.bench.declared_corpus(directory,'math')
-                        self.assertEqual([r['name'] for r in restored],[r['name'] for r in selected])
-                        for before, after in zip(selected,restored):
-                            self.assertEqual(before['program'],after['program'])
-                            self.assertEqual(before['oracle_payload'],self.bench.oracle_payload(after).decode())
+            partitions = [(band, shard) for band in INPUTS.OLD.BANDS for shard in range(shards)]
+            if family == 'validation':
+                partitions.append(('sine', 0))
+            for band, shard in partitions:
+                selected=INPUTS.select(rows,family,band,shard,shards)
+                union+=selected
+                modes={}
+                for r in selected:
+                    modes.setdefault(INPUTS.OLD.pair_key(r),set()).add(r['parameters']['mode'])
+                self.assertTrue(all(v=={'one_shot','repeated'} for v in modes.values()))
+                with tempfile.TemporaryDirectory() as tmp:
+                    directory=Path(tmp)/'inputs'
+                    INPUTS.write(selected,family,preset,band,shard,shards,directory)
+                    restored,_=self.bench.declared_corpus(directory,'math')
+                    self.assertEqual([r['name'] for r in restored],[r['name'] for r in selected])
+                    for before, after in zip(selected,restored):
+                        self.assertEqual(before['program'],after['program'])
+                        self.assertEqual(before['oracle_payload'],self.bench.oracle_payload(after).decode())
             self.assertEqual(len(union),len(rows))
             self.assertEqual({r['name'] for r in union},{r['name'] for r in rows})
+
+    def test_known_sine_failure_retains_both_unchanged_modes(self):
+        isolated = INPUTS.select(self.previous, 'validation', 'sine', 0, 3)
+        self.assertEqual(isolated, [row for row in self.previous
+            if row['name'].startswith('math_reconstruction_validation_34_')])
+        self.assertEqual(len(isolated), 2)
 
     def test_new_oracles_are_pinned_independent_and_numerically_disjoint(self):
         self.assertEqual(len(self.fresh),76)

@@ -81,6 +81,24 @@ def validation(fresh=False):
     return rows
 
 
+def select(rows, family, partition, shard, shards):
+    """Retain the known Howard oracle failure in its own paired-mode shard."""
+    group = 'math_reconstruction_validation_34'
+    if partition == 'sine':
+        if (family, shard, shards) != ('validation', 0, 3):
+            raise ValueError('invalid isolated sine partition')
+        isolated = [row for row in rows if row['group'] == group]
+        if {row['parameters']['mode'] for row in isolated} != {'one_shot', 'repeated'}:
+            raise ValueError('the isolated sine partition requires both original modes')
+        return isolated
+    selected = OLD.select(rows, partition, shard, shards)
+    if family == 'validation':
+        selected = [row for row in selected if row['group'] != group]
+    if not selected:
+        raise ValueError('empty fixed input partition')
+    return selected
+
+
 def write(rows, family, preset, partition, shard, shards, directory):
     # The old writer preserves exact program/oracle bytes and the declared
     # schema. Add provenance for this union rather than changing old fixtures.
@@ -102,7 +120,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--family', choices=('controls', 'validation', 'fresh'), required=True)
     parser.add_argument('--preset', choices=('full', 'holdout'), required=True)
-    parser.add_argument('--partition', choices=OLD.BANDS, required=True)
+    parser.add_argument('--partition', choices=(*OLD.BANDS, 'sine'), required=True)
     parser.add_argument('--shard', type=int, required=True)
     parser.add_argument('--shards', type=int, required=True)
     parser.add_argument('--output', type=Path, required=True)
@@ -110,7 +128,7 @@ def main():
     if args.family != 'controls' and args.preset != 'holdout':
         parser.error('fresh validation uses the holdout namespace')
     rows = controls(args.preset) if args.family == 'controls' else validation(fresh=args.family == 'fresh')
-    write(OLD.select(rows, args.partition, args.shard, args.shards), args.family, args.preset,
+    write(select(rows, args.family, args.partition, args.shard, args.shards), args.family, args.preset,
           args.partition, args.shard, args.shards, args.output)
 
 
