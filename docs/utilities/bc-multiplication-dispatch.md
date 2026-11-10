@@ -29,3 +29,15 @@ least 256 limbs per operand and a zero second limb, then stops at the
 fifth nonzero limb. The direct path accumulates each nonzero pair into
 the ordinary coefficient buffer with radix carries. Other operands
 continue through the uniform-run or recursive kernels.
+
+The GCC Linux x86-64 experiment emits the default 32-bit-limb sparse kernel
+in a separate native object, with 64-byte function and loop alignment. The
+object disables LTO and the function uses GCC's `noipa` attribute so unrelated
+VM changes cannot clone its body or change its internal loop padding. A
+configure-time attribute check selects this arrangement. Other platforms,
+compilers and limb traits continue to instantiate the same generic header
+algorithm. This code-placement experiment addresses repeated sparse-workload
+losses after VM changes whose normalized sparse-kernel instructions were
+unchanged. Alignment is a hypothesis until native full and holdout comparisons
+confirm the effect; local Clang checks establish compilation and exact products
+only.

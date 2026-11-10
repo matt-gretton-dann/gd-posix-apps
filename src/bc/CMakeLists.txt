@@ -147,6 +147,26 @@ target_sources(libbc PRIVATE cli-interrupt.cc execution-plan.cc instruction.cc l
 if(WIN32)
   target_sources(libbc PRIVATE verification-linear.cc)
 endif()
+# Keep the selected sparse kernel native so VM LTO changes cannot alter its
+# internal loop padding. Other compiler/target combinations use the header body.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
+   AND CMAKE_SIZEOF_VOID_P EQUAL 8
+   AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64|amd64)$")
+  include(CheckCXXSourceCompiles)
+  check_cxx_source_compiles("
+#if !__has_cpp_attribute(gnu::noipa)
+#error GCC noipa attribute is required
+#endif
+[[gnu::noipa]] int value() { return 1; }
+int main() { return value() - 1; }
+" GD_BC_HAS_NOIPA)
+  if(GD_BC_HAS_NOIPA)
+    target_sources(libbc PRIVATE number-sparse-multiply.cc)
+    target_compile_definitions(libbc PUBLIC GD_BC_OUTLINED_SPARSE_MULTIPLY=1)
+    set_property(SOURCE number-sparse-multiply.cc APPEND PROPERTY COMPILE_OPTIONS
+                 -fno-lto -falign-functions=64 -falign-loops=64)
+  endif()
+endif()
 if(ENABLE_BC_PROFILE)
   if(ENABLE_BC_COVERAGE)
     message(FATAL_ERROR "Use separate bc coverage and allocation profiling builds")

@@ -1831,7 +1831,10 @@ private:
     return result;
   }
 
-#if defined(_MSC_VER)
+#if defined(GD_BC_OUTLINED_SPARSE_MULTIPLY) && __has_cpp_attribute(gnu::noipa)
+  // Keep the visible inline template body from being cloned into LTO callers.
+  [[gnu::noipa]]
+#elif defined(_MSC_VER)
   __declspec(noinline)
 #elif __has_cpp_attribute(gnu::noinline)
   [[gnu::noinline]]
@@ -2190,6 +2193,15 @@ template<typename Traits>
 typename BasicDigits<Traits>::DigitVector::difference_type
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
   BasicDigits<Traits>::multiply_split_point_ = 1;
+
+#if defined(GD_BC_OUTLINED_SPARSE_MULTIPLY)
+// The selected build emits this instantiation for default limbs in a native object.
+// Other traits and build configurations instantiate the generic header body.
+extern template auto
+BasicDigits<NumberTraits32>::multiply_sparse(std::span<NumberTraits32::NumType const> lhs,
+                                             std::span<NumberTraits32::NumType const> rhs)
+  -> std::optional<BasicDigits<NumberTraits32>>;
+#endif
 
 }  // namespace Details
 
