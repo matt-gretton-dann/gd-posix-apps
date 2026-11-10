@@ -69,3 +69,11 @@ missing, corrupt or misidentified bytes. This checks retention, not runtime
 qualification. Partial builds retain available bytes without being accepted
 as complete. Ordinary elapsed workflows exclude this exact topic branch;
 correctness publication starts no replacement performance cohort.
+
+The first published head `a601bee8` retains all 33 original native/support
+archives and six core logs. Four strict native configurations and two core
+configurations failed because the new lifetime fixture wrote an extension-only
+one-line replacement definition. A local exact-compile diagnostic reproduces
+the POSIX parser error and accepts the multiline POSIX definition. The fixture
+now uses that portable spelling; VM runtime code is unchanged. Original failed
+checks remain recorded, and this correction requires its own hosted checks.
