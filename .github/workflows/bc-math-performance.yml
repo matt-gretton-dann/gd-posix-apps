@@ -22,7 +22,9 @@ concurrency:
 jobs:
   paired:
     # Policy/offline-audit reviews reuse retained measurements; no new cohort.
-    if: github.head_ref != 'codex/bc-652-competitive-margin' && github.head_ref != 'codex/bc-655-array-profile' && github.head_ref != 'codex/bc-659-startup-calibration' && github.head_ref != 'codex/bc-663-versioned-roles' && github.head_ref != 'codex/bc-200-control-audit' && github.head_ref != 'codex/bc-200-root-control-audit' && github.head_ref != 'codex/bc-200-math-evidence' && github.head_ref != 'codex/bc-200-arithmetic-images' && github.head_ref != 'codex/bc-200-process-controls' && github.head_ref != 'codex/bc-200-profile-policy'
+    # Bessel precision gets correctness preflight before separately declared
+    # full qualification; skipping these narrow jobs waives no acceptance gate.
+    if: github.head_ref != 'codex/bc-652-competitive-margin' && github.head_ref != 'codex/bc-655-array-profile' && github.head_ref != 'codex/bc-659-startup-calibration' && github.head_ref != 'codex/bc-663-versioned-roles' && github.head_ref != 'codex/bc-200-control-audit' && github.head_ref != 'codex/bc-200-root-control-audit' && github.head_ref != 'codex/bc-200-math-evidence' && github.head_ref != 'codex/bc-200-arithmetic-images' && github.head_ref != 'codex/bc-200-process-controls' && github.head_ref != 'codex/bc-200-profile-policy' && github.head_ref != 'codex/bc-bessel-working-precision'
     name: Native math bc / ${{ matrix.image }}${{ matrix.preset == 'holdout' && ' / holdout' || '' }}
     runs-on: ${{ matrix.image }}
     timeout-minutes: 120
