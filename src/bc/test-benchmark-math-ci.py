@@ -22,6 +22,62 @@ SPEC.loader.exec_module(CI)
 
 
 class NativeMath(unittest.TestCase):
+    def test_declared_null_rounds_do_not_change_competitive_replay_or_seed(self):
+        for null_rounds in (None, 151):
+            args = types.SimpleNamespace(samples=31, aa_samples=null_rounds,
+                                         child_timeout_seconds=600)
+            for comparison in ('aa', 'paired'):
+                command = CI.measurement_command(args, comparison, Path('frozen'),
+                                                 Path('evidence'), Path('results'))
+                count = null_rounds if comparison == 'aa' and null_rounds else 31
+                self.assertEqual(command[command.index('--samples') + 1], str(count))
+                self.assertEqual(command[command.index('--reference') + 1],
+                                 'gd-portable' if comparison == 'aa' else 'howard-standard')
+                for option, expected in (('--replay-corpus', 'frozen'), ('--seed', '1972170'),
+                                         ('--warmups', '3'), ('--timeout', '600')):
+                    self.assertEqual(command[command.index(option) + 1], expected)
+                self.assertNotIn('--calibrate-seconds', command)
+                self.assertIn('--require-provenance', command)
+        with self.assertRaises(ValueError):
+            CI.measurement_command(args, 'unknown', Path('frozen'), Path('evidence'), Path('results'))
+
+    def test_invalid_null_rounds_fail_before_output_or_builds(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / 'results'
+            argv = [str(PATH), '--source', temporary, '--candidate', 'a'*40,
+                    '--base', 'b'*40, '--output', str(output), '--aa-samples', '2']
+            with mock.patch.object(sys, 'argv', argv), contextlib.redirect_stderr(io.StringIO()), \
+                    mock.patch.object(CI, 'Commands', side_effect=AssertionError('build started')):
+                with self.assertRaises(SystemExit) as error:
+                    CI.main()
+            self.assertEqual(error.exception.code, 2)
+            self.assertFalse(output.exists())
+
+    def test_declared_preparation_preserves_the_prospective_margin_and_inputs(self):
+        args = types.SimpleNamespace(input_corpus=Path('declared'), calibration_seconds=.5,
+            duration_seconds=.25, child_timeout_seconds=600, broad=True)
+        with mock.patch.object(CI, 'selected_cases', side_effect=AssertionError('regenerated input')):
+            command = CI.preparation_command(None, args, 'holdout', Path('evidence'))
+        for option, value in (('--calibrate-seconds', '.5'), ('--duration-floor-seconds', '.25')):
+            self.assertEqual(float(command[command.index(option) + 1]), float(value))
+        self.assertEqual(command[command.index('--input-corpus') + 1], str(args.input_corpus.resolve()))
+        self.assertNotIn('--replay-corpus', command)
+        self.assertNotIn('--workload', command)
+
+    def test_invalid_declared_input_fails_before_builds_or_output_creation(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            output = root / 'results'
+            argv = [str(PATH), '--source', str(root), '--candidate', 'a' * 40,
+                '--base', 'b' * 40, '--output', str(output), '--broad', '--broad-preset',
+                'full', '--input-corpus', str(root / 'missing')]
+            with mock.patch.object(sys, 'argv', argv), contextlib.redirect_stderr(io.StringIO()), \
+                    mock.patch.object(CI, 'Commands', side_effect=AssertionError('build started')):
+                with self.assertRaises(SystemExit) as error:
+                    CI.main()
+            self.assertEqual(error.exception.code, 2)
+            self.assertFalse(output.exists())
+
     def test_measurements_use_remaining_total_budget_without_a_hidden_hour_limit(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

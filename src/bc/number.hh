@@ -2483,6 +2483,27 @@ public:
     digits_.mac(base_, value);
   }
 
+  /** Construct an unsigned machine word without decimal formatting/parsing.
+   * Split only values wider than a coefficient's storage type. Each Horner
+   * step uses the existing normalized coefficient operation, including on
+   * the small-width arithmetic test instantiations.
+   */
+  [[nodiscard]] static auto from_unsigned_word(std::uint64_t value) -> BasicNumber
+  {
+    if constexpr (sizeof(NumType) >= sizeof(std::uint64_t)) {
+      return BasicNumber(static_cast<NumType>(value));
+    }
+    else {
+      if (value <= std::numeric_limits<NumType>::max()) {
+        return BasicNumber(static_cast<NumType>(value));
+      }
+      auto const radix = static_cast<std::uint64_t>(base_);
+      auto result = from_unsigned_word(value / radix);
+      result.digits_.mac(static_cast<NumType>(base_), static_cast<NumType>(value % radix));
+      return result;
+    }
+  }
+
   /** Convert a nonnegative bc value to its truncated integer part.
    * The current conversion domain is [0, base_); larger domains belong to
    * the separate size/scale work. A negative sign on exact zero does not

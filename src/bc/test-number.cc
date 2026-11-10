@@ -22,6 +22,46 @@
 #include "bc.hh"
 #include "benchmark-support.hh"
 
+namespace {
+template<typename Number>
+void check_unsigned_word(std::uint64_t value)
+{
+  CAPTURE(value, Number::base_log10_);
+  auto const number = Number::from_unsigned_word(value);
+  std::ostringstream output;
+  number.output(output, static_cast<typename Number::NumType>(10), 0);
+  CHECK(output.str() == std::to_string(value));
+  CHECK(number.scale() == 0);
+  auto changed = number;
+  changed.add(Number(1));
+  changed.sub(number);
+  CHECK(changed == Number(1));
+}
+}  // namespace
+
+TEST_CASE("Unsigned machine-word construction preserves all coefficient widths",
+          "[bc][number][word]")
+{
+  using namespace GD::Bc;
+  // The same radix with wider storage exercises direct construction without
+  // requiring a platform-specific 128-bit arithmetic type.
+  using WideStorage = BasicNumber<NumberTraitsBase<std::uint64_t, std::uint64_t, 9>>;
+  for (std::uint64_t value = 0; value <= 65535; ++value) {
+    check_unsigned_word<BasicNumber<NumberTraits8>>(value);
+  }
+  for (auto const value :
+       {0ULL, 1ULL, 9ULL, 10ULL, 255ULL, 256ULL, 65535ULL, 65536ULL, 999999999ULL, 1000000000ULL,
+        4294967295ULL, 4294967296ULL, 999999999999999999ULL, 1000000000000000000ULL,
+        std::numeric_limits<unsigned long long>::max()}) {
+    CAPTURE(value);
+    check_unsigned_word<BasicNumber<NumberTraits8>>(value);
+    check_unsigned_word<BasicNumber<NumberTraits16>>(value);
+    check_unsigned_word<BasicNumber<NumberTraits32>>(value);
+    check_unsigned_word<WideStorage>(value);
+    check_unsigned_word<Number>(value);
+  }
+}
+
 TEST_CASE("GD::Bc::Number - Number construction, directed", "[bc][number]")
 {
   /* Test input in one base is output correctly in another. */

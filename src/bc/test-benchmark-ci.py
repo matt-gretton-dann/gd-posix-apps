@@ -20,6 +20,17 @@ SPEC.loader.exec_module(CI)
 
 
 class NativeTrends(unittest.TestCase):
+    def test_invalid_additional_replay_fails_before_output_and_builds(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output=Path(tmp)/'results'
+            argv=[str(PATH),'--source',tmp,'--base','a'*40,'--candidate','b'*40,
+                  '--output',str(output),'--additional-replay-corpus',str(Path(tmp)/'missing')]
+            with mock.patch.object(sys,'argv',argv), contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit) as error:
+                    CI.main()
+            self.assertEqual(error.exception.code,2)
+            self.assertFalse(output.exists())
+
     def test_sparse_duration_requires_every_independent_role(self):
         row = dict(implementations={role: dict(median_seconds=.25)
                                     for role in ('base', 'aa', 'candidate')})
@@ -175,13 +186,23 @@ class NativeTrends(unittest.TestCase):
                                  {case['group'] for case in cases})
 
     def exercise(self, fail=False, aa_first=None, aa_second=None, prepared=False,
-                 identical=False):
+                 identical=False, replay=False, shortfall=False, partition=None):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name) / 'results'
         calls = []
         helper = CI.load('build-bc-comparators')
         original_load = CI.load
+        declared = Path(temporary.name)/'declared'
+        if replay:
+            (declared/'workloads').mkdir(parents=True)
+            program, oracle = b'1+1\n', b'2\n'
+            (declared/'workloads/integer_fixture.bc').write_bytes(program)
+            (declared/'workloads/integer_fixture.expected').write_bytes(oracle)
+            (declared/'manifest.json').write_text(json.dumps(dict(suite='arithmetic',corpus=[dict(
+                name='integer_fixture',group='calls',parameters=dict(mode='repeated',iterations=2,
+                duration_target_seconds=.25),program_sha256=hashlib.sha256(program).hexdigest(),
+                oracle_sha256=hashlib.sha256(oracle).hexdigest())])))
 
         class Builder:
             def __init__(self, directory, timeout):
@@ -229,8 +250,13 @@ class NativeTrends(unittest.TestCase):
                         ratio = aa_second if output.name.endswith('confirmation') and aa_second is not None else aa_first
                     parameters = dict(timing_scope=('whole-process latency'
                         if name.startswith('divisor_cold_') else 'repeated process workload'))
-                    results.append({'name': name, 'parameters': parameters,
-                                    'candidate_over_reference': {candidate: ratio}})
+                    result = {'name': name, 'parameters': parameters,
+                              'candidate_over_reference': {candidate: ratio}}
+                    if '--replay-corpus' in argv:
+                        result.update(parameters=dict(mode='repeated', iterations=2,
+                                      duration_target_seconds=.25),
+                                      duration_target_met={role: not shortfall for role in implementations})
+                    results.append(result)
                     for round_number in range(9):
                         for implementation in implementations:
                             raw.append({'phase': 'measurement', 'workload': name,
@@ -258,11 +284,57 @@ class NativeTrends(unittest.TestCase):
                 '--candidate', 'b' * 40, '--output', str(root)]
         if prepared:
             argv += ['--candidate-prepared-divisors']
+        if replay:
+            argv += ['--additional-replay-corpus',str(declared)]
+        if partition:
+            argv += ['--broad', '--partition', partition, '--samples', '151']
         with mock.patch.object(CI, 'load', modules), mock.patch.object(CI, 'host_info', return_value={}), \
                 mock.patch.object(sys, 'argv', argv), mock.patch.dict('os.environ', {}, clear=True), \
                 contextlib.redirect_stderr(io.StringIO()):
             result = CI.main()
         return root, calls, result
+
+    def test_partition_preserves_exact_workloads_and_counts(self):
+        bench = CI.load('bench-bc')
+        for partition in ('full', 'holdout', 'integer-validation'):
+            with self.subTest(partition=partition):
+                replay = partition == 'integer-validation'
+                root, calls, result = self.exercise(replay=replay, partition=partition)
+                self.assertEqual(result, 0)
+                measured = [call for call in calls if Path(call[1]).name == 'bench-bc.py']
+                expected = ['integer_fixture'] if replay else CI.selected_cases(bench, partition, True)
+                self.assertEqual(len(measured), 3)
+                for call in measured[:2]:
+                    self.assertEqual([call[i + 1] for i, arg in enumerate(call)
+                                      if arg == '--workload'], expected)
+                    self.assertEqual(call[call.index('--samples') + 1], '151')
+                report = json.loads((root / 'evidence/orchestration.json').read_text())
+                self.assertEqual(report['partition'], partition)
+
+    def test_fixed_validation_keeps_replay_identity_and_sampling_controls(self):
+        root,calls,result=self.exercise(replay=True)
+        self.assertEqual(result,0)
+        replay=[call for call in calls if '--replay-corpus' in call]
+        self.assertEqual(len(replay),3)  # A/A, paired and prescribed regression confirmation.
+        for command in replay:
+            self.assertEqual(command[command.index('--replay-corpus')+1],str((root.parent/'declared').resolve()))
+            self.assertEqual(command[command.index('--samples')+1],'9')
+            self.assertNotIn('--calibrate-seconds',command)
+        report=json.loads((root/'evidence/orchestration.json').read_text())
+        self.assertEqual(report['additional_replay_manifest_sha256'],hashlib.sha256(
+            (root.parent/'declared/manifest.json').read_bytes()).hexdigest())
+
+    def test_validation_duration_shortfall_remains_inconclusive(self):
+        root,_,result=self.exercise(replay=True,shortfall=True)
+        self.assertEqual(result,0)
+        rows=json.loads((root/'evidence/decisions.json').read_text())['results']
+        fresh=[row for row in rows if row['preset']=='integer-validation']
+        self.assertEqual(len(fresh),2)
+        self.assertTrue(all(row['status']=='inconclusive duration shortfall' for row in fresh))
+        reviews=json.loads((root/'evidence/acceptance.json').read_text())['results']
+        paired=[row for row in reviews if row['preset']=='integer-validation' and row['comparison']=='paired']
+        self.assertEqual(len(paired),1)
+        self.assertEqual(paired[0]['acceptance'],'inconclusive')
 
     def test_prepared_candidate_keeps_controls_ordinary_and_guards_before_timing(self):
         root, calls, result = self.exercise(prepared=True)

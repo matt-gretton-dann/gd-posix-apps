@@ -402,6 +402,65 @@ auto restore_call_after_allocation_failure() -> bool
   return false;  // Require a complete sweep of call setup and execution.
 }
 
+#if defined(GD_BC_TEST_LIBRARY_IMAGE)
+// Keep the real deferred loader in this isolated allocation-failure fixture.
+// A failed decode/registration may leave a pending or decoded definition, but
+// either state must permit retry, user replacement and loading a fresh image.
+auto deferred_library_failures(GD::Bc::VM::ExecutionChecks checks) -> bool
+{
+  auto parse = [](std::string const& text) {
+    GD::Bc::Parser parser(
+      std::make_unique<GD::Bc::Lexer>(std::make_unique<GD::Bc::StringReader>(text)), false);
+    return parser.parse();
+  };
+  bool observed_failure = false;
+  for (std::size_t point = 0; point != 1024; ++point) {
+    auto const before = outstanding.load(std::memory_order_relaxed);
+    bool injected = false;
+    {
+      std::ostringstream output, errors;
+      GD::Bc::VM vm(output, errors, true, checks);
+      GD::Bc::Library::load(vm);
+      auto call = parse("q=s(0)\n");
+      auto query = parse("q\n");
+      auto replacement = parse("define s(x) {\nreturn(x+7)\n}\n");
+      auto user_call = parse("q=s(5)\n");
+      if (!call || !query || !replacement || !user_call)
+        return false;
+      auto const failures = injected_failures;
+      bool threw = false;
+      try {
+        AllocationFailure const failure(point);
+        if (vm.execute(*call))
+          return false;
+      }
+      catch (std::bad_alloc const&) {
+        threw = true;
+      }
+      injected = failures != injected_failures;
+      observed_failure = observed_failure || injected;
+      if ((threw && !injected) || (threw && vm.execute(*call)) || vm.execute(*query) ||
+          output.str() != "0\n" || vm.execute(*replacement) || vm.execute(*user_call) ||
+          vm.execute(*query) || output.str() != "0\n12\n")
+        return false;
+      GD::Bc::Library::load(vm);
+      if (vm.execute(*call) || vm.execute(*query) || output.str() != "0\n12\n0\n" ||
+          !errors.str().empty())
+        return false;
+    }
+    if (outstanding.load(std::memory_order_relaxed) != before) {
+      std::fprintf(stderr, "Deferred library sweep retained allocations at %zu\n", point);
+      return false;
+    }
+    if (!injected) {
+      std::fprintf(stdout, "Deferred library fault sweep covered %zu allocations\n", point);
+      return observed_failure;
+    }
+  }
+  return false;  // Require a completed sweep, not just a prefix of failures.
+}
+#endif
+
 auto run() -> bool
 {
   std::ostringstream output;
@@ -638,7 +697,7 @@ auto native_leaf_rejection_cache() -> bool
          output.str() == "21\n1\n" && errors.str().empty();
 }
 
-auto native_leaf_call_failures() -> bool
+auto native_leaf_call_failures(bool recurrence) -> bool
 {
   using namespace GD::Bc;
   auto parse = [](std::string const& text) {
@@ -652,8 +711,10 @@ auto native_leaf_call_failures() -> bool
     {
       std::ostringstream output, errors;
       VM vm(output, errors, true, VM::ExecutionChecks::verified);
-      auto setup = parse("x=17\ndefine f(x) {\nreturn(x*x+1)\n}\n");
-      auto call = parse("q=f(999999999)\n");
+      auto setup =
+        parse(recurrence ? "x=17\ndefine f(x) {\nif(x<=1)return(1)\nreturn(x*f(x-1))\n}\n"
+                         : "x=17\ndefine f(x) {\nreturn(x*x+1)\n}\n");
+      auto call = parse(recurrence ? "q=f(50)\n" : "q=f(999999999)\n");
       auto query = parse("x\nq\n");
       if (!setup || !call || !query || vm.execute(*setup))
         return false;
@@ -669,10 +730,14 @@ auto native_leaf_call_failures() -> bool
       }
       injected = failures != injected_failures;
       observed_failure = observed_failure || injected;
-      // Optional compilation and result boxing can absorb a failure by using
-      // the generic path. Generic failures must leave a reusable VM as well.
+      // Preparation, exact recurrence arithmetic and result boxing can absorb
+      // a failure by using the generic path. Generic failures must leave a
+      // reusable VM as well; the outer scalar binding must always survive.
+      auto const expected =
+        recurrence ? "17\n30414093201713378043612608166064768844377641568960512000000000000\n"
+                   : "17\n999999998000000002\n";
       if ((threw && !injected) || (threw && vm.execute(*call)) || vm.execute(*query) ||
-          output.str() != "17\n999999998000000002\n" || !errors.str().empty()) {
+          output.str() != expected || !errors.str().empty()) {
         std::fprintf(stderr, "Native leaf call sweep failed at %zu (injected=%d, threw=%d)\n",
                      point, int(injected), int(threw));
         return false;
@@ -684,7 +749,8 @@ auto native_leaf_call_failures() -> bool
       return false;
     }
     if (!injected) {
-      std::fprintf(stdout, "Native leaf call fault sweep covered %zu allocations\n", point);
+      std::fprintf(stdout, "Native %s call fault sweep covered %zu allocations\n",
+                   recurrence ? "integer recurrence" : "leaf", point);
       return observed_failure;
     }
   }
@@ -715,12 +781,19 @@ auto main() -> int
   if (!run()) {
     return 1;
   }
+#if defined(GD_BC_TEST_LIBRARY_IMAGE)
+  if (!deferred_library_failures(GD::Bc::VM::ExecutionChecks::verified) ||
+      !deferred_library_failures(GD::Bc::VM::ExecutionChecks::full)) {
+    std::fprintf(stderr, "Deferred library allocation failure damaged ownership or retry\n");
+    return 1;
+  }
+#endif
 #if defined(GD_BC_TEST_NATIVE_FUNCTIONS)
   if (!native_leaf_rejection_cache()) {
     std::fprintf(stderr, "Native leaf permanent rejection was not cached\n");
     return 1;
   }
-  if (!native_leaf_call_failures()) {
+  if (!native_leaf_call_failures(false) || !native_leaf_call_failures(true)) {
     std::fprintf(stderr, "Native leaf call allocation failure damaged arguments or retry\n");
     return 1;
   }
