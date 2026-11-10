@@ -1497,7 +1497,16 @@ void GD::Bc::Details::VMState::validate(Instructions const& instrs, bool functio
     // impossible here. Unsigned addition also handles valid negative offsets.
     return i + static_cast<Instruction::Index>(std::get<Instruction::Offset>(operand));
   };
-  std::vector<ResultKind> kinds(instrs.size(), ResultKind::none);
+  // Short input items can keep their complete result table on the stack.
+  // Larger regions retain the same indexing and diagnostic order.
+  std::array<ResultKind, 16> small_kinds{};
+  std::vector<ResultKind> large_kinds;
+  std::span<ResultKind> kinds(small_kinds);
+  if (instrs.size() > small_kinds.size()) {
+    large_kinds.resize(instrs.size());
+    kinds = large_kinds;
+  }
+  kinds = kinds.first(instrs.size());
   for (Instruction::Index i = 0; i < instrs.size(); ++i) {
     kinds[i] = classify_result(instrs, i);
   }
