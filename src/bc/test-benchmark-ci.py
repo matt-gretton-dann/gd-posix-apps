@@ -245,7 +245,8 @@ class NativeTrends(unittest.TestCase):
 
         def modules(name):
             if name == 'collect-bc-codegen':
-                return types.SimpleNamespace(collect=capture)
+                return types.SimpleNamespace(collect=capture,
+                    preserve_builds=original_load(name).preserve_builds)
             if name == 'build-bc-comparators':
                 return types.SimpleNamespace(Builder=Builder, BuildError=helper.BuildError)
             return original_load(name)

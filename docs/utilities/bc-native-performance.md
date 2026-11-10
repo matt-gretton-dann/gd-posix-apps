@@ -169,6 +169,14 @@ oracles, and are not silently added to that validator's contract.
 
 ## Preserve measured machine code
 
+Before the first elapsed child, `evidence/elapsed-images/` contains a verified
+snapshot of every ordinary GD and Howard executable and declared external
+input. Completed build recipes and logs are copied into the evidence tree too.
+This snapshot runs no native inspector. A controller killed during sampling
+therefore leaves these completed inputs available for upload, even when its
+final cleanup cannot run. Recipe refresh uses atomic replacement to preserve
+an earlier complete copy if cleanup itself is interrupted.
+
 Issue #397 adds `evidence/codegen/` to the arithmetic native workflow after all
 elapsed children finish, including bounded confirmations. It copies the exact
 base, candidate and independently built A/A executables and verifies every copy

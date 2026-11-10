@@ -311,11 +311,11 @@ def gd_build_command(args, name, destination, cc, cxx):
     return command
 
 
-def preserve_ordinary(configs, evidence, deadline):
+def preserve_ordinary(configs, evidence, deadline, inspect=True):
     """Retain actual elapsed-role recipes/assets once, including failed runs.
 
-    This is post-sampling archival, never a rebuild. Optional inspection shares
-    the experiment's remaining deadline; exhausted budgets still retain bytes.
+    The early snapshot uses inspect=False. Post-sampling inspection shares the
+    remaining deadline; exhausted budgets still retain bytes. Never rebuild.
     """
     entries = {}
     for comparison in ('aa', 'paired'):
@@ -328,7 +328,8 @@ def preserve_ordinary(configs, evidence, deadline):
         return
     codegen = load('collect-bc-codegen')
     try:
-        codegen.collect(list(entries.values()), evidence / 'codegen', timeout=15, deadline=deadline)
+        directory = evidence / ('codegen' if inspect else 'elapsed-images')
+        codegen.collect(list(entries.values()), directory, timeout=15, deadline=deadline, inspect=inspect)
     except (codegen.CodegenError, OSError, ValueError) as error:
         raise CommandFailure('ordinary asset preservation failed: ' + str(error)) from error
 
@@ -388,6 +389,8 @@ def run_math(args, root, evidence, commands, configs, gd_builder, bench, helper,
         shutil.copyfile(base_library, libraries / 'base.bc')
     for name, entries in configs.items():
         write(evidence / (name + '.json'), dict(implementations=entries))
+    load('collect-bc-codegen').preserve_builds(root, evidence, ('gd', 'aa', 'base', 'profile', 'howard'))
+    preserve_ordinary(configs, evidence, commands.deadline, inspect=False)
     decisions = []
     for preset in presets:
         prepared = evidence / (preset + '-prepared')
@@ -536,19 +539,7 @@ def main():
               child_timeout_seconds=args.child_timeout_seconds,total_seconds=args.total_seconds,
               candidate_prepared_divisors=args.candidate_prepared_divisors,
               candidate_preparsed_library=args.candidate_preparsed_library))
-        for path in root.glob('command-*.log'):
-            shutil.copyfile(path, evidence / path.name)
-        for name in ('gd', 'aa', 'base', 'profile', 'howard'):
-            source = root / name
-            target = evidence / name
-            target.mkdir(exist_ok=True)
-            for path in source.glob('*'):
-                if path.is_file():
-                    shutil.copyfile(path, target / path.name)
-            if (source / 'prepared-policy').is_dir():
-                shutil.copytree(str(source / 'prepared-policy'), str(target / 'prepared-policy'))
-            if (source / 'logs').is_dir():
-                shutil.copytree(source / 'logs', target / 'logs')
+        load('collect-bc-codegen').preserve_builds(root, evidence, ('gd', 'aa', 'base', 'profile', 'howard'))
         try:
             if configs:
                 preserve_ordinary(configs, evidence, commands.deadline)

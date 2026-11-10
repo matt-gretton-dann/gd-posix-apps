@@ -103,6 +103,14 @@ role names must have identical recipes. Profiled executables cannot enter this
 set. Missing or changed declared assets make archival a hard failure; successful
 elapsed stages cannot hide that failure or establish acceptance.
 
+Before the first calibration or elapsed child, `elapsed-images/manifest.json`
+and its copies retain the same ordinary role assets without native inspection.
+Completed build recipes and logs are also copied before that child starts.
+These early inputs survive a controller kill that prevents final archival;
+they do not replace missing original evidence from older runs. Final recipe
+refresh uses atomic replacement so interruption preserves an earlier complete
+copy. The separate post-sampling `codegen/` archive and integrity checks remain.
+
 All role assets are copied and hash-checked before optional native inspection.
 The original and retained bytes are checked again afterward. Missing inspectors
 or exhausted inspection budgets retain the exact files with an explicit

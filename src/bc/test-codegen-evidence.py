@@ -96,6 +96,28 @@ class CodegenEvidence(unittest.TestCase):
             copied = row['input_artifacts'][0]
             self.assertEqual((root / 'snapshot' / copied['archive_path']).read_bytes(), library.read_bytes())
 
+    def test_interrupted_recipe_refresh_keeps_the_previous_complete_copy(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source, evidence = root / 'builds', root / 'evidence'
+            (source / 'candidate/logs').mkdir(parents=True)
+            evidence.mkdir()
+            recipe = source / 'candidate/build-manifest.json'
+            recipe.write_bytes(b'completed recipe')
+            (source / 'candidate/logs/build.log').write_bytes(b'completed build')
+            CG.preserve_builds(source, evidence, ['candidate'])
+            retained = evidence / 'candidate/build-manifest.json'
+            recipe.write_bytes(b'updated completed recipe')
+            with mock.patch.object(CG.shutil, 'copyfileobj', side_effect=OSError('interrupted copy')):
+                with self.assertRaisesRegex(OSError, 'interrupted copy'):
+                    CG.preserve_builds(source, evidence, ['candidate'])
+            self.assertEqual(retained.read_bytes(), b'completed recipe')
+            self.assertEqual(sorted(p.name for p in retained.parent.iterdir()),
+                             ['build-manifest.json', 'logs'])
+            CG.preserve_builds(source, evidence, ['candidate'])
+            self.assertEqual(retained.read_bytes(), recipe.read_bytes())
+            self.assertEqual((retained.parent / 'logs/build.log').read_bytes(), b'completed build')
+
     def test_versioned_comparators_preserve_both_exact_executables(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
