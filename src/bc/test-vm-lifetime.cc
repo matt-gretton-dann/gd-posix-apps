@@ -697,7 +697,7 @@ auto native_leaf_rejection_cache() -> bool
          output.str() == "21\n1\n" && errors.str().empty();
 }
 
-auto native_leaf_call_failures() -> bool
+auto native_leaf_call_failures(bool recurrence) -> bool
 {
   using namespace GD::Bc;
   auto parse = [](std::string const& text) {
@@ -711,8 +711,10 @@ auto native_leaf_call_failures() -> bool
     {
       std::ostringstream output, errors;
       VM vm(output, errors, true, VM::ExecutionChecks::verified);
-      auto setup = parse("x=17\ndefine f(x) {\nreturn(x*x+1)\n}\n");
-      auto call = parse("q=f(999999999)\n");
+      auto setup =
+        parse(recurrence ? "x=17\ndefine f(x) {\nif(x<=1)return(1)\nreturn(x*f(x-1))\n}\n"
+                         : "x=17\ndefine f(x) {\nreturn(x*x+1)\n}\n");
+      auto call = parse(recurrence ? "q=f(50)\n" : "q=f(999999999)\n");
       auto query = parse("x\nq\n");
       if (!setup || !call || !query || vm.execute(*setup))
         return false;
@@ -728,10 +730,14 @@ auto native_leaf_call_failures() -> bool
       }
       injected = failures != injected_failures;
       observed_failure = observed_failure || injected;
-      // Optional compilation and result boxing can absorb a failure by using
-      // the generic path. Generic failures must leave a reusable VM as well.
+      // Preparation, exact recurrence arithmetic and result boxing can absorb
+      // a failure by using the generic path. Generic failures must leave a
+      // reusable VM as well; the outer scalar binding must always survive.
+      auto const expected =
+        recurrence ? "17\n30414093201713378043612608166064768844377641568960512000000000000\n"
+                   : "17\n999999998000000002\n";
       if ((threw && !injected) || (threw && vm.execute(*call)) || vm.execute(*query) ||
-          output.str() != "17\n999999998000000002\n" || !errors.str().empty()) {
+          output.str() != expected || !errors.str().empty()) {
         std::fprintf(stderr, "Native leaf call sweep failed at %zu (injected=%d, threw=%d)\n",
                      point, int(injected), int(threw));
         return false;
@@ -743,7 +749,8 @@ auto native_leaf_call_failures() -> bool
       return false;
     }
     if (!injected) {
-      std::fprintf(stdout, "Native leaf call fault sweep covered %zu allocations\n", point);
+      std::fprintf(stdout, "Native %s call fault sweep covered %zu allocations\n",
+                   recurrence ? "integer recurrence" : "leaf", point);
       return observed_failure;
     }
   }
@@ -786,7 +793,7 @@ auto main() -> int
     std::fprintf(stderr, "Native leaf permanent rejection was not cached\n");
     return 1;
   }
-  if (!native_leaf_call_failures()) {
+  if (!native_leaf_call_failures(false) || !native_leaf_call_failures(true)) {
     std::fprintf(stderr, "Native leaf call allocation failure damaged arguments or retry\n");
     return 1;
   }
