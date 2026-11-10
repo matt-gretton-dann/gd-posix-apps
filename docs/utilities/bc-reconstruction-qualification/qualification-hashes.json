@@ -79,7 +79,7 @@
     "src/bc/test-reconstruction-declaration.py": "aa02d9722941da0a1c6fe6fe03e5c47e109343883105c274f8735c4b58f25528",
     "src/bc/test-reconstruction-hosted-limits.py": "bbcead2244770e84eb92656431c015b9955a6e2e91b8359020edcbe3294bc1e8",
     "src/bc/test-reconstruction-inputs.py": "f2b928d9a0e895837697ef0bc069894128008dc18eec91b7d3749691ebfecc98",
-    "src/bc/test-resource-comparison.py": "58d9104983af8049550b2770a9fdc48fc3e6746aa556217c35db203034c52fea",
+    "src/bc/test-resource-comparison.py": "522d36fe17838e0dff8bd776f4cbc79e2296e48dfe2cc56b2b26713b3e5a3e3b",
     "src/bc/test-startup-calibration.py": "c0b965d95bf783ea43aa11a2fd4fdceaa375f0691882dedb51b630048cfa0f25",
     "src/bc/test-vm-lifetime.cc": "a2ccd9faffe322c128166c22172120ffe933511017fed0e649abab3f0f8f737b",
     "src/bc/vm.cc": "e60314fd9e2b51041d608d0f69e1c8a2b40a6b3c8723a8a41219c64b637b431b"

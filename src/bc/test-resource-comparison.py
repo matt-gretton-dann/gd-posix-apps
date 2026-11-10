@@ -313,6 +313,41 @@ class ResourceComparison(unittest.TestCase):
                 rss_profile=rss or self.observed_rss), self.profiles, self.ordinary,
                 [self.case], self.root / 'results', repetitions=5, seed=657197, timeout=10)
 
+    def test_each_resource_child_sees_all_previous_checked_receipts(self):
+        counters, rss = [], []
+        original = self.observed_profile
+
+        def profile(*args, **keywords):
+            path = self.root / 'results/manifest.json'
+            self.assertTrue(path.is_file(), 'manifest must precede the first child')
+            saved = json.loads(path.read_text())
+            self.assertEqual(saved['status'], 'incomplete')
+            counters.append(len(saved['results'][0].get('counter_observations', {})))
+            return original(*args, **keywords)
+
+        def resident(*args, **keywords):
+            saved = json.loads((self.root / 'results/manifest.json').read_text())
+            row = saved['results'][0]
+            self.assertEqual(set(row['counter_observations']), {'base', 'candidate'})
+            self.assertTrue(all(r['checked'] for r in row['counter_observations'].values()))
+            rss.append(sum(len(r['roles']) for r in row['rss_observations']))
+            return self.observed_rss(*args, **keywords)
+
+        self.observed_profile = profile
+        report = self.collect(resident)
+        self.assertEqual(counters, [0, 1])
+        self.assertEqual(rss, list(range(10)))
+        self.assertEqual(report['status'], 'collected')
+
+    def test_failed_atomic_refresh_preserves_the_previous_resource_receipt(self):
+        path = self.root / 'manifest.json'
+        self.module.write(path, dict(status='incomplete', checked_receipts=1))
+        with mock.patch.object(self.module.Path, 'replace', side_effect=OSError('interrupted replacement')):
+            with self.assertRaisesRegex(OSError, 'interrupted replacement'):
+                self.module.write(path, dict(status='incomplete', checked_receipts=2))
+        self.assertEqual(json.loads(path.read_text())['checked_receipts'], 1)
+        self.assertEqual(list(self.root.iterdir()), [path])
+
     def test_profile_and_ordinary_require_the_same_object_boundary(self):
         ordinary = self.ordinary['candidate']['metadata']['configuration']
         profile = self.profiles['candidate']['metadata']['configuration']
@@ -576,6 +611,7 @@ class ResourceComparison(unittest.TestCase):
                 (source / 'src/bc/math-library.bc').write_text('scale=20\n')
                 ci = load('benchmark-math-ci' if kind == 'math' else 'benchmark-ci')
                 helper, calls = ci.load('build-bc-comparators'), []
+                early_profiles = []
 
                 class Commands:
                     def __init__(self, root, timeout):
@@ -593,6 +629,8 @@ class ResourceComparison(unittest.TestCase):
                             (directory / 'manifest.json').write_text('{"fixture":true}')
                             return
                         if script == 'bench-bc.py':
+                            manifest = output / 'evidence/profile-images-early/manifest.json'
+                            early_profiles.append(manifest.is_file())
                             directory = Path(argv[argv.index('--output') + 1])
                             directory.mkdir()
                             (directory / 'summary.json').write_text('{"workloads":[]}')
@@ -656,6 +694,8 @@ class ResourceComparison(unittest.TestCase):
                 self.assertEqual([c[c.index('--preset') + 1] for c in resource_calls], ['full', 'holdout'])
                 timings = [i for i, c in enumerate(calls) if Path(c[1]).name == 'bench-bc.py']
                 self.assertTrue(timings)
+                self.assertTrue(early_profiles)
+                self.assertTrue(all(early_profiles), 'profile images must precede every elapsed child')
                 self.assertTrue(all(calls.index(c) > max(timings) for c in resource_calls))
                 builds = [i for i, c in enumerate(calls) if Path(c[1]).name.startswith('build-')]
                 self.assertTrue(all(i < min(timings) for i in builds))
