@@ -115,7 +115,7 @@ class LibraryCli(unittest.TestCase):
         # a(1)=100 supplies a period of 800. These inputs do not wrap, so
         # their true sin/cos references still apply while the reduced kernel
         # crosses its actual domain boundary. The public call has a side effect.
-        program = ['define a(x) { z+=1;return(100) }', 'scale=20', 'z=0']
+        program = ['define a(x) {\nz+=1\nreturn(100)\n}', 'scale=20', 'z=0']
         for function, argument in cases:
             program += [function + '(' + argument + ')', 'z', 'scale', 'ibase']
         lines = self.checked_lines('\n'.join(program) + '\n', options=(), files=(SOURCE,))
@@ -133,11 +133,13 @@ class LibraryCli(unittest.TestCase):
     def test_period_redefinition_changing_input_base_keeps_generic_behavior(self):
         # These are the original generic library's observable outputs, not
         # sin/cos(4): the callback changes how later decimal constants parse.
-        program = ('define a(x) { ibase=2;return(1) }\nscale=20\n'
+        program = ('define a(x) {\nibase=2\nreturn(1)\n}\nscale=20\n'
                    's(4)\nibase\nibase=A\nc(4)\nibase\n')
-        expected = ['-4.03628594162818967804', '10', '-.16299125763286368412', '10']
+        expected = [Fraction('-4.03628594162818967804'), Fraction('-.16299125763286368412')]
         for options in (dict(), dict(options=(), files=(SOURCE,))):
-            self.assertEqual(self.checked_lines(program, **options), expected)
+            lines = self.checked_lines(program, **options)
+            self.assertEqual(lines[1::2], ['10', '10'])
+            self.assertEqual([ORACLE.decimal_fraction(value) for value in lines[::2]], expected)
 
     def test_adaptive_precision_boundaries_and_caller_state(self):
         report = json.loads((ROOT / 'fixtures/math-adaptive-budget-oracles.json').read_text())

@@ -107,7 +107,7 @@ def main():
     # Certify the actual reduced arguments, rather than treating a changed
     # period as the standard sin/cos of the original argument.
     for value, argument, reduced in (('100', '8', '8'), ('64', '384', '-128')):
-        program = ('define a(x) { return(' + value + ') }\nscale=20\n'
+        program = ('define a(x) {\nreturn(' + value + ')\n}\nscale=20\n'
                    's(' + argument + ')\nc(' + argument + ')\n')
         result = run(args.bc, transformed, program)
         assert result.returncode == 0 and not result.stderr, result.stderr
@@ -118,12 +118,14 @@ def main():
             assert classify(decimal_fraction(output), Fraction(reference['lower']),
                             Fraction(reference['upper']), 20) == 'pass'
         outcomes.update(dependency_outcomes)
-    program = ('define a(x) { ibase=2;return(1) }\nscale=20\n'
+    program = ('define a(x) {\nibase=2\nreturn(1)\n}\nscale=20\n'
                's(4)\nibase\nibase=A\nc(4)\nibase\n')
     result = run(args.bc, transformed, program)
     assert result.returncode == 0 and not result.stderr, result.stderr
     values, base_outcomes = strip_probes(result.stdout)
-    assert values == ['-4.03628594162818967804', '10', '-.16299125763286368412', '10']
+    assert values[1::2] == ['10', '10']
+    assert [decimal_fraction(value) for value in values[::2]] == [
+        Fraction('-4.03628594162818967804'), Fraction('-.16299125763286368412')]
     outcomes.update(base_outcomes)
     # GD rejects an unrepresentable scale before readback. A separate portable
     # host model clips precisely one setter at a time and must reach that
