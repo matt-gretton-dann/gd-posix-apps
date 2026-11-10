@@ -235,6 +235,12 @@ TEST_CASE("Native function profiling proves cached execution and fallback",
   CHECK(after.events[attempts] - before.events[attempts] == 2);
   CHECK(after.events[completed] - before.events[completed] == 2);
   before = after;
+  CHECK(run_functions("define f(x) {\nreturn(x*x+1)\n}\nf(100000)\nf(999999999)\n",
+                      VM::ExecutionChecks::verified) == "10000000001\n999999998000000002\n");
+  after = Profile::snapshot();
+  CHECK(after.events[attempts] - before.events[attempts] == 2);
+  CHECK(after.events[completed] - before.events[completed] == 2);
+  before = after;
   CHECK(run_functions(source, VM::ExecutionChecks::full) == "50\n65\n5\n");
   after = Profile::snapshot();
   CHECK(after.events[attempts] == before.events[attempts]);

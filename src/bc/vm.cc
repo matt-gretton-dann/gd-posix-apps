@@ -1194,8 +1194,7 @@ auto GD::Bc::Details::VMState::call_native_leaf(Letter func, Location const& loc
           code.execute(argument.to_unsigned(), value)) {
         // Complete all potentially throwing result construction before the
         // parameter pack is consumed. The generated kernel never owns Numbers.
-        Number result = value < Number::base_ ? Number(static_cast<Number::NumType>(value))
-                                              : Number(std::to_string(value), 10);
+        Number result = Number::from_unsigned_word(value);
         if (!have_been_interrupted.test(std::memory_order_relaxed)) {
           auto const begin = param_marks_.back().begin;
           parameters_.resize(begin);
