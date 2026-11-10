@@ -417,6 +417,7 @@ def run_math(args, root, evidence, commands, configs, gd_builder, bench, helper,
         commands.run(profile_build_command(args, directory, cc, cxx, baseline=True), timeout=1200)
         profiles['base'] = json.loads((directory / 'implementations.json').read_text())['implementations'][0]
         load('compare-bc-resources').validate_roles(bench, profiles, ordinary)
+        load('compare-bc-resources').preserve_profiles(profiles, evidence / 'profile-images-early')
     # All builds and correctness checks finish before elapsed measurements.
     commands.run([sys.executable, str(SCRIPTS.parent / 'test-math-library-cli.py'),
                   configs['paired'][1]['argv'][0], '--source',

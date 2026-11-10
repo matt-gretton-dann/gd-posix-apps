@@ -264,6 +264,7 @@ def main():
                 profiles[role] = json.loads((directory / 'implementations.json').read_text())['implementations'][0]
             load('compare-bc-resources').validate_roles(bench, profiles,
                 dict(base=entries[0], candidate=entries[1]))
+            load('compare-bc-resources').preserve_profiles(profiles, evidence / 'profile-images-early')
         base_digest = entries[0]['metadata'].get('binary_sha256')
         identical_binaries = bool(base_digest) and base_digest == entries[1]['metadata'].get('binary_sha256')
         configs = {'paired': [entries[0], entries[1]] + howard,

@@ -8,6 +8,7 @@ import io
 import json
 import os
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 import types
@@ -347,6 +348,43 @@ class ResourceComparison(unittest.TestCase):
                 self.module.write(path, dict(status='incomplete', checked_receipts=2))
         self.assertEqual(json.loads(path.read_text())['checked_receipts'], 1)
         self.assertEqual(list(self.root.iterdir()), [path])
+
+    def test_controller_exit_without_cleanup_retains_only_completed_receipts(self):
+        # This worker executes only the existing fake counter/RSS adapters.
+        # os._exit bypasses finally without generating a crash report.
+        worker = r'''
+import importlib.util,os,sys,types
+from pathlib import Path
+from unittest import mock
+spec=importlib.util.spec_from_file_location('fixture',sys.argv[1])
+m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
+t=m.ResourceComparison()
+with mock.patch.object(m.tempfile,'TemporaryDirectory',return_value=types.SimpleNamespace(
+        name=sys.argv[2],cleanup=lambda:None)):
+    t.setUp()
+completed=[]
+def resident(*args,**kwargs):
+    if completed:
+        (args[3]/'unverified.rss.txt').write_text('raw child output without a checked receipt')
+        os._exit(23)
+    completed.append(True)
+    return t.observed_rss(*args,**kwargs)
+t.collect(resident)
+raise SystemExit('worker did not stop at the second RSS child')
+'''
+        result = subprocess.run([sys.executable, '-c', worker, str(Path(__file__).resolve()),
+                                 str(self.root)], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                timeout=20)
+        self.assertEqual(result.returncode, 23, result.stderr)
+        report = json.loads((self.root / 'results/manifest.json').read_text())
+        self.assertEqual(report['status'], 'incomplete')
+        self.assertFalse(report['merge_eligible'])
+        row = report['results'][0]
+        self.assertEqual(set(row['counter_observations']), {'base', 'candidate'})
+        self.assertEqual(len(row['rss_observations']), 1)
+        self.assertEqual(len(row['rss_observations'][0]['roles']), 1)
+        self.assertEqual(row['rss_comparison']['complete_pairs'], 0)
+        self.assertEqual(len(list((self.root / 'results').rglob('unverified.rss.txt'))), 1)
 
     def test_profile_and_ordinary_require_the_same_object_boundary(self):
         ordinary = self.ordinary['candidate']['metadata']['configuration']

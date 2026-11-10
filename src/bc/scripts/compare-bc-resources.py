@@ -16,6 +16,7 @@ import random
 import re
 import statistics
 import sys
+import tempfile
 
 
 SCRIPTS = Path(__file__).resolve().parent
@@ -32,7 +33,19 @@ def load(name):
 
 
 def write(path, value):
-    path.write_text(json.dumps(value, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+    """Atomically refresh a receipt, preserving the last complete JSON on failure."""
+    path = Path(path)
+    payload = json.dumps(value, indent=2, sort_keys=True) + '\n'
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8',
+                                         dir=str(path.parent), delete=False) as stream:
+            temporary = Path(stream.name)
+            stream.write(payload)
+        temporary.replace(path)
+    finally:
+        if temporary is not None and temporary.exists():
+            temporary.unlink()
 
 
 def frame_cases(preset):
@@ -365,7 +378,9 @@ def allocation_comparison(base, candidate):
 def rss_comparison(observations, repetitions):
     ratios = []
     for observation in observations:
-        a, b = observation['roles']['base'], observation['roles']['candidate']
+        # Incremental receipts may contain only the first completed role.
+        a = observation['roles'].get('base', {})
+        b = observation['roles'].get('candidate', {})
         if not all(role.get('status') == 'collected' and role.get('checked') is True and
                    isinstance(role.get('peak_rss_native'), int) and not isinstance(role['peak_rss_native'], bool) and
                    role['peak_rss_native'] > 0 for role in (a, b)):
@@ -529,6 +544,7 @@ def collect(bench, adapter, profiles, ordinary, cases, directory, repetitions=5,
                   profiles=profiles, ordinary=ordinary, results=[])
     previous = os.environ.get('GD_BC_PROFILE_OUTPUT')
     try:
+        write(directory / 'manifest.json', report)
         for case in cases:
             name = case['name']
             if not re.fullmatch('[A-Za-z0-9_.-]+', name) or name in ('.', '..'):
@@ -540,8 +556,10 @@ def collect(bench, adapter, profiles, ordinary, cases, directory, repetitions=5,
             (target / 'expected.txt').write_bytes(oracle)
             row = dict(name=name, parameters=case['parameters'], input_mode=case.get('input_mode', 'stdin'),
                        program_sha256=hashlib.sha256(program).hexdigest(),
-                       oracle_sha256=hashlib.sha256(oracle).hexdigest(), rss_observations=[])
+                       oracle_sha256=hashlib.sha256(oracle).hexdigest(),
+                       counter_observations={}, rss_observations=[])
             report['results'].append(row)
+            write(directory / 'manifest.json', report)
             counters = {}
             for role in ROLES:
                 check_binary(bench, profiles[role])
@@ -556,7 +574,11 @@ def collect(bench, adapter, profiles, ordinary, cases, directory, repetitions=5,
                 write(target / (role + '-profile.json'), observed)
                 counters[role] = checked_counters(json.loads(path.read_text(encoding='utf-8')))
                 verify_native_path(profiles[role]['metadata']['configuration'], counters[role], case)
+                observed['counters_sha256'] = bench.digest_file(path)
+                row['counter_observations'][role] = observed
+                write(directory / 'manifest.json', report)
             row['allocation_comparison'] = allocation_comparison(counters['base'], counters['candidate'])
+            write(directory / 'manifest.json', report)
             randomizer = random.Random(str(seed) + ':' + name)
             first = randomizer.randrange(2)
             for round_number in range(repetitions):
@@ -565,12 +587,17 @@ def collect(bench, adapter, profiles, ordinary, cases, directory, repetitions=5,
                     order.reverse()
                 observed = dict(round=round_number, order=order, roles={})
                 row['rss_observations'].append(observed)
+                write(directory / 'manifest.json', report)
                 for role in order:
                     check_binary(bench, ordinary[role])
                     destination = target / ('rss-' + str(round_number) + '-' + role)
                     destination.mkdir()
                     observed['roles'][role] = adapter.rss_profile(bench, ordinary[role], case, destination, timeout)
-            row['rss_comparison'] = rss_comparison(row['rss_observations'], repetitions)
+                    row['rss_comparison'] = rss_comparison(row['rss_observations'], repetitions)
+                    # A kill during the next child must not erase this checked
+                    # or explicitly unavailable result. Never promote raw files
+                    # from a child that did not return a verified receipt.
+                    write(directory / 'manifest.json', report)
         report['status'] = 'collected'
         return report
     finally:

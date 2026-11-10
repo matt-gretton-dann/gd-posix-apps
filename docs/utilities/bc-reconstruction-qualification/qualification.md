@@ -143,6 +143,17 @@ paths before changing child working directory. Retain unavailable values and
 profile/ordinary execution-policy differences; counters are not process malloc
 or ordinary elapsed observations, and object sizes do not establish RSS.
 
+Successor collectors retain matched instrumented images in
+`profile-images-early/` before any elapsed child, separately from ordinary
+images and final profile archival. Resource manifests are atomically updated
+before the first child and after each returned counter or RSS role. Counter
+receipts bind checked output identity and validated counter-file hashes;
+RSS receipts retain checked or explicitly unavailable adapter results.
+Partial prefixes remain `incomplete` and never merge eligible. A controller
+exit without cleanup preserves completed receipts, while raw files from the
+unfinished child supply no checked observation. These changes prevent future
+loss; they do not reconstruct the original #717 missing evidence.
+
 After arithmetic/resource work, run the unchanged startup-calibration
 controller with those exact base, independent base A/A and candidate images:
 151 pairs per existing null/candidate block, 2,400-second total and five-second
