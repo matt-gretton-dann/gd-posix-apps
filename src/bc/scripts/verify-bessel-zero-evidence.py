@@ -27,6 +27,8 @@ def validate(read, source):
     required = {'.github/workflows/bc-bessel-zero-correctness.yml',
                 'src/bc/vm.cc', 'src/bc/test-bessel-zero-proof.py',
                 'src/bc/test-bessel-precision-proof.py',
+                'src/bc/function-slot.hh','src/bc/integer-recurrence.cc',
+                'src/bc/test-integer-recurrence.cc','src/bc/test-math-budget-proof.py',
                 'src/bc/fixtures/math-bessel-classification-oracles.json',
                 'src/bc/math-library.bc', 'build-native/src/bc/bc-math-library.hh'}
     if not required <= set(inputs):
@@ -51,7 +53,9 @@ def validate(read, source):
     suffix = '.exe' if metadata['system'] == 'Windows' else ''
     expected = {name + suffix for name in (
         'bc', 'test-libbc', 'test-bc-signal', 'test-divisor-cache-lifetime',
-        'test-bc-vm-lifetime', 'test-bc-consumer-mode')}
+        'test-bc-vm-lifetime', 'test-bc-consumer-mode', 'test-bc-function-slot')}
+    if metadata['options']['ENABLE_BC_PREPARSED_LIBRARY'] == 'ON':
+        expected.add('test-bc-library-lifetime' + suffix)
     optional = {'test-bc-vm-lifetime-ipo' + suffix}
     if not expected <= set(images) or set(images) - expected - optional:
         raise ValueError('native evidence omits or misnames a tested image')

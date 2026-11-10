@@ -19,13 +19,17 @@ def fixture(image=True, windows=False, ipo=False):
     inputs = {name: hashlib.sha256(b'synthetic input').hexdigest() for name in (
         '.github/workflows/bc-bessel-zero-correctness.yml',
         'src/bc/vm.cc', 'src/bc/test-bessel-zero-proof.py',
-        'src/bc/test-bessel-precision-proof.py', 'src/bc/fixtures/math-bessel-classification-oracles.json', 'src/bc/math-library.bc',
+        'src/bc/test-bessel-precision-proof.py',
+        'src/bc/function-slot.hh','src/bc/integer-recurrence.cc',
+        'src/bc/test-integer-recurrence.cc','src/bc/test-math-budget-proof.py', 'src/bc/fixtures/math-bessel-classification-oracles.json', 'src/bc/math-library.bc',
         'build-native/src/bc/bc-math-library.hh')}
     if image:
         inputs['build-native/src/bc/bc-math-library-image.inc'] = next(iter(inputs.values()))
     files.update({'inputs/' + name: b'synthetic input' for name in inputs})
     names = ['bc', 'test-libbc', 'test-bc-signal', 'test-divisor-cache-lifetime',
-             'test-bc-vm-lifetime', 'test-bc-consumer-mode']
+             'test-bc-vm-lifetime', 'test-bc-consumer-mode', 'test-bc-function-slot']
+    if image:
+        names.append('test-bc-library-lifetime')
     if ipo:
         names.append('test-bc-vm-lifetime-ipo')
     images = {name + ('.exe' if windows else ''):
@@ -50,7 +54,7 @@ class RetentionTests(unittest.TestCase):
                 for ipo in (False, True):
                     with self.subTest(image=image, windows=windows, ipo=ipo):
                         self.assertEqual(self.validate(fixture(image, windows, ipo))['images'],
-                                         6 + int(ipo))
+                                         7 + int(image) + int(ipo))
 
     def test_missing_or_corrupt_bytes(self):
         original = fixture()
