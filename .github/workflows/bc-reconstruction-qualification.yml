@@ -28,7 +28,7 @@ jobs:
         suite: [full-low-0, full-low-1, full-low-2, full-low-3, full-low-4, full-low-5, full-middle-0, full-middle-1, full-middle-2, full-middle-3, full-middle-4, full-middle-5, full-high-0, full-high-1, full-high-2, full-high-3, full-high-4, full-high-5, holdout-low-0, holdout-low-1, holdout-low-2, holdout-low-3, holdout-low-4, holdout-low-5, holdout-middle-0, holdout-middle-1, holdout-middle-2, holdout-middle-3, holdout-middle-4, holdout-middle-5, holdout-high-0, holdout-high-1, holdout-high-2, holdout-high-3, holdout-high-4, holdout-high-5, validation-low-0, validation-low-1, validation-low-2, validation-middle-0, validation-middle-1, validation-middle-2, validation-high-0, validation-high-1, validation-high-2, arithmetic-startup]
     name: Reconstruction / ${{ matrix.image }} / ${{ matrix.suite }}
     runs-on: ${{ matrix.image }}
-    timeout-minutes: 720
+    timeout-minutes: 360
     env:
       BC_CANDIDATE: ${{ github.event.pull_request.head.sha }}
       BC_BASE: '3beebb1461ac7549832707f9b84e547127e3c14a'
@@ -93,7 +93,7 @@ jobs:
           spec=importlib.util.spec_from_file_location('deadline',scripts/'benchmark-math-ci.py')
           deadline=importlib.util.module_from_spec(spec);spec.loader.exec_module(deadline)
           driver=cohort/'driver';driver.mkdir()
-          commands=deadline.Commands(driver,40000)
+          commands=deadline.Commands(driver,20000)
           suite=os.environ['BC_SUITE']
           try:
               if suite=='arithmetic-startup':
@@ -134,10 +134,10 @@ jobs:
                       '--broad','--compare-resources','--samples','31','--aa-samples','151',
                       '--broad-preset',preset,'--input-corpus',str(declared),
                       '--duration-seconds','.25','--calibration-seconds','.5',
-                      '--child-timeout-seconds','600','--total-seconds','36000'])
+                      '--child-timeout-seconds','600','--total-seconds','18000'])
           finally:
               (driver/'orchestration.json').write_text(json.dumps(dict(
-                  source=os.environ['BC_CANDIDATE'],suite=suite,total_seconds=40000,
+                  source=os.environ['BC_CANDIDATE'],suite=suite,total_seconds=20000,
                   commands=commands.commands,scope='Original bounded cohort; no retries or pooled evidence.'),
                   indent=2)+'\n')
       - name: Preserve every original outcome and available input

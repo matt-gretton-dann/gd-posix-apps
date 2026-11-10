@@ -430,6 +430,9 @@ if(RUN_INTEGRATION_TESTS)
   add_test(NAME bc/integer-qualification-inputs COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-integer-qualification-inputs.py" "$<TARGET_FILE:bc>")
   set_tests_properties(bc/integer-qualification-inputs PROPERTIES TIMEOUT 30)
+  add_test(NAME bc/reconstruction-hosted-limits COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-reconstruction-hosted-limits.py")
+  set_tests_properties(bc/reconstruction-hosted-limits PROPERTIES TIMEOUT 10)
   add_test(NAME bc/reconstruction-declaration-text COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-reconstruction-declaration.py")
   set_tests_properties(bc/reconstruction-declaration-text PROPERTIES TIMEOUT 120)

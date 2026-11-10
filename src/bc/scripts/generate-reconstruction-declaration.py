@@ -39,7 +39,7 @@ def declaration():
         'src/bc/test-integer-recurrence.cc','src/bc/test-native-expression.cc','src/bc/test-number.cc',
         'src/bc/test-math-budget-proof.py','src/bc/test-reconstruction-inputs.py',
         'src/bc/test-integer-qualification-inputs.py',
-        'src/bc/test-reconstruction-declaration.py',
+        'src/bc/test-reconstruction-declaration.py','src/bc/test-reconstruction-hosted-limits.py',
         'src/bc/fixtures/math-reconstruction-validation-cases.json',
         'src/bc/fixtures/math-reconstruction-validation-oracles.json',
         'src/bc/scripts/reconstruction-qualification-inputs.py',

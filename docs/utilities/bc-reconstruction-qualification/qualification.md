@@ -87,7 +87,7 @@ confirmation stages. The larger null cohort addresses earlier control
 uncertainty without multiplying every expensive four-role competitive case.
 Neither count changes after observation. Keep the paired IID/circular-block
 95% interval union, output checks, all raw ordering and trial records. Math
-children have 600-second bounds; the math controller has 36,000 seconds.
+children have 600-second bounds; the math controller has 18,000 seconds.
 
 ## Arithmetic, integer validation, startup and resources
 
@@ -130,9 +130,10 @@ and confirmed bias. Startup still requires qualified empirical calibration
 and candidate acceptance; Howard margins cannot waive it. Missing startup
 data stays unqualified.
 
-Every job has a 40,000-second process-tree deadline around its entire collector
+Every job has a 20,000-second process-tree deadline around its entire collector
 sequence, including arithmetic and subsequent startup. The workflow bound is
-720 minutes, leaving time for retention. These larger bounds and finer shards
+360 minutes, within the standard hosted six-hour limit and leaving time for
+retention. These process bounds and finer shards
 are declared before any new elapsed result. No local production elapsed
 benchmark or CPU sampling is used.
 
@@ -156,3 +157,22 @@ circularity. Review every original outcome before any source change, further
 experiment, merge or adoption. Green workflows alone do not establish
 performance acceptance. Keep original missing-image and missing-observation
 limitations explicit; do not rebuild substitutes and call them original data.
+
+## Correctness preflight repairs before elapsed qualification
+
+The original integrated draft head `4db9f457` completed 43 hosted jobs:
+36 passed and seven failed. All 33 original archives and eight core/proof/
+resource logs remain retained and reviewed. Four Windows native modes and
+two core jobs rejected a CRLF declaration despite equal canonical content;
+comparison now normalizes CRLF while rejecting changed hashes. Linux's
+sanitizer exposed absent compiler function-type metadata at the generated
+entry bridge; only that Clang bridge check is omitted, with other sanitizer
+instrumentation retained.
+
+New exact arithmetic tests also exposed unsigned wrap when a nonnegative
+recurrence input crosses zero before a negative stop threshold. The kernel
+now constructs signed intermediate factors and retains the supported family.
+A separate automated guard rejects job deadlines exceeding hosted limits.
+These repairs require a fresh immutable-head correctness preflight. No elapsed
+qualification was dispatched for the original draft, and its green jobs do
+not qualify the corrected source.
