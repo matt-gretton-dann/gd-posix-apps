@@ -32,6 +32,7 @@
 #  include "native-scalar.hh"
 #endif
 #ifdef GD_BC_NATIVE_FUNCTIONS
+#  include "integer-recurrence.hh"
 #  include "native-expression.hh"
 #  if defined(_MSC_VER)
 #    define GD_BC_LEAF_NOINLINE __declspec(noinline)
@@ -66,6 +67,12 @@ __DISABLE_NARROWING_WARNING
   }
 
 namespace GD::Bc::Details {
+#if defined(GD_BC_NATIVE_FUNCTIONS)
+struct NativeFunction
+{
+  std::variant<std::shared_ptr<NativeExpression const>, IntegerRecurrence> implementation;
+};
+#endif
 using ExecutionResult = std::variant<std::monostate, Number, ArrayValues, std::string_view,
                                      Variable, Array, ArrayElement, Ibase, Obase, Scale>;
 
@@ -310,8 +317,8 @@ private:
   // Cache only code derived from this immutable definition. Replacing a
   // function discards its page and cached rejection state. Failed allocations
   // and executable-memory publication can be retried.
-  GD_BC_LEAF_NOINLINE auto native_leaf(VariableMask locals) -> NativeExpression const*;
-  std::shared_ptr<NativeExpression const> native_leaf_;
+  GD_BC_LEAF_NOINLINE auto native_leaf(VariableMask locals, Letter self) -> NativeFunction const*;
+  std::shared_ptr<NativeFunction const> native_leaf_;
   bool native_leaf_rejected_ = false;
 #endif
 
@@ -446,7 +453,7 @@ struct VMState
   GD_BC_LEAF_NOINLINE auto call_generic(Letter func, Location const& loc) -> Number;
 #  endif
   GD_BC_LEAF_NOINLINE auto call_native_leaf(Letter func, Location const& loc,
-                                            NativeExpression const& code,
+                                            NativeFunction const& code,
                                             Number const* borrowed = nullptr) -> Number;
 #endif
 
@@ -1041,7 +1048,8 @@ void GD::Bc::Details::VMState::defer_library_function(Letter name, std::string_v
 #endif
 
 #if defined(GD_BC_NATIVE_FUNCTIONS)
-auto GD::Bc::Details::FunctionCode::native_leaf(VariableMask locals) -> NativeExpression const*
+auto GD::Bc::Details::FunctionCode::native_leaf(VariableMask locals, Letter self)
+  -> NativeFunction const*
 {
   if (native_leaf_ || native_leaf_rejected_)
     return native_leaf_.get();
@@ -1050,10 +1058,14 @@ auto GD::Bc::Details::FunctionCode::native_leaf(VariableMask locals) -> NativeEx
   using K = NativeExpressionOp::Kind;
   constexpr Instruction::Index body = 4;
   constexpr Instruction::Index limit = 132;
-  auto reject = [&]() -> NativeExpression const* {
+  auto reject = [&]() -> NativeFunction const* {
     native_leaf_rejected_ = true;
     return nullptr;
   };
+  if (auto recurrence = IntegerRecurrence::match(instructions_, locals, self)) {
+    native_leaf_ = std::make_shared<NativeFunction const>(NativeFunction{*recurrence});
+    return native_leaf_.get();
+  }
   if (instructions_.size() <= body || instructions_.size() > limit ||
       instructions_[0].opcode() != O::pop_param || instructions_[1].opcode() != O::variable ||
       instructions_[2].opcode() != O::store || instructions_[3].opcode() != O::pop_param_mark ||
@@ -1111,8 +1123,11 @@ auto GD::Bc::Details::FunctionCode::native_leaf(VariableMask locals) -> NativeEx
       if (result < 0)
         return reject();
       auto failure = NativeExpression::Failure::unavailable;
-      native_leaf_ =
+      auto expression =
         NativeExpression::compile(operations, static_cast<std::uint8_t>(result), &failure);
+      if (expression)
+        native_leaf_ =
+          std::make_shared<NativeFunction const>(NativeFunction{std::move(expression)});
       if (failure == NativeExpression::Failure::unsupported)
         return reject();
       return native_leaf_.get();
@@ -1151,9 +1166,9 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
     if (definition && mark.next == mark.begin && one_argument) {
       // Deferred library definitions keep their normal first-call loader.
       // No Number owner lives in this routing frame on a generic call.
-      NativeExpression const* code = nullptr;
+      NativeFunction const* code = nullptr;
       try {
-        code = std::get<0>(*definition).native_leaf(std::get<1>(*definition));
+        code = std::get<0>(*definition).native_leaf(std::get<1>(*definition), func);
       }
       catch (std::bad_alloc const&) {
         // Preparation has not consumed arguments or changed dynamic bindings.
@@ -1175,8 +1190,8 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
 }
 
 auto GD::Bc::Details::VMState::call_native_leaf(Letter func, Location const& loc,
-                                              NativeExpression const& code,
-                                              Number const* borrowed) -> GD::Bc::Number
+                                                NativeFunction const& code, Number const* borrowed)
+  -> GD::Bc::Number
 {
   static_assert(std::is_nothrow_move_constructible_v<Number>);
   // Apple ARM64's ordinary caller can lend a result-slot Number instead of
@@ -1188,13 +1203,28 @@ auto GD::Bc::Details::VMState::call_native_leaf(Letter func, Location const& loc
   if (!argument.has_heap_storage() && argument.scale() == 0 &&
       argument.length() <= Number::base_log10_ && argument >= Number(0)) {
     try {
-      std::uint64_t value = 0;
       GD_BC_PROFILE_EVENT(Profile::Event::native_function_attempts, 1);
-      if (!have_been_interrupted.test(std::memory_order_relaxed) &&
-          code.execute(argument.to_unsigned(), value)) {
-        // Complete all potentially throwing result construction before the
-        // parameter pack is consumed. The generated kernel never owns Numbers.
-        Number result = Number::from_unsigned_word(value);
+      Number result;
+      auto const interrupted =
+        +[]() { return have_been_interrupted.test(std::memory_order_relaxed); };
+      bool complete = false;
+      if (auto recurrence = std::get_if<IntegerRecurrence>(&code.implementation)) {
+        // A copied definition must never redirect its explicit recursive call.
+        complete = recurrence->self == func &&
+                   recurrence->execute(argument.to_unsigned(), result, interrupted);
+      }
+      else {
+        std::uint64_t value = 0;
+        auto const& expression =
+          std::get<std::shared_ptr<NativeExpression const>>(code.implementation);
+        if (!interrupted() && expression->execute(argument.to_unsigned(), value)) {
+          result = Number::from_unsigned_word(value);
+          complete = true;
+        }
+      }
+      // Complete all potentially throwing arithmetic/boxing before consuming
+      // the pack. Neither a declining kernel nor interruption changes bindings.
+      if (complete) {
         if (!have_been_interrupted.test(std::memory_order_relaxed)) {
           auto const begin = param_marks_.back().begin;
           parameters_.resize(begin);
