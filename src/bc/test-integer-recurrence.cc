@@ -57,8 +57,7 @@ TEST_CASE("Pure integer reductions preserve arbitrary precision recursion",
        {"if(n<=1)return(1); return(n*f(n-1))", "if(n<2)return(1); return(f(n-1)*n)",
         "if(n>1)return(n*f(n-1)); return(1)", "if(n>=2)return(f(n-1)*n); return(1)",
         "if(n<=3)return(n); return(n+f(n-2))", "if(n<0)return(n); return(f(n-3)+n)",
-        "if(n<= -9)return(-2); return(n*f(n-3))",
-        "if(n< -8)return(n); return(f(n-3)+n)",
+        "if(n<= -9)return(-2); return(n*f(n-3))", "if(n< -8)return(n); return(f(n-3)+n)",
         "if(n<=4)return(-2); return(n*f(n-3))", "if(n<=2)return(0); return(f(n-2)+n)"}) {
     std::string const source = "define f(n) {\n" + std::string(body) +
                                "\n}\nn=73\nf(0)\nf(1)\nf(2)\nf(7)\nf(31)\nf(50)\nn\n"

@@ -150,6 +150,7 @@ jobs:
               'scripts/reconstruction-qualification-inputs.py','test-reconstruction-inputs.py',
               'scripts/integer-qualification-inputs.py','test-integer-qualification-inputs.py',
               'scripts/generate-reconstruction-declaration.py',
+              'test-reconstruction-declaration.py','test-reconstruction-hosted-limits.py',
               'fixtures/math-reconstruction-validation-cases.json',
               'fixtures/math-reconstruction-validation-oracles.json',
               'number.hh','digit-storage.hh','profiling.hh','CMakeLists.txt',
