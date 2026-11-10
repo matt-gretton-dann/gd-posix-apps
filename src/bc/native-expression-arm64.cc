@@ -139,6 +139,11 @@ NativeExpression::~NativeExpression()
   }
 }
 
+// Generated entries have the machine ABI but no compiler UBSan type preamble.
+// Omit only that metadata check here; retain all other sanitizer checks.
+#if defined(__clang__)
+__attribute__((no_sanitize("function")))
+#endif
 auto NativeExpression::execute(std::uint64_t argument, std::uint64_t& result) const noexcept -> bool
 {
   using Entry = bool (*)(std::uint64_t, std::uint64_t*);

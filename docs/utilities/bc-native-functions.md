@@ -153,3 +153,11 @@ with explicit OFF modes and unsupported-architecture generic fallbacks.
 Correctness, memory/code-size review and source-specific hosted performance
 qualification are required before merging that default activation;
 no earlier native or numerical candidate's timing results transfer.
+
+The generated-code entry bridge uses the platform function-call ABI without a
+compiler-generated UBSan function-type preamble. Clang therefore omits only
+its `function` metadata check at `NativeExpression::execute`; AddressSanitizer
+and other undefined-behavior checks remain enabled. Other compilers retain
+the ordinary bridge. Both supported emitters use this narrow boundary rule.
+The original integrated Linux sanitizer failure remains archived; corrected
+hosted sanitizer results are required before qualification.
