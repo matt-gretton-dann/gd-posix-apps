@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 import hashlib
 import math
 from pathlib import Path
+import re
 
 
 def bounds(first):
@@ -43,7 +44,18 @@ def source_sha256():
     return hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
 
-ACCEPTANCE_POLICY = '2026-11-06-competitive-margin-v1'
+ACCEPTANCE_POLICY = '2026-11-10-competitive-margin-v2'
+
+
+def arithmetic_substantive(row):
+    """Exclude latency, including cold rows retained before metadata propagation."""
+    parameters = row.get('parameters') or {}
+    name = row.get('name') or ''
+    legacy_cold = re.fullmatch(r'divisor_cold_(divide|modulo)_\d+d_\d+d_x1', name)
+    return (row.get('comparison') == 'paired' and name != 'startup' and
+            parameters.get('mode') != 'one_shot' and
+            parameters.get('timing_scope') != 'whole-process latency' and
+            not legacy_cold)
 
 
 def regression_acceptance(first, competitive, control, system, second=None,
@@ -108,8 +120,7 @@ def acceptance_review(rows, system, kind, required_pairs):
             arguments = dict(first=row.get('ratio'), second=row.get('confirmation'),
                              competitive=row.get('candidate_over_howard'),
                              control=row.get('aa_control_status'),
-                             substantive=row.get('comparison') == 'paired' and
-                                         row.get('name') != 'startup',
+                             substantive=arithmetic_substantive(row),
                              measured='duration' not in raw and 'timing bias' not in raw,
                              required_pairs=row.get('fixed_samples', required_pairs))
         results.append(dict(name=row.get('name'), preset=row.get('preset'),

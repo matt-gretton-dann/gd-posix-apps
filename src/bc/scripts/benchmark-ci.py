@@ -290,6 +290,7 @@ def main():
                         # Identical bytes can still time differently under separate launch paths.
                         status = 'confirmed timing bias (identical binaries)'
                     reports.append({'preset': preset, 'comparison': comparison, 'name': row['name'],
+                                    'parameters': row['parameters'],
                                     'ratio': ratio, 'confirmation': second,
                                     'status': status, 'aa_control_status': controls[row['name']],
                                     'candidate_over_howard': competitive})
