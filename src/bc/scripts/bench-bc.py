@@ -662,6 +662,33 @@ def corpus(preset="full", selected=None, listing=False, seed=197200, suite='arit
                 dict(dividend_digits=len(str(a)), divisor_digits=len(str(b)), iterations=count,
                      scale=0, operation=operation, admission=shape, change_period=16 if shape == 'periodic' else 1,
                      timing_scope='whole-process latency' if shape == 'cold' else 'repeated process workload'))
+    # #703's fixed, fresh cases are appended after every existing RNG draw.
+    # The kernel/crossover was frozen before declaring these dimensions.
+    square_rng = random.Random(seed ^ 703197)
+    square_counts = (121, 135, 250) if preset == 'holdout' else (118, 131, 236)
+    for shape, limbs, repeats in zip(('irregular', 'zero_low', 'equal_halves'),
+                                     square_counts, (10000, 10000, 3000)):
+        if preset == 'quick':
+            limbs = 2 * max(1, limbs // 20) if shape == 'equal_halves' else max(1, limbs // 10)
+        digits = 9 * limbs
+        def square_dense(count):
+            return str(square_rng.randrange(1, 10)) + ''.join(
+                str(square_rng.randrange(10)) for _ in range(count - 1))
+        if shape == 'zero_low':
+            zeros = 9 * (limbs // 2)
+            value = square_dense(digits - zeros) + '0' * zeros
+        elif shape == 'equal_halves':
+            half = square_dense(digits // 2)
+            value = half + half
+        else:
+            value = square_dense(digits)
+        count = iterations(repeats)
+        add('square_fresh_{}_{}d_x{}'.format(shape, digits, count),
+            'square_fresh_' + shape,
+            'a={}\nfor(i=0;i<{};i++) c=a*a\nc'.format(value, count),
+            lambda value=value: int(value) ** 2,
+            dict(digits=digits, iterations=count, shape=shape, native_decimal_limbs=limbs,
+                 declaration='issue-703-comment-6734551250', operand_seed=seed ^ 703197))
     if selected:
         missing = set(selected) - set(known)
         if missing:

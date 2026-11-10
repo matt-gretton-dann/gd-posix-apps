@@ -18,6 +18,10 @@ endif()
 target_compile_definitions(libbc PUBLIC GD_BC_ARRAY_STORAGE=${_bc_array_layout})
 target_compile_definitions(libbc PUBLIC GD_BC_PREPARED_DIVISORS=$<BOOL:${ENABLE_BC_PREPARED_DIVISORS}>)
 option(ENABLE_BC_EXACT_SQUARE "Enable the experimental exact transform square" OFF)
+option(ENABLE_BC_SUBTRACTIVE_SQUARE "Enable experimental bounded-scratch Karatsuba squares" ON)
+# Number templates are visible to consumers; keep their dispatch consistent.
+target_compile_definitions(libbc PUBLIC
+  GD_BC_SUBTRACTIVE_SQUARE=$<BOOL:${ENABLE_BC_SUBTRACTIVE_SQUARE}>)
 if(ENABLE_BC_EXACT_SQUARE)
   target_compile_definitions(libbc PUBLIC GD_BC_EXPERIMENT_NTT=1)
 endif()
@@ -466,6 +470,9 @@ if(RUN_INTEGRATION_TESTS)
   set_tests_properties(bc/ipo-policy PROPERTIES TIMEOUT 180)
   add_test(NAME bc/benchmark-ci COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-benchmark-ci.py")
+  add_test(NAME bc/resource-comparison COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-resource-comparison.py")
+  set_tests_properties(bc/resource-comparison PROPERTIES TIMEOUT 90)
   add_test(NAME bc/benchmark-acceptance COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-benchmark-acceptance.py")
   set_tests_properties(bc/benchmark-acceptance PROPERTIES TIMEOUT 15)

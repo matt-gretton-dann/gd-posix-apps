@@ -185,6 +185,12 @@ def gd_build_command(args, name, revision, directory, cc, cxx):
     return command
 
 
+def profile_build_command(args, name, revision, directory, cc, cxx):
+    command = gd_build_command(args, name, revision, directory, cc, cxx)
+    command[command.index('--name') + 1] = name + '-profile'
+    return command + ['--diagnostic-profile']
+
+
 def main():
     helper = load('build-bc-comparators')
     gd = load('build-gd-bc')
@@ -195,7 +201,13 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--broad', action='store_true')
     parser.add_argument('--sparse-qualification', action='store_true')
+    parser.add_argument('--compare-resources', action='store_true')
     parser.add_argument('--candidate-prepared-divisors', action='store_true')
+    parser.add_argument('--require-candidate-native', action='store_true')
+    parser.add_argument('--require-candidate-native-functions', action='store_true')
+    parser.add_argument('--require-candidate-word-functions', action='store_true')
+    parser.add_argument('--require-candidate-prefix-results', action='store_true')
+    parser.add_argument('--require-candidate-subtractive-square', action='store_true')
     parser.add_argument('--samples', type=int, default=9)
     parser.add_argument('--split-point', type=gd.positive_point, default=126)
     args = parser.parse_args()
@@ -209,6 +221,7 @@ def main():
     builder = helper.Builder(root, 900)
     cc, cxx = ('cl', 'cl') if os.name == 'nt' else ('cc', 'c++')
     entries = []
+    profiles = {}
     howard = []
     try:
         # Independent A/A build measures source/build noise; no build runs
@@ -220,6 +233,21 @@ def main():
             if name == 'candidate' and args.candidate_prepared_divisors:
                 for entry in built:
                     gd.require_prepared_candidate(helper, entry)
+            if name == 'candidate' and args.require_candidate_native:
+                for entry in built:
+                    gd.require_native_candidate(helper, entry)
+            if name == 'candidate' and args.require_candidate_native_functions:
+                for entry in built:
+                    gd.require_native_function_candidate(helper, entry)
+            if args.require_candidate_word_functions:
+                for entry in built:
+                    gd.require_word_function_candidate(helper, entry) if name == 'candidate' else gd.require_word_function_baseline(helper, entry)
+            if args.require_candidate_prefix_results:
+                for entry in built:
+                    gd.require_prefix_result_candidate(helper, entry) if name == 'candidate' else gd.require_prefix_result_baseline(helper, entry)
+            if args.require_candidate_subtractive_square:
+                for entry in built:
+                    gd.require_subtractive_square_role(helper, entry, name == 'candidate')
             entries.extend(built)
         comparator = root / 'howard'
         builder.run([sys.executable, str(SCRIPTS / 'build-bc-comparators.py'), '--output',
@@ -231,6 +259,11 @@ def main():
             for entry in entries:
                 builder.run([sys.executable, str(SCRIPTS.parent / 'test-divisor-reuse-cli.py'),
                              entry['argv'][0]])
+        if args.require_candidate_native or args.require_candidate_native_functions or args.require_candidate_word_functions or args.require_candidate_prefix_results or args.require_candidate_subtractive_square:
+            for entry in entries:
+                for script in ('test-cli.py', 'test-vm-cli.py'):
+                    builder.run([sys.executable, str(SCRIPTS.parent / script),
+                                 entry['argv'][0], '--extensions', 'ON'])
         bench = load('bench-bc')
         base_digest = entries[0]['metadata'].get('binary_sha256')
         identical_binaries = bool(base_digest) and base_digest == entries[1]['metadata'].get('binary_sha256')
@@ -238,6 +271,26 @@ def main():
                    'aa': [entries[0], entries[2]]}
         for name, implementations in configs.items():
             write(root / (name + '.json'), {'implementations': implementations})
+        if args.compare_resources:
+            for name, revision in (('base', args.base), ('candidate', args.candidate)):
+                directory = root / (name + '-profile')
+                builder.run(profile_build_command(args, name, revision, directory, cc, cxx))
+                profile = json.loads((directory / 'implementations.json').read_text())['implementations'][0]
+                if name == 'candidate' and args.candidate_prepared_divisors:
+                    gd.require_prepared_candidate(helper, profile)
+                if name == 'candidate' and args.require_candidate_native:
+                    gd.require_native_candidate(helper, profile)
+                if name == 'candidate' and args.require_candidate_native_functions:
+                    gd.require_native_function_candidate(helper, profile)
+                if args.require_candidate_word_functions:
+                    gd.require_word_function_candidate(helper, profile) if name == 'candidate' else gd.require_word_function_baseline(helper, profile)
+                if args.require_candidate_prefix_results:
+                    gd.require_prefix_result_candidate(helper, profile) if name == 'candidate' else gd.require_prefix_result_baseline(helper, profile)
+                if args.require_candidate_subtractive_square:
+                    gd.require_subtractive_square_role(helper, profile, name == 'candidate')
+                profiles[name] = profile
+            load('compare-bc-resources').validate_roles(
+                bench, profiles, dict(base=entries[0], candidate=entries[1]))
         reports = []
         for preset in (('full', 'holdout') if args.broad else ('full',)):
             names = selected_cases(bench, preset, args.broad)
@@ -295,6 +348,11 @@ def main():
                                     'candidate_over_howard': competitive})
         if args.sparse_qualification:
             reports.extend(qualify_sparse(builder, evidence, entries))
+        # All owned builds precede sampling; wrappers follow all elapsed stages.
+        if args.compare_resources:
+            load('compare-bc-resources').run_diagnostics(
+                builder.run, profiles, dict(base=entries[0], candidate=entries[1]),
+                ('full', 'holdout') if args.broad else ('full',), 'arithmetic', evidence)
         write(evidence / 'acceptance.json', acceptance_report(reports, args.samples))
         write(evidence / 'decisions.json', {'advisory': True, 'results': reports,
               'aa_policy_sha256': AA_POLICY.source_sha256(),
@@ -326,11 +384,16 @@ def main():
         # Preserve exact recipes/logs without uploading cloned source/build trees.
         write(evidence / 'orchestration.json', {'base': args.base, 'candidate': args.candidate,
               'split_point': args.split_point, 'candidate_prepared_divisors': args.candidate_prepared_divisors,
-              'sparse_qualification': args.sparse_qualification,
+              'require_candidate_native': args.require_candidate_native,
+              'require_candidate_native_functions': args.require_candidate_native_functions,
+              'require_candidate_word_functions': args.require_candidate_word_functions,
+              'require_candidate_prefix_results': args.require_candidate_prefix_results,
+              'require_candidate_subtractive_square': args.require_candidate_subtractive_square,
+              'sparse_qualification': args.sparse_qualification, 'compare_resources': args.compare_resources,
               'commands': builder.commands})
         for path in root.glob('command-*.log'):
             shutil.copyfile(str(path), str(evidence / path.name))
-        for name in ('base', 'candidate', 'aa', 'howard'):
+        for name in ('base', 'candidate', 'aa', 'howard', 'base-profile', 'candidate-profile'):
             source = root / name
             target = evidence / name
             target.mkdir(exist_ok=True)
@@ -339,11 +402,23 @@ def main():
                     shutil.copyfile(str(path), str(target / path.name))
             if (source / 'prepared-policy').is_dir():
                 shutil.copytree(str(source / 'prepared-policy'), str(target / 'prepared-policy'))
+            if (source / 'native-policy').is_dir():
+                shutil.copytree(str(source / 'native-policy'), str(target / 'native-policy'))
+            if (source / 'native-function-policy').is_dir():
+                shutil.copytree(str(source / 'native-function-policy'), str(target / 'native-function-policy'))
+            if (source / 'word-function-policy').is_dir():
+                shutil.copytree(str(source / 'word-function-policy'), str(target / 'word-function-policy'))
+            if (source / 'prefix-result-policy').is_dir():
+                shutil.copytree(str(source / 'prefix-result-policy'), str(target / 'prefix-result-policy'))
+            if (source / 'subtractive-square-policy').is_dir():
+                shutil.copytree(str(source / 'subtractive-square-policy'), str(target / 'subtractive-square-policy'))
             if (source / 'logs').is_dir():
                 shutil.copytree(str(source / 'logs'), str(target / 'logs'))
         # Every timed child has finished. Preserve every measured GD and Howard
         # image without rebuilding, relinking or changing compiler flags.
         load('collect-bc-codegen').collect(entries + howard, evidence / 'codegen')
+        if profiles:
+            load('compare-bc-resources').preserve_profiles(profiles, evidence / 'profile-images')
 
 
 if __name__ == '__main__':

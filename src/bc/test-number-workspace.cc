@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <limits>
 #include <string>
 #include <utility>
 #include <vector>
@@ -16,6 +17,8 @@
 #include "bc.hh"
 #include "limb-product.hh"
 #include "limb-schoolbook.hh"
+#include "limb-subtractive-square.hh"
+#include "profiling.hh"
 
 namespace {
 // This oracle uses decimal characters, not the implementation's limb radix,
@@ -87,6 +90,32 @@ TEMPLATE_TEST_CASE("Recursive workspace stays within planned buffers",
 }
 }  // namespace
 
+#if defined(GD_BC_PROFILE) && GD_BC_SUBTRACTIVE_SQUARE
+TEST_CASE("Medium squares recurse independently of the product crossover",
+          "[bc][number][multiply][square][subtractive]")
+{
+  using Number = GD::Bc::Number;
+  using N = Number::NumType;
+  struct Restore
+  {
+    ~Restore() { Number::multiply_split_point(1); }
+  } const restore;
+  Number::multiply_split_point(N(126));
+  std::string input(112 * Number::base_log10_, '9');
+  for (std::size_t i = 1; i < input.size(); ++i)
+    input[i] = static_cast<char>('0' + (i * 7 + i / 13) % 10);
+  Number value(input, N(10));
+  auto const snapshot = value;
+  auto const before = GD::Bc::Profile::snapshot();
+  value.multiply(value, N(0));
+  auto const after = GD::Bc::Profile::snapshot();
+  auto const index = static_cast<std::size_t>(GD::Bc::Profile::Event::square_multiply_calls);
+  CHECK(after.events[index] - before.events[index] == 3);
+  CHECK(value == Number(decimal_product(input, input), N(10)));
+  CHECK(snapshot == Number(input, N(10)));
+}
+#endif
+
 TEMPLATE_TEST_CASE("Recursive products agree with decimal convolution",
                    "[bc][number][multiply][workspace]", GD::Bc::NumberTraits8,
                    GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
@@ -146,7 +175,7 @@ TEMPLATE_TEST_CASE("Aliased and opposite-sign shared squares preserve snapshots"
   {
     ~Restore() { Number::multiply_split_point(1); }
   } const restore;
-  for (unsigned count : {2U, 3U, 4U, 7U, 16U, 17U, 63U}) {
+  for (unsigned count : {2U, 3U, 4U, 7U, 16U, 17U, 63U, 65U, 112U, 129U}) {
     for (unsigned sparse : {0U, 1U}) {
       std::string input(count * Number::base_log10_, '9');
       if (sparse != 0) {
@@ -302,6 +331,115 @@ struct TightBlockedTraits
   static constexpr WideType base_ = 200;
 };
 }  // namespace
+TEMPLATE_TEST_CASE("Subtractive squares stay within planned output and scratch",
+                   "[bc][number][multiply][square][subtractive]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Limb = typename TestType::NumType;
+  using Kernel = GD::Bc::Details::LimbSubtractiveSquare<TestType>;
+  auto const guard = static_cast<Limb>(TestType::base_ - 1);
+  auto decimal = [](std::span<Limb const> value) {
+    std::string text;
+    for (auto it = value.rbegin(); it != value.rend(); ++it) {
+      auto const part = std::to_string(*it);
+      text.append(TestType::base_log10_ - part.size(), '0');
+      text += part;
+    }
+    auto const first = text.find_first_not_of('0');
+    return first == std::string::npos ? std::string("0") : text.substr(first);
+  };
+  for (std::size_t count :
+       {0U, 1U, 2U, 3U, 5U, 7U, 16U, 17U, 63U, 64U, 65U, 111U, 112U, 127U, 128U, 129U}) {
+    for (unsigned pattern = 0; pattern != 8; ++pattern) {
+      std::vector<Limb> input(count, guard);
+      for (std::size_t i = 0; i < count; ++i) {
+        switch (pattern) {
+        case 1:
+          input[i] = static_cast<Limb>((i * 37 + i / 7 + 11) % TestType::base_);
+          break;
+        case 2:
+          input[i] = 0;
+          break;
+        case 3:
+          input[i] = i < count / 2 ? 0 : guard;
+          break;
+        case 4:
+          input[i] = i >= count / 2 ? 0 : guard;
+          break;
+        case 5:
+          input[i] = i % 2 == 0 ? guard : Limb{0};
+          break;
+        case 6:
+          input[i] = i == count / 2 ? Limb{1} : Limb{0};
+          break;
+        case 7:
+          input[i] = i == 0 ? Limb{1} : guard;
+          break;
+        default:
+          break;
+        }
+      }
+      auto const snapshot = input;
+      auto const expected = decimal_product(decimal(input), decimal(input));
+      for (std::size_t point : {0U, 1U, 3U, 16U, 64U, 256U}) {
+        INFO("limb digits " << TestType::base_log10_ << ", count " << count << ", pattern "
+                            << pattern << ", split " << point);
+        auto const size = Kernel::workspace_size(count, point);
+        std::vector<Limb> scratch(size + 2, guard);
+        std::vector<Limb> output(2 * count + 2, Limb{0});
+        output.front() = output.back() = guard;
+        auto const result = std::span<Limb>(output).subspan(1, 2 * count);
+        Kernel::multiply(input, result, std::span<Limb>(scratch).subspan(1, size), point);
+        CHECK(decimal(result) == expected);
+        CHECK(input == snapshot);
+        CHECK(output.front() == guard);
+        CHECK(output.back() == guard);
+        CHECK(scratch.front() == guard);
+        CHECK(scratch.back() == guard);
+      }
+    }
+  }
+}
+
+TEST_CASE("Subtractive square planning checks overflow before allocation",
+          "[bc][number][multiply][square][subtractive]")
+{
+  using Kernel = GD::Bc::Details::LimbSubtractiveSquare<GD::Bc::NumberTraits32>;
+  auto const maximum = std::numeric_limits<std::size_t>::max();
+  CHECK(Kernel::workspace_size(0, 0) == 0);
+  CHECK(Kernel::workspace_size(64, 64) == 0);
+  CHECK(Kernel::workspace_size(65, 64) == 100);
+  CHECK(Kernel::workspace_size(128, 64) == 193);
+  CHECK_THROWS_AS(Kernel::workspace_size(maximum, maximum), std::length_error);
+  CHECK_THROWS_AS(Kernel::workspace_size(maximum / 2, 1), std::length_error);
+}
+
+TEMPLATE_TEST_CASE("Medium shared fractional squares preserve scale and sign",
+                   "[bc][number][multiply][square][subtractive]", GD::Bc::NumberTraits8,
+                   GD::Bc::NumberTraits16, GD::Bc::NumberTraits32)
+{
+  using Number = GD::Bc::BasicNumber<TestType>;
+  using N = typename Number::NumType;
+  std::string digits(65 * Number::base_log10_, '9');
+  for (std::size_t i = 1; i < digits.size(); ++i)
+    digits[i] = static_cast<char>('0' + (i * 3 + i / 11) % 10);
+  auto text = digits;
+  text.insert(text.size() - 7, ".");
+  auto expected = decimal_product(digits, digits);
+  expected.insert(expected.size() - 14, ".");
+  Number const original(text, N(10));
+  auto negative = original;
+  negative.negate();
+  auto result = original;
+  result.multiply(negative, N(14));
+  auto oracle = Number(expected, N(10));
+  oracle.negate();
+  CHECK(result == oracle);
+  CHECK(result.scale() == 14);
+  CHECK(original == Number(text, N(10)));
+  CHECK(original.scale() == 7);
+}
+
 TEST_CASE("Blocked schoolbook retains a narrow-wide scalar fallback", "[bc][number][blocked]")
 {
   using Kernel = GD::Bc::Details::LimbSchoolbook<TightBlockedTraits>;
