@@ -320,6 +320,20 @@ def summary_markdown(decisions):
     return '\n'.join(lines)
 
 
+def measurement_command(args, comparison, prepared, evidence, target):
+    if comparison not in ('aa', 'paired'):
+        raise ValueError('unknown mathematical comparison')
+    # A larger prospectively declared null cohort need not multiply the
+    # expensive four-role competitive cohort. Neither count changes on retry.
+    samples = (getattr(args, 'aa_samples', None) or args.samples) if comparison == 'aa' else args.samples
+    return [sys.executable, str(SCRIPTS / 'bench-bc.py'), '--suite', 'math',
+            '--config', str(evidence / (comparison + '.json')), '--output', str(target),
+            '--replay-corpus', str(prepared),
+            '--reference', 'gd-portable' if comparison == 'aa' else 'howard-standard',
+            '--samples', str(samples), '--warmups', '3', '--seed', '1972170',
+            '--timeout', str(args.child_timeout_seconds), '--require-provenance']
+
+
 def gd_build_command(args, name, destination, cc, cxx):
     command = [sys.executable, str(SCRIPTS / 'build-gd-bc.py'), '--source',
                str(args.source.resolve()), '--revision', args.base if name == 'base' else args.candidate,
@@ -423,13 +437,9 @@ def run_math(args, root, evidence, commands, configs, gd_builder, bench, helper,
         command = preparation_command(bench, args, preset, evidence)
         commands.run(command)
         reports = {}
-        for comparison, reference in (('aa', 'gd-portable'), ('paired', 'howard-standard')):
+        for comparison in ('aa', 'paired'):
             target = evidence / (preset + '-' + comparison)
-            command = [sys.executable, str(SCRIPTS / 'bench-bc.py'), '--suite', 'math',
-                       '--config', str(evidence / (comparison + '.json')), '--output', str(target),
-                       '--replay-corpus', str(prepared), '--reference', reference,
-                       '--samples', str(args.samples), '--warmups', '3', '--seed', '1972170',
-                       '--timeout', str(args.child_timeout_seconds), '--require-provenance']
+            command = measurement_command(args, comparison, prepared, evidence, target)
             commands.run(command)
             summary = json.loads((target / 'summary.json').read_text())
             measurements(target)
@@ -538,12 +548,16 @@ def main():
     parser.add_argument('--candidate-preparsed-library', action='store_true')
     parser.add_argument('--broad-preset', choices=('full', 'holdout'))
     parser.add_argument('--samples', type=bench.positive_integer, default=15)
+    parser.add_argument('--aa-samples', type=bench.positive_integer,
+                        help='prospectively fixed A/A rounds; defaults to --samples')
     parser.add_argument('--duration-seconds', type=bench.positive_timeout, default=.1)
     parser.add_argument('--child-timeout-seconds', type=bench.positive_timeout, default=120)
     parser.add_argument('--total-seconds', type=bench.positive_timeout, default=4800)
     args = parser.parse_args()
     if args.samples < 3:
         parser.error('at least three paired samples are required')
+    if args.aa_samples is not None and args.aa_samples < 3:
+        parser.error('at least three A/A samples are required')
     if args.broad_preset and not args.broad:
         parser.error('--broad-preset requires --broad')
     presets = ((args.broad_preset,) if args.broad_preset else
@@ -573,7 +587,8 @@ def main():
         result = 1
     finally:
         write(evidence / 'orchestration.json',dict(candidate=args.candidate,base=args.base,baseline_library_available=bool(configs.get('regression')),commands=commands.commands,
-              broad=args.broad,presets=list(presets),samples=args.samples,duration_target=args.duration_seconds,
+              broad=args.broad,presets=list(presets),samples=args.samples,
+              aa_samples=args.aa_samples or args.samples,duration_target=args.duration_seconds,
               calibration_target=args.calibration_seconds or args.duration_seconds,
               input_corpus=str(args.input_corpus) if args.input_corpus else None,
               compare_resources=args.compare_resources,
