@@ -193,6 +193,16 @@ summary is written only after every invocation passes. Partial samples retain
 their individual checked status. Do not treat an incomplete run as a passing
 performance comparison.
 
+When numeric output fails its oracle, `failure.json` also retains a
+`failed_output` receipt: implementation/workload, full output byte count and
+SHA-256, and up to 4096 exact raw bytes encoded as `prefix_hex`.
+`prefix_complete` distinguishes an entire small result from a truncated
+prefix; decode it with `bytes.fromhex(...)`. The receipt has `checked=false`:
+numeric syntax alone does not pass the oracle or create a checked timing
+sample. Arbitrary nonnumeric child text is not copied into this receipt.
+This preserves future rejected numerical values without reconstructing
+missing output from historical failures.
+
 ## Paired measurements and raw evidence
 
 The default schedule seed is `197200`. Within each round, workloads and the

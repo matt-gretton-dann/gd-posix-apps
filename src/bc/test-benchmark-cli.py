@@ -7,6 +7,7 @@ import importlib.util
 import io
 import hashlib
 import json
+import os
 import re
 from pathlib import Path
 import subprocess
@@ -424,6 +425,22 @@ class BenchmarkCli(unittest.TestCase):
         self.assertEqual(json.loads((prepared / 'calibration-only.json').read_text())['workloads'], 1)
         self.assertTrue((prepared / 'setup.json').exists())
         self.assertFalse((prepared / 'samples.jsonl').exists())
+
+    def test_cli_failure_preserves_rejected_numeric_receipt_without_checked_samples(self):
+        result, output = self.invoke('wrong')
+        self.assertEqual(result.returncode, 1)
+        failure = json.loads((output / 'failure.json').read_text())
+        receipt = failure.get('failed_output')
+        self.assertIsNotNone(receipt)
+        expected = ('3' + os.linesep).encode('ascii')
+        self.assertEqual(bytes.fromhex(receipt['prefix_hex']), expected)
+        self.assertEqual(receipt['output_bytes'], len(expected))
+        self.assertEqual(receipt['output_sha256'], hashlib.sha256(expected).hexdigest())
+        self.assertTrue(receipt['prefix_complete'])
+        self.assertFalse(receipt['checked'])
+        self.assertEqual(receipt['workload'], 'startup')
+        self.assertEqual((output / 'samples.jsonl').read_text(), '')
+
 
 
 class PairedStatistics(unittest.TestCase):
@@ -887,6 +904,40 @@ class PairedStatistics(unittest.TestCase):
         with self.assertRaisesRegex(module.BenchmarkError, 'caller state'):
             module.run_checked(dict(tool, argv=[sys.executable, '-c', "print('2\\n0\\n10\\n2')"]),
                                state_case, 3)
+
+    def test_failed_numeric_output_has_bounded_exact_bytes_and_full_identity(self):
+        module = self.module()
+        tool = dict(name='fake', argv=['fixture'])
+        mathematical = dict(name='enclosure', program='1+1\n', expected=None,
+                            oracle=dict(kind='decimal-ulp', scale=2,
+                                        lower='199/100', upper='201/100'))
+        exact = dict(name='large', program='1+1\n', expected=['2'])
+        for case, payload in ((mathematical, b'3.\\\n125\r\n'),
+                              (exact, b'3'*5000+b'\n')):
+            with self.subTest(workload=case['name']):
+                child = subprocess.CompletedProcess(['fixture'], 0, stdout=payload, stderr=b'')
+                with mock.patch.object(module.subprocess, 'run', return_value=child):
+                    with self.assertRaises(module.BenchmarkError) as failure:
+                        module.run_checked(tool, case, 3)
+                receipt = getattr(failure.exception, 'failed_output', None)
+                self.assertIsNotNone(receipt)
+                self.assertFalse(receipt['checked'])
+                self.assertEqual(receipt['implementation'], 'fake')
+                self.assertEqual(receipt['workload'], case['name'])
+                self.assertEqual(receipt['output_bytes'], len(payload))
+                self.assertEqual(receipt['output_sha256'], hashlib.sha256(payload).hexdigest())
+                self.assertEqual(bytes.fromhex(receipt['prefix_hex']), payload[:4096])
+                self.assertEqual(receipt['prefix_bytes'], min(len(payload), 4096))
+                self.assertEqual(receipt['prefix_complete'], len(payload) <= 4096)
+
+    def test_non_numeric_failures_do_not_archive_arbitrary_child_text(self):
+        module = self.module()
+        child = subprocess.CompletedProcess(['fixture'], 0, stdout=b'unrelated text\n', stderr=b'')
+        with mock.patch.object(module.subprocess, 'run', return_value=child):
+            with self.assertRaisesRegex(module.BenchmarkError, 'not numeric') as failure:
+                module.run_checked(dict(name='fake', argv=['fixture']),
+                                   dict(name='case', program='1+1\n', expected=['2']), 3)
+        self.assertIsNone(getattr(failure.exception, 'failed_output', None))
 
     def test_optional_math_suite_preserves_arithmetic_and_records_all_dimensions(self):
         module = self.module()
