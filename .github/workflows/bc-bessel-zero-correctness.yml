@@ -142,7 +142,8 @@ jobs:
               'math-library.bc','math-library.cc','math-library.hh.in','math-library-image.hh',
               'preparse-math-library.cc','test-math-library-cli.py','test-math-library-source.py',
               'test-bessel-zero-evidence.py','scripts/verify-bessel-zero-evidence.py',
-              'test-bessel-zero-proof.py','scripts/generate-bessel-classification-oracles.py',
+              'test-bessel-zero-proof.py','test-bessel-oracle-portability.py',
+              'scripts/generate-bessel-classification-oracles.py',
               'fixtures/math-bessel-classification-oracles.json',
               'fixtures/math-oracles.json','fixtures/math-crossover-oracles.json',
               'fixtures/math-trig-oracles.json','fixtures/math-bessel-zero-oracles.json',
@@ -192,7 +193,7 @@ jobs:
             grep -q 'All tests passed' evidence/native-tests.log
           fi
           ctest --test-dir build-native --no-tests=error --output-on-failure \
-            -R '^bc/(vm-lifetime(-ipo)?|signal-(normal|exception|delivery)|consumer-mode|divisor-cache-lifetime|bessel-zero-proof|bessel-classification-oracles|bessel-zero-evidence|math-library-(cli|source|image|decisions)|math-imported|math-oracle)$' \
+            -R '^bc/(vm-lifetime(-ipo)?|signal-(normal|exception|delivery)|consumer-mode|divisor-cache-lifetime|bessel-zero-proof|bessel-classification-oracles|bessel-oracle-portability|bessel-zero-evidence|math-library-(cli|source|image|decisions)|math-imported|math-oracle)$' \
             2>&1 | tee evidence/ctest.log
           "$python_cmd" src/bc/test-cli.py "build-native/src/bc/bc${executable_suffix}" \
             --extensions ${{ matrix.mode.extensions }} 2>&1 | tee evidence/cli.log
