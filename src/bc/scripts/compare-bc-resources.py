@@ -415,7 +415,7 @@ def merge_cases(bench, ordinary, additional):
 
 
 def run_diagnostics(run, profiles, ordinary, presets, suite, evidence, timeout=60,
-                    additional_corpora=None):
+                    additional_corpora=None, additional_replay_corpus=None):
     """Invoke resource wrappers after all elapsed children have finished."""
     profile_path, ordinary_path = evidence / 'resource-profiles.json', evidence / 'resource-ordinary.json'
     write(profile_path, role_configuration(profiles, library=suite == 'math'))
@@ -430,6 +430,13 @@ def run_diagnostics(run, profiles, ordinary, presets, suite, evidence, timeout=6
                 raise ValueError('additional math inputs must match the declared presets')
             # Commands.run may launch the child from the results directory.
             arguments += ['--additional-corpus', str(Path(additional_corpora[preset]).resolve())]
+        if additional_replay_corpus is not None:
+            if suite != 'arithmetic':
+                raise ValueError('additional arithmetic replay requires the arithmetic suite')
+            # Collect the fixed validation programs once, after every elapsed
+            # cohort, without duplicating them in both ordinary presets.
+            if preset == presets[0]:
+                arguments += ['--additional-replay-corpus', str(Path(additional_replay_corpus).resolve())]
         run(arguments)
 
 
@@ -587,6 +594,8 @@ def main():
     parser.add_argument('--child-timeout-seconds', type=bench.positive_timeout, default=60)
     parser.add_argument('--additional-corpus', type=Path,
                         help='append new one-shot math diagnostics from a checked partition')
+    parser.add_argument('--additional-replay-corpus', type=Path,
+                        help='append exact fixed arithmetic validation programs')
     args = parser.parse_args()
     try:
         profiles = json.loads(args.profiles.read_text(encoding='utf-8'))['implementations']
@@ -600,6 +609,11 @@ def main():
             if args.suite != 'math':
                 raise ValueError('additional partition inputs require the math suite')
             cases = merge_cases(bench, cases, additional_cases(bench, args.additional_corpus))
+        if args.additional_replay_corpus is not None:
+            if args.suite != 'arithmetic' or args.additional_corpus is not None:
+                raise ValueError('additional arithmetic replay requires only the arithmetic suite')
+            extra, _ = bench.replay_corpus(args.additional_replay_corpus, 'arithmetic')
+            cases = merge_cases(bench, cases, extra)
         collect(bench, load('profile-bc'), profiles, ordinary, cases, args.output,
                 args.repetitions, args.seed, args.child_timeout_seconds)
         return 0

@@ -26,6 +26,16 @@ def load(name):
 
 
 class ResourceComparison(unittest.TestCase):
+    def test_fixed_arithmetic_replay_is_absolute_and_collected_only_once(self):
+        calls=[]
+        self.module.run_diagnostics(calls.append,self.profiles,self.ordinary,
+            ('full','holdout'),'arithmetic',self.root,
+            additional_replay_corpus=Path('declared-integers'))
+        self.assertEqual(len(calls),2)
+        self.assertEqual(calls[0][calls[0].index('--additional-replay-corpus')+1],
+                         str(Path('declared-integers').resolve()))
+        self.assertNotIn('--additional-replay-corpus',calls[1])
+
     def test_common_resource_inputs_match_each_elapsed_preset_seed(self):
         for preset, seed in [('full', 197200), ('holdout', 197201)]:
             elapsed = {case['name']: case for case in self.bench.corpus(preset, seed=seed)}
