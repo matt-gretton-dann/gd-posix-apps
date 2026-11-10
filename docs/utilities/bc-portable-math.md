@@ -333,11 +333,12 @@ precedes the test, and zero is independent of the recorded parity. The
 ordinary decimal product 16*x is exact because multiplication retains x's
 fractional scale. No transcendental bound calculation runs in the interpreter.
 
-At entry scale zero, order zero and |x|<=8, strict certified threshold
-comparisons classify the nearest integer without evaluating the series.
+At entry scale zero, normalized orders zero/one and |x|<=8, strict certified
+threshold comparisons classify the nearest integer without evaluating the series.
 The unique J0(x)=1/2 crossing lies strictly between two adjacent 64-place
-decimals. Return one below the lower endpoint and zero above the upper;
-retain the accepted series inside the uncertain bracket. An exact energy
+decimals; strict concavity similarly certifies the two J1 half crossings. For J0 return one below the lower endpoint and zero above the upper.
+For J1 return one between its two strict brackets and zero outside them,
+applying odd-order parity. Retain the accepted series inside all uncertain brackets. An exact energy
 bound prevents later excursions outside the zero rounding cell. The
 [complete rational argument](bc-zero-scale-bessel.md) includes endpoint,
 monotonicity and tail certificates. Restricting x to eight preserves the

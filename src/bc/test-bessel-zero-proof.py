@@ -59,11 +59,11 @@ def certify():
     # The alternating P2 bounds it below one on [0,2], and by 7/8 on [2,3].
     assert F(3, 2)*F(7, 12) == F(7, 8) < 1
     assert -F(1, 2)+F(9, 4)/6 < 0
-    # Test-first J1 proofs precede its implementation. Bind the already
-    # implemented J0 constants here; the implementation adds the J1 binding.
+    # Bind every proved endpoint to the actual strict source comparisons.
     source = (Path(__file__).parent/'math-library.bc').read_text(encoding='utf-8')
-    assert 'if (x<'+BRACKETS[0][1]+')' in source
-    assert 'if (x>'+BRACKETS[0][2]+')' in source
+    for _, lower, upper, _ in BRACKETS:
+        assert 'if (x<'+lower+')' in source
+        assert 'if (x>'+upper+')' in source
     return dict(endpoint_brackets=3, terms=80, energy_at_three_upper='0.182588',
                 j0_lower_on_two_to_three=str(p3), j1_concavity_upper=str(p4),
                 coefficient_derivation='docs/utilities/bc-zero-scale-bessel.md',

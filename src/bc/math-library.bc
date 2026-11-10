@@ -421,21 +421,40 @@ define j(n,x) {
       }
     }
   }
-  /* At scale zero, certified J0 half-crossing bounds classify the
-     series-only range. Keep strict comparisons: the narrow uncertain
-     bracket uses the accepted series. Arguments above eight retain public
-     a/c/s calls in the Hankel path and ordinary redefinition semantics.
-     Scale is already zero; order-zero symmetry has no sign adjustment. */
+  /* At scale zero, certified half-crossing bounds classify J0/J1 in
+     the series-only range. Strict comparisons leave uncertain brackets
+     to the accepted series. Above eight retain public a/c/s calls and
+     ordinary redefinition semantics. Scale is already zero. */
   if (s==0) {
-    if (n==0) {
+    if (n<2) {
       if (x<=8) {
-        if (x<1.5211440576687651481513018730625235342837878902941129591913817089) {
-          ibase=b
-          return(1)
+        if (n==0) {
+          if (x<1.5211440576687651481513018730625235342837878902941129591913817089) {
+            ibase=b
+            return(1)
+          }
+          if (x>1.5211440576687651481513018730625235342837878902941129591913817090) {
+            ibase=b
+            return(0)
+          }
         }
-        if (x>1.5211440576687651481513018730625235342837878902941129591913817090) {
-          ibase=b
-          return(0)
+        if (n==1) {
+          if (x<1.2067184630059078866565349810721299413472200414880472421508483780) {
+            ibase=b
+            return(0)
+          }
+          if (x>2.4881550851691471311579234121812087972033545580535080099003329208) {
+            ibase=b
+            return(0)
+          }
+          if (x>1.2067184630059078866565349810721299413472200414880472421508483781) {
+            if (x<2.4881550851691471311579234121812087972033545580535080099003329207) {
+              r=1
+              if (v==1) r= -r
+              ibase=b
+              return(r)
+            }
+          }
         }
       }
     }

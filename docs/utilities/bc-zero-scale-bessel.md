@@ -6,8 +6,8 @@ of the function-storage experiment in PR #713. No elapsed improvement or
 adoption is established. The total recorded goal-time cap remains 864,000
 seconds; previous failed and inconclusive outcomes remain part of the record.
 
-For normalized order zero and entry scale zero, round J0 to the nearest
-integer by classifying its value around one half. Retain the accepted series
+For normalized orders zero/one and entry scale zero, classify their nearest
+integer using the certified half-crossing brackets below. Retain the accepted series
 inside the uncertain threshold bracket, for other orders/scales, and for
 arguments larger than eight. Symmetry makes J0 even. The restriction to
 arguments at most eight is necessary for language semantics: the accepted
@@ -111,9 +111,9 @@ fixture text; the eleven rational cases and their bounds are unchanged. Native
 archives still retain and hash the actual physical bytes separately. This
 correction requires its own hosted checks and establishes no elapsed benefit.
 
-## Order-one cells: proof and tests before implementation
+## Order-one cells
 
-The order-one extension uses two strict brackets:
+The order-one implementation uses two strict brackets:
 
 L1 = 1.2067184630059078866565349810721299413472200414880472421508483780
 
