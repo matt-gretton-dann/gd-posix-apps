@@ -662,6 +662,68 @@ def corpus(preset="full", selected=None, listing=False, seed=197200, suite='arit
                 dict(dividend_digits=len(str(a)), divisor_digits=len(str(b)), iterations=count,
                      scale=0, operation=operation, admission=shape, change_period=16 if shape == 'periodic' else 1,
                      timing_scope='whole-process latency' if shape == 'cold' else 'repeated process workload'))
+    # #707's frame cases were declared before generation. Append after every
+    # accepted case, using an independent stream to preserve all old identities.
+    bindings_rng = random.Random(seed ^ 707197)
+    heap_digits, inline_digits, depth = ((207, 18, 41) if preset == 'holdout'
+                                         else (180, 17, 37))
+    modulus = 1000000007
+    def binding_dense(digits):
+        return int('1' + ''.join(str(bindings_rng.randrange(10)) for _ in range(digits - 1)))
+
+    letters = 'abcdehjklmopqrtu'
+    global_value, initial = binding_dense(heap_digits), binding_dense(inline_digits)
+    coefficients = [bindings_rng.randrange(1, 98) for _ in letters]
+    count = iterations(75000)
+    lines = ['scale=0', 'define f(n) {', 'auto ' + ','.join(letters)]
+    lines += ['{}=n+{}'.format(letter, c) for letter, c in zip(letters, coefficients)]
+    lines += ['return(' + '+'.join('{}*{}'.format(j, letter)
+                                 for j, letter in enumerate(letters, 1)) + ')', '}']
+    lines += ['{}={}'.format(letter, global_value + j)
+              for j, letter in enumerate(letters, 1)]
+    lines += ['x={}'.format(initial), 's=0',
+              'for(i=0;i<{};i++) {{v=f(x+i);s=(s+v)%{}}}'.format(count, modulus), 's']
+    lines += ['{}%{}'.format(letter, modulus) for letter in letters]
+    checksum = (136 * (count * initial + count * (count - 1) // 2) +
+                count * sum(j * c for j, c in enumerate(coefficients, 1))) % modulus
+    expected = [checksum] + [(global_value + j) % modulus for j in range(1, 17)]
+    add('bindings_wide_locals_{}d_x{}'.format(heap_digits, count), 'bindings_wide_locals',
+        '\n'.join(lines), expected,
+        dict(iterations=count, initial=str(initial), global_value=str(global_value),
+             coefficients=coefficients, local_letters=letters, heap_digits=heap_digits,
+             inline_digits=inline_digits, operand_seed=seed ^ 707197, checksum_modulus=modulus))
+
+    global_value, initial = binding_dense(heap_digits), binding_dense(inline_digits)
+    c, d, y0 = [bindings_rng.randrange(1, 98) for _ in range(3)]
+    count = iterations(100000)
+    program = ('scale=0\ndefine g(z) {{\nx+=z\ny+=1\nreturn(x)\n}}\n'
+               'define f(x) {{\nauto t,u\nt=g(c)\nu=g(d)\nreturn(t+u+y)\n}}\n'
+               'x={}\nt={}\nu={}\nz=31\ny={}\nc={}\nd={}\na={}\ns=0\n'
+               'for(i=0;i<{};i++) {{v=f(a+i);s=(s+v)%{}}}\ns\ny\nx%{}\nt%{}\nu%{}\nz').format(
+                   global_value, global_value + 1, global_value + 2, y0, c, d, initial,
+                   count, modulus, modulus, modulus, modulus)
+    checksum = (count * (2 * initial + 2 * c + d + y0 + 2) +
+                2 * count * (count - 1)) % modulus
+    expected = [checksum, y0 + 2 * count] + [(global_value + j) % modulus for j in range(3)] + [31]
+    add('bindings_dynamic_chain_{}d_x{}'.format(heap_digits, count), 'bindings_dynamic_chain',
+        program, expected,
+        dict(iterations=count, initial=str(initial), global_value=str(global_value),
+             c=c, d=d, y0=y0, heap_digits=heap_digits, inline_digits=inline_digits,
+             operand_seed=seed ^ 707197, checksum_modulus=modulus))
+
+    initial, delta = binding_dense(heap_digits), bindings_rng.randrange(1, 98)
+    count = iterations(1200)
+    program = ('scale=0\ndefine f(n,x) {{\nauto t\nif(n==0) return(x)\n'
+               't=x+{}\nreturn(f(n-1,t)+x)\n}}\nx={}\nt={}\nn=29\na={}\ns=0\n'
+               'for(i=0;i<{};i++) {{v=f({},a+i);s=(s+v)%{}}}\ns\nx%{}\nt%{}\nn').format(
+                   delta, initial, initial + 1, initial, count, depth, modulus, modulus, modulus)
+    checksum = ((depth + 1) * (count * initial + count * (count - 1) // 2) +
+                count * delta * depth * (depth + 1) // 2) % modulus
+    add('bindings_recursion_snapshots_{}d_depth{}_x{}'.format(heap_digits, depth, count),
+        'bindings_recursion_snapshots', program,
+        [checksum, initial % modulus, (initial + 1) % modulus, 29],
+        dict(iterations=count, initial=str(initial), delta=delta, depth=depth,
+             heap_digits=heap_digits, operand_seed=seed ^ 707197, checksum_modulus=modulus))
     if selected:
         missing = set(selected) - set(known)
         if missing:

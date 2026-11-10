@@ -328,6 +328,30 @@ TEST_CASE("Consumed parameters and terminal returns preserve snapshots",
         "00000000000000000000000000000000000000000000000000000000000\n-1.2500\n17\n");
 }
 
+TEST_CASE("Scalar locals preserve dynamic inheritance and argument evaluation",
+          "[bc][vm][execution][ownership][scalar-bindings]")
+{
+  auto checks = GENERATE(GD::Bc::VM::ExecutionChecks::full, GD::Bc::VM::ExecutionChecks::verified);
+  std::string const source =
+    "x=11\ny=22\nt=77\n"
+    "define g(z) {\nauto t\nt=x\nx+=z\ny+=1\nreturn(t)\n}\n"
+    "define f(x) {\nauto t\nt=g(3)\nreturn(x*100+t)\n}\n"
+    "f(5)\nx\ny\nt\nz\n"
+    "define g(z) {\nx+=z\nreturn(x)\n}\n"
+    "f(5)\nx\ny\nt\nf(g(2))\nx\n"
+    "define r(n) {\nauto x\nx=n+100\nif(n>0) return(r(n-1)+x)\nreturn(x)\n}\n"
+    "r(3)\nx\nn\nt\n";
+  std::ostringstream output, errors;
+  GD::Bc::VM vm(output, errors, false, checks);
+  GD::Bc::Parser parser(
+    std::make_unique<GD::Bc::Lexer>(std::make_unique<GD::Bc::StringReader>(source)), true);
+  while (auto code = parser.parse()) {
+    if (!vm.execute(*code)) break;
+  }
+  CHECK(errors.str().empty());
+  CHECK(output.str() == "805\n11\n23\n77\n0\n808\n11\n23\n77\n1616\n13\n406\n13\n0\n77\n");
+}
+
 TEST_CASE("Repeated executable code observes replaced literal text", "[bc][vm][literal]")
 {
   auto checks = GENERATE(GD::Bc::VM::ExecutionChecks::full, GD::Bc::VM::ExecutionChecks::verified);

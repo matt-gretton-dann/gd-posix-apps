@@ -17,6 +17,8 @@ if(_bc_array_layout LESS 0)
 endif()
 target_compile_definitions(libbc PUBLIC GD_BC_ARRAY_STORAGE=${_bc_array_layout})
 target_compile_definitions(libbc PUBLIC GD_BC_PREPARED_DIVISORS=$<BOOL:${ENABLE_BC_PREPARED_DIVISORS}>)
+option(ENABLE_BC_SCALAR_BINDINGS "Enable experimental reusable scalar-local bindings" ON)
+target_compile_definitions(libbc PRIVATE GD_BC_SCALAR_BINDINGS=$<BOOL:${ENABLE_BC_SCALAR_BINDINGS}>)
 option(ENABLE_BC_EXACT_SQUARE "Enable the experimental exact transform square" OFF)
 if(ENABLE_BC_EXACT_SQUARE)
   target_compile_definitions(libbc PUBLIC GD_BC_EXPERIMENT_NTT=1)
@@ -158,6 +160,13 @@ add_dependencies("libbc" "bc_messages_header")
 target_add_clang_format(libbc)
 
 if(RUN_UNIT_TESTS)
+  add_executable(test-bc-scalar-bindings test-scalar-bindings.cc)
+  set_property(TARGET test-bc-scalar-bindings PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
+  set_property(TARGET test-bc-scalar-bindings PROPERTY CXX_STANDARD_REQUIRED ON)
+  set_warnings(test-bc-scalar-bindings)
+  target_add_clang_format(test-bc-scalar-bindings)
+  add_test(NAME bc/scalar-bindings COMMAND "$<TARGET_FILE:test-bc-scalar-bindings>")
+  set_tests_properties(bc/scalar-bindings PROPERTIES TIMEOUT 10)
   add_executable(test-bc-profiling profiling.cc test-profiling.cc)
   target_compile_definitions(test-bc-profiling PRIVATE GD_BC_PROFILE=1)
   add_executable(test-bc-profiling-disabled test-profiling-disabled.cc)
@@ -432,6 +441,9 @@ if(RUN_INTEGRATION_TESTS)
            "${CMAKE_CURRENT_SOURCE_DIR}/test-gd-build.py"
            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/build-gd-bc.py")
   set_tests_properties(bc/gd-build-provenance PROPERTIES TIMEOUT 20)
+  add_test(NAME bc/resource-comparison COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-resource-comparison.py")
+  set_tests_properties(bc/resource-comparison PROPERTIES TIMEOUT 20)
   add_test(NAME bc/multiply-config COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-multiply-config.py" "${CMAKE_COMMAND}"
            "${CMAKE_SOURCE_DIR}/cmake/BcMultiplyConfig.cmake")
@@ -498,6 +510,9 @@ if(RUN_INTEGRATION_TESTS)
            "${CMAKE_CURRENT_SOURCE_DIR}/test-benchmark-cli.py"
            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/bench-bc.py" --bc "$<TARGET_FILE:bc>")
   set_tests_properties(bc/benchmark-cli PROPERTIES TIMEOUT 30)
+  add_test(NAME bc/scalar-binding-corpus COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-scalar-binding-corpus.py")
+  set_tests_properties(bc/scalar-binding-corpus PROPERTIES TIMEOUT 20)
   if(ENABLE_BC_PROFILE)
     add_test(NAME bc/profiling-cli COMMAND "${Python_EXECUTABLE}"
              "${CMAKE_CURRENT_SOURCE_DIR}/test-profiling-cli.py" "$<TARGET_FILE:bc>")

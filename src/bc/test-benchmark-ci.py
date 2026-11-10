@@ -20,6 +20,7 @@ SPEC.loader.exec_module(CI)
 
 
 class NativeTrends(unittest.TestCase):
+
     def test_sparse_duration_requires_every_independent_role(self):
         row = dict(implementations={role: dict(median_seconds=.25)
                                     for role in ('base', 'aa', 'candidate')})
@@ -160,7 +161,7 @@ class NativeTrends(unittest.TestCase):
         self.assertIn('divide_scaled_dense_s1000_t1000_x5000', subset)
         self.assertIn('divide_scaled_trailing_zero_s1000_t1000_x5000', subset)
         self.assertLess(len(subset), len(full))
-        self.assertEqual(len(full), 66)
+        self.assertEqual(len(full), 69)
         self.assertEqual(set(full) & set(held), {'startup'})
 
     def test_pr_subset_covers_every_corpus_group(self):
@@ -175,7 +176,7 @@ class NativeTrends(unittest.TestCase):
                                  {case['group'] for case in cases})
 
     def exercise(self, fail=False, aa_first=None, aa_second=None, prepared=False,
-                 identical=False):
+                 identical=False, native=False, disabled_native=False, native_functions=False, word_functions=False, word_baseline_unknown=False, prefix_results=False, scalar_bindings=False):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name) / 'results'
@@ -191,19 +192,68 @@ class NativeTrends(unittest.TestCase):
             def run(self, argv):
                 calls.append(argv)
                 script = Path(argv[1]).name
-                if script == 'test-divisor-reuse-cli.py':
+                if script in ('test-divisor-reuse-cli.py','test-cli.py','test-vm-cli.py'):
                     return
                 output = Path(argv[argv.index('--output') + 1])
                 output.mkdir()
                 if script in ('build-gd-bc.py', 'build-bc-comparators.py'):
                     (output / 'prepared-policy').mkdir()
                     (output / 'prepared-policy/libbc.vcxproj').write_text('retained fixture')
+                    activated=native and not disabled_native and '--name' in argv and argv[argv.index('--name')+1].startswith('candidate')
+                    if activated:
+                        (output / 'native-policy').mkdir()
+                        (output / 'native-policy/libbc.vcxproj').write_text('native fixture')
                     name = argv[argv.index('--name') + 1] if '--name' in argv else 'howard-7.0.3'
                     (output / 'implementations.json').write_text(json.dumps(
                         {'implementations': [{'name': name, 'argv': ['fixture'], 'metadata': dict(
                             binary_sha256=('b' if name == 'candidate' and not identical else 'a') * 64,
                             configuration=dict(prepared_divisors_policy=dict(
-                                status='recorded', mode='ON', enabled=True)))}]}))
+                                status='recorded', mode='ON', enabled=True),
+                                native_scalar_policy=dict(status='recorded', mode='AUTO', configured=activated, enabled=activated, shared_plan=activated, backend='native-scalar-x64.cc' if activated else None)))}]}))
+                    path = output / 'implementations.json'
+                    saved = json.loads(path.read_text())
+                    selected = native_functions and not disabled_native and name.startswith('candidate')
+                    saved['implementations'][0]['metadata']['configuration']['native_function_policy'] = dict(
+                        status='recorded', mode='AUTO', configured=selected, enabled=selected,
+                        shared_plan=selected, backend='native-expression-x64.cc' if selected else None,
+                        source_inputs=[dict(path='src/bc/native-expression-plan.hh',sha256='c'*64),
+                                       dict(path='src/bc/native-expression-x64.cc',sha256='d'*64)] if selected else [])
+                    if selected:
+                        (output / 'native-function-policy').mkdir()
+                        (output / 'native-function-policy/planner.hh').write_text('retained source fixture')
+                    selected = word_functions and not disabled_native and name.startswith('candidate')
+                    units = ['word-function.cc', 'word-lowering.cc', 'word-runtime.cc']
+                    policy = dict(status='recorded', mode='AUTO', configured=selected, enabled=selected,
+                        translation_units=units if selected else [], source_inputs=[dict(path='src/bc/' + n,
+                        sha256='a'*64) for n in units + [n.replace('.cc','.hh') for n in units]] if selected else [])
+                    if word_baseline_unknown and name=='base': policy=dict(status='legacy-auto',mode='AUTO',enabled=None)
+                    saved['implementations'][0]['metadata']['configuration']['word_function_policy']=policy
+                    if selected:
+                        (output / 'word-function-policy').mkdir()
+                        (output / 'word-function-policy/core.cc').write_text('retained word source fixture')
+                    present = prefix_results and name.startswith('candidate')
+                    selected = present and not disabled_native
+                    names = ['vm.cc', 'CMakeLists.txt'] + (['prefix-result-buffer.hh'] if present else [])
+                    policy = dict(status='recorded', mode='AUTO', enabled=selected,
+                        configured=selected if present else None, implementation_present=present,
+                        source_inputs=[dict(path='src/bc/' + n, sha256='e' * 64) for n in names])
+                    if word_baseline_unknown and name=='base': policy=dict(status='legacy-auto', mode='AUTO', enabled=None)
+                    saved['implementations'][0]['metadata']['configuration']['prefix_result_policy'] = policy
+                    if present:
+                        (output / 'prefix-result-policy').mkdir()
+                        (output / 'prefix-result-policy/core.cc').write_text('retained prefix source fixture')
+                    present = scalar_bindings and name.startswith('candidate')
+                    selected = present and not disabled_native
+                    names = ['vm.cc', 'CMakeLists.txt'] + (['scalar-bindings.hh'] if present else [])
+                    policy = dict(status='recorded', mode='AUTO', enabled=selected,
+                        configured=selected if present else None, implementation_present=present,
+                        source_inputs=[dict(path='src/bc/' + n, sha256='e' * 64) for n in names])
+                    if word_baseline_unknown and name=='base': policy=dict(status='legacy-auto', mode='AUTO', enabled=None)
+                    saved['implementations'][0]['metadata']['configuration']['scalar_binding_policy'] = policy
+                    if present:
+                        (output / 'scalar-binding-policy').mkdir()
+                        (output / 'scalar-binding-policy/core.cc').write_text('retained prefix source fixture')
+                    path.write_text(json.dumps(saved))
                     return
                 if fail:
                     raise helper.BuildError('fixture incorrect output')
@@ -245,11 +295,91 @@ class NativeTrends(unittest.TestCase):
                 '--candidate', 'b' * 40, '--output', str(root)]
         if prepared:
             argv += ['--candidate-prepared-divisors']
+        if native:
+            argv += ['--require-candidate-native']
+        if native_functions:
+            argv += ['--require-candidate-native-functions']
+        if word_functions:
+            argv += ['--require-candidate-word-functions']
+        if prefix_results:
+            argv += ['--require-candidate-prefix-results']
+        if scalar_bindings:
+            argv += ['--require-candidate-scalar-bindings']
         with mock.patch.object(CI, 'load', modules), mock.patch.object(CI, 'host_info', return_value={}), \
                 mock.patch.object(sys, 'argv', argv), mock.patch.dict('os.environ', {}, clear=True), \
                 contextlib.redirect_stderr(io.StringIO()):
             result = CI.main()
         return root, calls, result
+
+    def test_word_selection_and_known_baseline_are_required_before_elapsed(self):
+        for disabled, unknown in [(True, False), (False, True)]:
+            root, calls, result = self.exercise(word_functions=True, disabled_native=disabled, word_baseline_unknown=unknown)
+            self.assertEqual(result, 1)
+            self.assertFalse(any(Path(c[1]).name=='bench-bc.py' for c in calls))
+
+    def test_word_preflight_and_source_policy_are_preserved(self):
+        root, calls, result = self.exercise(word_functions=True)
+        self.assertEqual(result, 0)
+        first = next(i for i,c in enumerate(calls) if Path(c[1]).name=='bench-bc.py')
+        self.assertEqual(sum(Path(c[1]).name=='test-cli.py' for c in calls[:first]), 3)
+        self.assertTrue((root/'evidence/candidate/word-function-policy/core.cc').is_file())
+        self.assertTrue(json.loads((root/'evidence/orchestration.json').read_text())['require_candidate_word_functions'])
+
+    def test_prefix_selection_and_known_baseline_are_required_before_elapsed(self):
+        for disabled, unknown in [(True, False), (False, True)]:
+            root, calls, result = self.exercise(prefix_results=True, disabled_native=disabled, word_baseline_unknown=unknown)
+            self.assertEqual(result, 1)
+            self.assertFalse(any(Path(c[1]).name=='bench-bc.py' for c in calls))
+
+    def test_prefix_preflight_and_source_policy_are_preserved(self):
+        root, calls, result = self.exercise(prefix_results=True)
+        self.assertEqual(result, 0)
+        first = next(i for i,c in enumerate(calls) if Path(c[1]).name=='bench-bc.py')
+        self.assertEqual(sum(Path(c[1]).name=='test-cli.py' for c in calls[:first]), 3)
+        self.assertTrue((root/'evidence/candidate/prefix-result-policy/core.cc').is_file())
+        self.assertTrue(json.loads((root/'evidence/orchestration.json').read_text())['require_candidate_prefix_results'])
+
+    def test_scalar_binding_selection_and_known_baseline_are_required_before_elapsed(self):
+        for disabled, unknown in [(True, False), (False, True)]:
+            root, calls, result = self.exercise(scalar_bindings=True, disabled_native=disabled, word_baseline_unknown=unknown)
+            self.assertEqual(result, 1)
+            self.assertFalse(any(Path(c[1]).name=='bench-bc.py' for c in calls))
+
+    def test_scalar_binding_preflight_and_source_policy_are_preserved(self):
+        root, calls, result = self.exercise(scalar_bindings=True)
+        self.assertEqual(result, 0)
+        first = next(i for i,c in enumerate(calls) if Path(c[1]).name=='bench-bc.py')
+        self.assertEqual(sum(Path(c[1]).name=='test-cli.py' for c in calls[:first]), 3)
+        self.assertTrue((root/'evidence/candidate/scalar-binding-policy/core.cc').is_file())
+        self.assertTrue(json.loads((root/'evidence/orchestration.json').read_text())['require_candidate_scalar_bindings'])
+
+    def test_disabled_native_functions_never_reach_elapsed_sampling(self):
+        root, calls, result = self.exercise(native_functions=True, disabled_native=True)
+        self.assertEqual(result, 1)
+        self.assertFalse(any(Path(call[1]).name == 'bench-bc.py' for call in calls))
+
+    def test_native_functions_keep_preflight_and_retained_planner(self):
+        root, calls, result = self.exercise(native_functions=True)
+        self.assertEqual(result, 0)
+        first = next(i for i, call in enumerate(calls) if Path(call[1]).name == 'bench-bc.py')
+        self.assertEqual(sum(Path(call[1]).name == 'test-vm-cli.py' for call in calls[:first]), 3)
+        self.assertTrue((root / 'evidence/candidate/native-function-policy/planner.hh').is_file())
+
+    def test_disabled_native_candidate_never_reaches_elapsed_sampling(self):
+        root, calls, result = self.exercise(native=True, disabled_native=True)
+        self.assertEqual(result, 1)
+        self.assertFalse(any(Path(call[1]).name == 'bench-bc.py' for call in calls))
+
+    def test_native_candidate_checks_all_roles_before_timing(self):
+        root,calls,result=self.exercise(native=True)
+        self.assertEqual(result,0)
+        for index,call in enumerate(calls[:3]):
+            self.assertNotIn('--native-scalars',call)
+        self.assertEqual([Path(call[1]).name for call in calls[4:10]],
+                         ['test-cli.py','test-vm-cli.py']*3)
+        self.assertTrue(all(Path(call[1]).name=='bench-bc.py' for call in calls[10:]))
+        self.assertTrue(json.loads((root/'evidence/orchestration.json').read_text())['require_candidate_native'])
+        self.assertEqual((root/'evidence/candidate/native-policy/libbc.vcxproj').read_text(),'native fixture')
 
     def test_prepared_candidate_keeps_controls_ordinary_and_guards_before_timing(self):
         root, calls, result = self.exercise(prepared=True)
