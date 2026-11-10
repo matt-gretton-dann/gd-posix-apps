@@ -119,7 +119,9 @@ explicit self-call letter. Unsupported definitions retain normal execution.
 
 Admitted arguments have stored scale zero, are nonnegative, use no retained
 heap storage and fit the existing one-radix-digit input domain. The terminal
-argument and all recurrence operands are therefore integers with scale zero.
+argument and all recurrence operands are integers with scale zero. A negative
+stop threshold can produce negative intermediate factors before the terminal
+call; the reduction keeps their signs through direct Number construction.
 Addition and multiplication retain scale zero at any global scale, so exact
 reassociation preserves bc arithmetic. A Number accumulator computes the
 result beyond machine-word range, without one VM activation per recursive

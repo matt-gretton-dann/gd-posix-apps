@@ -224,11 +224,16 @@ auto IntegerRecurrence::execute(std::uint64_t argument, Number& result, bool (*i
   Number value(static_cast<Number::NumType>(initial < 0 ? -initial : initial));
   if (initial < 0)
     value.negate();
-  auto current = argument;
+  // A negative threshold can leave negative factors before the terminal call.
+  // Admitted arguments and single-digit bounds keep this signed range small.
+  auto current = static_cast<std::int64_t>(argument);
   for (std::uint64_t i = 0; i < steps; ++i) {
     if (interrupted())
       return false;
-    auto factor = Number::from_unsigned_word(current);
+    auto magnitude = static_cast<std::uint64_t>(current < 0 ? -current : current);
+    auto factor = Number::from_unsigned_word(magnitude);
+    if (current < 0)
+      factor.negate();
     if (multiply)
       value.multiply(factor, 0);
     else
