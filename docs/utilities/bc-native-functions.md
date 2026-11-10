@@ -2,9 +2,10 @@
 
 Issue #683 explores a separate way to reduce function-call and expression
 dispatch costs under #207 and #197. `ENABLE_BC_NATIVE_FUNCTIONS` defaults to
-`OFF`; this option is independent of `ENABLE_BC_NATIVE_SCALAR`. No performance
-benefit or default activation is established by the implementation or its
-correctness workflow.
+`ON` in the unqualified final integration candidate, independently of
+`ENABLE_BC_NATIVE_SCALAR`. Unsupported targets and explicit OFF builds use
+the generic interpreter. Correctness alone does not establish a performance
+benefit or qualify this default activation for merging.
 
 Backends support x86-64 Windows/POSIX and ordinary Apple ARM64 targets with a
 matching compiler. ARM64EC, Apple arm64e, universal Apple builds and other
@@ -14,8 +15,8 @@ processor.
 
 ## Eligibility and ownership
 
-Only verified functions with the parser's one-scalar parameter prologue and
-straight-line parameter loads, single decimal digits, addition, multiplication
+The machine-leaf path admits verified functions with the parser's one-scalar
+parameter prologue and straight-line parameter loads, single decimal digits, addition, multiplication
 and a return are eligible. There are at most 132 source instructions and 64
 native operations. Stores, global reads, branches, calls, arrays, I/O, special
 registers and other operations before the return reject the definition. Single
@@ -145,6 +146,8 @@ ownership. Profiling proves one outer VM call for the real factorial source
 shape. Function-call counters count executed VM dispatches, so folded internal
 calls do not increment them. Counters establish selection, not speed.
 
-The option remains OFF by default. Correctness, memory/code-size review and
-source-specific hosted performance qualification are required before adoption;
+The final integration candidate enables the option on supported targets,
+with explicit OFF modes and unsupported-architecture generic fallbacks.
+Correctness, memory/code-size review and source-specific hosted performance
+qualification are required before merging that default activation;
 no earlier native or numerical candidate's timing results transfer.
