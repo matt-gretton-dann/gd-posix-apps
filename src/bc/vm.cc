@@ -317,7 +317,14 @@ private:
   // Cache only code derived from this immutable definition. Replacing a
   // function discards its page and cached rejection state. Failed allocations
   // and executable-memory publication can be retried.
-  GD_BC_LEAF_NOINLINE auto native_leaf(VariableMask locals, Letter self) -> NativeFunction const*;
+  auto native_leaf(VariableMask locals, Letter self) -> NativeFunction const*
+  {
+    if (native_leaf_ || native_leaf_rejected_)
+      return native_leaf_.get();
+    return prepare_native_leaf(locals, self);
+  }
+  GD_BC_LEAF_NOINLINE auto prepare_native_leaf(VariableMask locals, Letter self)
+    -> NativeFunction const*;
   std::shared_ptr<NativeFunction const> native_leaf_;
   bool native_leaf_rejected_ = false;
 #endif
@@ -447,10 +454,9 @@ struct VMState
 #endif
 #if defined(GD_BC_NATIVE_FUNCTIONS)
 #  if GD_BC_FORWARD_SCALAR_ARGUMENT
-  GD_BC_LEAF_NOINLINE auto call_generic(Letter func, Location const& loc,
-                                        Number const* argument = nullptr) -> Number;
+  auto call_generic(Letter func, Location const& loc, Number const* argument = nullptr) -> Number;
 #  else
-  GD_BC_LEAF_NOINLINE auto call_generic(Letter func, Location const& loc) -> Number;
+  auto call_generic(Letter func, Location const& loc) -> Number;
 #  endif
   GD_BC_LEAF_NOINLINE auto call_native_leaf(Letter func, Location const& loc,
                                             NativeFunction const& code,
@@ -1048,11 +1054,9 @@ void GD::Bc::Details::VMState::defer_library_function(Letter name, std::string_v
 #endif
 
 #if defined(GD_BC_NATIVE_FUNCTIONS)
-auto GD::Bc::Details::FunctionCode::native_leaf(VariableMask locals, Letter self)
+auto GD::Bc::Details::FunctionCode::prepare_native_leaf(VariableMask locals, Letter self)
   -> NativeFunction const*
-{
-  if (native_leaf_ || native_leaf_rejected_)
-    return native_leaf_.get();
+try {
   using O = Instruction::Opcode;
   using D = Instruction::Offset;
   using K = NativeExpressionOp::Kind;
@@ -1143,6 +1147,11 @@ auto GD::Bc::Details::FunctionCode::native_leaf(VariableMask locals, Letter self
   }
   return reject();
 }
+catch (std::bad_alloc const&) {
+  // Preparation has not consumed arguments or changed dynamic bindings.
+  // Keep this cold failure handling out of every cached-call routing frame.
+  return nullptr;
+}
 
 #  if GD_BC_FORWARD_SCALAR_ARGUMENT
 auto GD::Bc::Details::VMState::call(Letter func, Location const& loc, Number const* argument)
@@ -1166,13 +1175,7 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
     if (definition && mark.next == mark.begin && one_argument) {
       // Deferred library definitions keep their normal first-call loader.
       // No Number owner lives in this routing frame on a generic call.
-      NativeFunction const* code = nullptr;
-      try {
-        code = std::get<0>(*definition).native_leaf(std::get<1>(*definition), func);
-      }
-      catch (std::bad_alloc const&) {
-        // Preparation has not consumed arguments or changed dynamic bindings.
-      }
+      auto const* code = std::get<0>(*definition).native_leaf(std::get<1>(*definition), func);
       if (code != nullptr) {
 #  if GD_BC_FORWARD_SCALAR_ARGUMENT
         return call_native_leaf(func, loc, *code, argument);
