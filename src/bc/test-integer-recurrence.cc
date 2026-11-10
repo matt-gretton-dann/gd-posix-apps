@@ -57,6 +57,8 @@ TEST_CASE("Pure integer reductions preserve arbitrary precision recursion",
        {"if(n<=1)return(1); return(n*f(n-1))", "if(n<2)return(1); return(f(n-1)*n)",
         "if(n>1)return(n*f(n-1)); return(1)", "if(n>=2)return(f(n-1)*n); return(1)",
         "if(n<=3)return(n); return(n+f(n-2))", "if(n<0)return(n); return(f(n-3)+n)",
+        "if(n<= -9)return(-2); return(n*f(n-3))",
+        "if(n< -8)return(n); return(f(n-3)+n)",
         "if(n<=4)return(-2); return(n*f(n-3))", "if(n<=2)return(0); return(f(n-2)+n)"}) {
     std::string const source = "define f(n) {\n" + std::string(body) +
                                "\n}\nn=73\nf(0)\nf(1)\nf(2)\nf(7)\nf(31)\nf(50)\nn\n"
@@ -68,6 +70,24 @@ TEST_CASE("Pure integer reductions preserve arbitrary precision recursion",
   auto const factorial = "define f(n) {\nif(n<=1)return(1)\nreturn(n*f(n-1))\n}\nf(50)\n";
   CHECK(run(factorial, VM::ExecutionChecks::verified) ==
         "30414093201713378043612608166064768844377641568960512000000000000\n");
+}
+
+TEST_CASE("Integer reductions preserve negative intermediate factors",
+          "[bc][native-expression][vm][integer-recurrence]")
+{
+  IntegerRecurrence product{Letter('f'), -9, -2, 3, false, true};
+  IntegerRecurrence sum{Letter('f'), -9, 0, 3, true, false};
+  Number result(77);
+  REQUIRE(product.execute(1, result, uninterrupted));
+  CHECK(result == Number(160));
+  REQUIRE(sum.execute(1, result, uninterrupted));
+  Number expected(25);
+  expected.negate();
+  CHECK(result == expected);
+  auto const source = "define f(n) {\nif(n<= -9)return(-2)\nreturn(n*f(n-3))\n}\nf(1)\n"
+                      "define f(n) {\nif(n< -8)return(n)\nreturn(f(n-3)+n)\n}\nf(1)\n";
+  CHECK(run(source, VM::ExecutionChecks::full) == "160\n-25\n");
+  CHECK(run(source, VM::ExecutionChecks::verified) == "160\n-25\n");
 }
 
 TEST_CASE("Integer reduction rejects effects and retains generic call semantics",
