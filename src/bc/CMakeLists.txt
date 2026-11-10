@@ -390,6 +390,24 @@ endif()
 
 # These local CLI regressions run in both extension configurations and on Windows.
 if(RUN_INTEGRATION_TESTS)
+  add_test(NAME bc/bessel-zero-proof COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-bessel-zero-proof.py")
+  set_tests_properties(bc/bessel-zero-proof PROPERTIES TIMEOUT 10)
+  add_test(NAME bc/bessel-precision-proof COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-bessel-precision-proof.py")
+  set_tests_properties(bc/bessel-precision-proof PROPERTIES TIMEOUT 60)
+  add_test(NAME bc/math-budget-proof COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-math-budget-proof.py")
+  set_tests_properties(bc/math-budget-proof PROPERTIES TIMEOUT 20)
+  add_test(NAME bc/bessel-zero-evidence COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-bessel-zero-evidence.py")
+  set_tests_properties(bc/bessel-zero-evidence PROPERTIES TIMEOUT 10)
+  add_test(NAME bc/bessel-classification-oracles COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate-bessel-classification-oracles.py" --check)
+  set_tests_properties(bc/bessel-classification-oracles PROPERTIES TIMEOUT 60)
+  add_test(NAME bc/bessel-oracle-portability COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-bessel-oracle-portability.py")
+  set_tests_properties(bc/bessel-oracle-portability PROPERTIES TIMEOUT 300)
   # Native performance inputs use the 64-bit-host Number model's index range.
   # All layouts still have generic 8/16/32-bit storage tests on other targets.
   if(CMAKE_SIZEOF_VOID_P GREATER 4)
@@ -485,6 +503,12 @@ if(RUN_INTEGRATION_TESTS)
   add_test(NAME bc/math-benchmark-ci COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-benchmark-math-ci.py")
   set_tests_properties(bc/math-benchmark-ci PROPERTIES TIMEOUT 30)
+  add_test(NAME bc/math-qualification-inputs COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-math-qualification-inputs.py")
+  set_tests_properties(bc/math-qualification-inputs PROPERTIES TIMEOUT 60)
+  add_test(NAME bc/resource-comparison COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-resource-comparison.py")
+  set_tests_properties(bc/resource-comparison PROPERTIES TIMEOUT 30)
   add_test(NAME bc/windows-image-probe COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-windows-image-probe.py" --bc "$<TARGET_FILE:bc>")
   set_tests_properties(bc/windows-image-probe PROPERTIES TIMEOUT 60)

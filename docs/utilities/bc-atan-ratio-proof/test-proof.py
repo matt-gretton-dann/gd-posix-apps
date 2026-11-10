@@ -35,7 +35,7 @@ class AtanProof(unittest.TestCase):
         body = source.split('define a(x) {', 1)[1].split('\ndefine e(x)', 1)[0]
         for premise in ('if (x>=.8)', 'if (x<=1.25)', 'x=(x-1)/(x+1)',
                         'while (x>.1)', 'q= -x*x',
-                        'w=s+2*length(s+scale(x)+length(x)+1)+24'):
+                        'w=s+2*length(s+scale(x)+length(x)+1)+12'):
             self.assertIn(premise, body, 'changed reduction needs a new proof review')
 
     def test_power_term_and_tail_error_bounds(self):
@@ -54,9 +54,9 @@ class AtanProof(unittest.TestCase):
         self.assertLess(F(10, 81), 1)
 
     def test_three_half_angles_and_reconstruction_budget(self):
-        # W>=26; each stored half-angle differs from exact H by <2u.
+        # W>=14; each stored half-angle differs from exact H by <2u.
         # Rational lower sqrt bounds give upper H bounds without floats.
-        u = F(1, 10**26)
+        u = F(1, 10**14)
         for x, root_lower, target in (
                 (F(1), F(141, 100), F(415, 1000)),
                 (F(415, 1000), F(27, 25), F(1, 5)),
@@ -77,7 +77,7 @@ class AtanProof(unittest.TestCase):
     def test_existing_guard_precision_has_rounding_headroom(self):
         # N<=W+1, T>=S+1 and d(T)<=T imply W+2<=29T.
         # T<10^d and d>=1 give the uniform pre-rounding bound below.
-        self.assertLess(F(301*29, 10**25), F(1, 2))
+        self.assertLess(F(301*29, 10**13), F(1, 2))
 
 
 if __name__ == '__main__':
