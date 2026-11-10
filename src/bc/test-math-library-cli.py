@@ -300,6 +300,59 @@ class LibraryCli(unittest.TestCase):
         program = 'scale=0\n' + ''.join(f'j(0,{x})\n' for x in arguments)
         self.assertEqual(self.checked_lines(program), ['1', '0'])
 
+    def test_bessel_zero_scale_boundaries_and_state(self):
+        # Exact alternating-series enclosures independently decide which side
+        # of the rounding boundary each finite decimal occupies. Include both
+        # proposed fallback endpoints, interior points and the scope boundary.
+        lower = '1.5211440576687651481513018730625235342837878902941129591913817089'
+        upper = '1.5211440576687651481513018730625235342837878902941129591913817090'
+        arguments = ('0', '1', '1.5', lower[:-1] + '8', lower,
+                     lower + '5', upper, upper[:-1] + '1',
+                     '2', '2.5', '3', '4', '8', '8.00000000000000000001')
+        cases = []
+        for argument in arguments:
+            x = Fraction(argument)
+            term = partial = Fraction(1)
+            for k in range(1, 100):
+                term *= -x*x/(4*k*k)
+                partial += term
+            following = -term*x*x/(4*100*100)
+            lo, hi = sorted((partial, partial + following))
+            self.assertTrue(lo > Fraction(1, 2) or hi < Fraction(1, 2))
+            expected = 1 if lo > Fraction(1, 2) else 0
+            # The entire tested range stays strictly above -1/2.
+            self.assertGreater(lo, Fraction(-1, 2))
+            for sign in ('', '-'):
+                for base in (2, 8, 16):
+                    cases.append((sign + argument, base, expected))
+        program = []
+        for argument, base, _ in cases:
+            # Parse x in decimal before changing the caller's base. Print
+            # result/base/state with decimal output and restore input base.
+            program.extend(('ibase=10', 'x= ' + argument, 'scale=0',
+                            'ibase=' + str(base), 'r=j(0,x)', 'r', 'scale',
+                            'ibase', 'scale(r)', 'ibase=A'))
+        modes = [(BC, ('-l',), ()), (BC, (), (SOURCE,))]
+        if OTHER_BC:
+            modes.append((OTHER_BC, (), (SOURCE,)))
+        for binary, options, files in modes:
+            lines = self.checked_lines('\n'.join(program) + '\n', binary=binary,
+                                       options=options, files=files)
+            self.assertEqual(len(lines), 4 * len(cases))
+            for i, (_, base, expected) in enumerate(cases):
+                self.assertEqual(lines[4*i:4*i+4],
+                                 [str(expected), '0', str(base), '0'])
+
+    def test_bessel_zero_scale_keeps_large_argument_public_calls(self):
+        program = ('scale=0\ny=0\n'
+                   'define a(x) {\ny+=1\nreturn(1)\n}\n'
+                   'define s(x) {\ny+=1\nreturn(0)\n}\n'
+                   'define c(x) {\ny+=1\nreturn(1)\n}\n'
+                   'r=j(0,1000)\ny\nscale\nibase\n')
+        for options, files in ((('-l',), ()), ((), (SOURCE,))):
+            lines = self.checked_lines(program, options=options, files=files)
+            self.assertEqual(lines, ['3', '0', '10'])
+
     def test_bessel_ascending_with_exact_rational_enclosures(self):
         arguments = ((0, 100, 150), (300, 300, 100), (1, '1.125', 100),
                      (1, '1.' + '23456789' * 12, 20))
