@@ -110,3 +110,40 @@ The generator now records normalized source identity and compares normalized
 fixture text; the eleven rational cases and their bounds are unchanged. Native
 archives still retain and hash the actual physical bytes separately. This
 correction requires its own hosted checks and establishes no elapsed benefit.
+
+## Order-one cells: proof and tests before implementation
+
+The order-one extension uses two strict brackets:
+
+L1 = 1.2067184630059078866565349810721299413472200414880472421508483780
+
+U1 = 1.2067184630059078866565349810721299413472200414880472421508483781
+
+L2 = 2.4881550851691471311579234121812087972033545580535080099003329207
+
+U2 = 2.4881550851691471311579234121812087972033545580535080099003329208
+
+Exact alternating enclosures put J1(L1)<1/2<J1(U1) and
+J1(U2)<1/2<J1(L2). On 0<x<=3, differentiating the convergent series twice
+and writing q=x*x/4 gives the alternating upper bound
+J1''(x)/x <= P(q)=-3/8+5q/24-7q*q/192+q*q*q/320.
+The omitted derivative ratios decrease and are at most 11/96 after the
+fourth term for q<=9/4. P' has positive leading coefficient and negative
+discriminant -23/9216, so P increases. Its maximum is
+P(9/4)=-1131/20480<0. Thus J1 is strictly concave on this interval.
+J1(0)=0, J1(1.5)>1/2 and 0<J1(3)<1/2 certify exactly two half crossings.
+
+Concavity keeps J1 nonnegative on [0,3]. The alternating upper partial sum
+x/2*(1-q/2+q*q/12) is below one on [0,2]. On [2,3] its bracket decreases
+from 7/12, while x/2<=3/2, so the upper bound is at most 7/8.
+The existing energy bound gives |J1|<1/2 beyond three. Consequently in the
+series-only scope x<=8, J1 rounds to one strictly between U1 and L2 and
+to zero below L1 or above U2. Both inclusive uncertain brackets retain the
+accepted generic evaluation. Normalized odd-order parity determines the
+sign of the nonzero return; zero is independent of parity.
+
+Test-first certificates and independent CLI cases cover all four endpoints,
+both uncertain interiors, adjacent decimal inputs, signs of both order and
+argument, caller bases/state and the scope boundary. Additional exact
+reference cases include the excluded order two. Large-argument binding tests
+require the ordinary a/c/s calls for orders zero, one and minus one.

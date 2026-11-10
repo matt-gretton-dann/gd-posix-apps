@@ -348,10 +348,59 @@ class LibraryCli(unittest.TestCase):
                    'define a(x) {\ny+=1\nreturn(1)\n}\n'
                    'define s(x) {\ny+=1\nreturn(0)\n}\n'
                    'define c(x) {\ny+=1\nreturn(1)\n}\n'
-                   'r=j(0,1000)\ny\nscale\nibase\n')
-        for options, files in ((('-l',), ()), ((), (SOURCE,))):
-            lines = self.checked_lines(program, options=options, files=files)
-            self.assertEqual(lines, ['3', '0', '10'])
+                   'r=j({order},1000)\ny\nscale\nibase\n')
+        for order in (0, 1, -1):
+            for options, files in ((('-l',), ()), ((), (SOURCE,))):
+                lines = self.checked_lines(program.replace('{order}', str(order)),
+                                           options=options, files=files)
+                self.assertEqual(lines, ['3', '0', '10'])
+
+    def test_bessel_order_one_zero_scale_cells_and_state(self):
+        brackets = (
+            ('1.2067184630059078866565349810721299413472200414880472421508483780',
+             '1.2067184630059078866565349810721299413472200414880472421508483781'),
+            ('2.4881550851691471311579234121812087972033545580535080099003329207',
+             '2.4881550851691471311579234121812087972033545580535080099003329208'))
+        arguments = ['0', '.1', '1', '1.5', '2', '3', '8', '8.00000000000000000001']
+        with localcontext() as context:
+            context.prec = 100
+            step = Decimal(10)**-64
+            for lower, upper in brackets:
+                arguments.extend((str(Decimal(lower)-step), lower, lower+'5', upper,
+                                  str(Decimal(upper)+step)))
+        cases = []
+        for argument in arguments:
+            x = Fraction(argument)
+            term = total = x/2
+            for k in range(1, 100):
+                term *= -x*x/(4*k*(k+1))
+                total += term
+            following = -term*x*x/(4*100*101)
+            lower, upper = sorted((total, total+following))
+            self.assertTrue(lower > Fraction(1, 2) or upper < Fraction(1, 2))
+            self.assertGreater(lower, Fraction(-1, 2))
+            expected = 1 if lower > Fraction(1, 2) else 0
+            for order in (1, -1):
+                for sign in ('', '-'):
+                    for base in (2, 8, 16):
+                        parity = (order < 0) != bool(sign)
+                        cases.append((order, sign+argument, base,
+                                      -expected if parity else expected))
+        program = []
+        for order, argument, base, _ in cases:
+            program.extend(('ibase=A', 'n= '+str(order), 'x= '+argument, 'scale=0',
+                            'ibase='+str(base), 'r=j(n,x)', 'r', 'scale', 'ibase',
+                            'scale(r)', 'ibase=A'))
+        modes = [(BC, ('-l',), ()), (BC, (), (SOURCE,))]
+        if OTHER_BC:
+            modes.append((OTHER_BC, (), (SOURCE,)))
+        for binary, options, files in modes:
+            lines = self.checked_lines('\n'.join(program)+'\n', binary=binary,
+                                       options=options, files=files)
+            self.assertEqual(len(lines), 4*len(cases))
+            for index, (_, _, base, expected) in enumerate(cases):
+                self.assertEqual(lines[4*index:4*index+4],
+                                 [str(expected), '0', str(base), '0'])
 
     def test_bessel_ascending_with_exact_rational_enclosures(self):
         arguments = ((0, 100, 150), (300, 300, 100), (1, '1.125', 100),

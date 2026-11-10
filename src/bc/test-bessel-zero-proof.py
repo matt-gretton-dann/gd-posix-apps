@@ -1,74 +1,74 @@
-"""Certify zero-scale J0 thresholds from exact alternating remainders."""
-from decimal import Decimal,localcontext,ROUND_FLOOR
+"""Certify zero-scale J0/J1 cells with exact alternating remainders."""
 from fractions import Fraction as F
 import json
+from pathlib import Path
+
+BRACKETS = (
+    (0, '1.5211440576687651481513018730625235342837878902941129591913817089',
+     '1.5211440576687651481513018730625235342837878902941129591913817090', False),
+    (1, '1.2067184630059078866565349810721299413472200414880472421508483780',
+     '1.2067184630059078866565349810721299413472200414880472421508483781', True),
+    (1, '2.4881550851691471311579234121812087972033545580535080099003329207',
+     '2.4881550851691471311579234121812087972033545580535080099003329208', False))
 
 
-def enclosure(n,x,k=80):
-    term=F(1) if n==0 else x/2
-    total=term
-    q=x*x/4
-    for i in range(1,k+1):
-        term *= -q/(i*(n+i))
+def enclosure(order, x, terms=80):
+    term = F(1) if order == 0 else x/2
+    total = term
+    q = x*x/4
+    for k in range(1, terms+1):
+        term *= -q/(k*(order+k))
         total += term
-    following=term*(-q/((k+1)*(n+k+1)))
-    assert abs(following)<abs(term)
-    assert q/((k+2)*(n+k+2))<1
-    return min(total,total+following),max(total,total+following)
+    following = -term*q/((terms+1)*(order+terms+1))
+    # Subsequent ratios decrease, so the first omitted term encloses the tail.
+    assert q/((terms+1)*(order+terms+1)) < 1
+    return tuple(sorted((total, total+following)))
 
 
-def dec_j0(x):
-    term=total=Decimal(1);q=x*x/4
-    for k in range(1,160):
-        term *= -q/(k*k);total+=term
-    return total
+def certify():
+    for order, lower, upper, increasing in BRACKETS:
+        a, b = F(lower), F(upper)
+        assert b-a == F(1, 10**64) and 0 < a < b < 3
+        al, au = enclosure(order, a)
+        bl, bu = enclosure(order, b)
+        if increasing:
+            assert au < F(1, 2) < bl
+        else:
+            assert bu < F(1, 2) < al
+
+    # J0'=-J1, J1'=J0-J1/x imply decreasing J0^2+J1^2 for x>0.
+    j0, j1 = enclosure(0, F(3)), enclosure(1, F(3))
+    energy = max(map(abs, j0))**2 + max(map(abs, j1))**2
+    assert energy < F(182588, 10**6) < F(1, 4)
+    # On [0,2], J1>=x/2*(1-q/2)>0 and J0>=1-q>=0.
+    # On [2,3], P3<=J0<=P2, P3 decreases and P2<=1/4.
+    q = F(9, 4)
+    p3 = 1-q+q*q/4-q**3/36
+    assert p3 == -F(77, 256) > -F(1, 2)
+    # J1''/x is bounded above by its fourth alternating partial sum.
+    # The derivative of this polynomial is positive: its discriminant is
+    # negative and its leading coefficient positive. Its endpoint is <0.
+    p4 = -F(3, 8)+F(5, 24)*q-F(7, 192)*q*q+q**3/320
+    discriminant = F(7, 96)**2-4*F(5, 24)*F(3, 320)
+    tail_ratio = q/F(5*6)*F(11, 9)*F(10, 8)
+    assert p4 == -F(1131, 20480) < 0
+    assert discriminant == -F(23, 9216) < 0 and tail_ratio == F(11, 96) < 1
+    assert enclosure(1, F(3, 2))[0] > F(1, 2)
+    assert 0 < j1[0] < j1[1] < F(1, 2)
+    # Concavity puts J1 above its nonnegative endpoint chord on [0,3].
+    # The alternating P2 bounds it below one on [0,2], and by 7/8 on [2,3].
+    assert F(3, 2)*F(7, 12) == F(7, 8) < 1
+    assert -F(1, 2)+F(9, 4)/6 < 0
+    # Test-first J1 proofs precede its implementation. Bind the already
+    # implemented J0 constants here; the implementation adds the J1 binding.
+    source = (Path(__file__).parent/'math-library.bc').read_text(encoding='utf-8')
+    assert 'if (x<'+BRACKETS[0][1]+')' in source
+    assert 'if (x>'+BRACKETS[0][2]+')' in source
+    return dict(endpoint_brackets=3, terms=80, energy_at_three_upper='0.182588',
+                j0_lower_on_two_to_three=str(p3), j1_concavity_upper=str(p4),
+                coefficient_derivation='docs/utilities/bc-zero-scale-bessel.md',
+                scope='Exact rational certificates; no elapsed or adoption result.', qualified=False)
 
 
-with localcontext() as c:
-    c.prec=100
-    lo=Decimal('1.5');hi=Decimal('1.6')
-    for _ in range(330):
-        mid=(lo+hi)/2
-        if dec_j0(mid)>Decimal('.5'):lo=mid
-        else:hi=mid
-    unit=Decimal(10)**-64
-    lower=lo.quantize(unit,rounding=ROUND_FLOOR)
-    upper=lower+unit
-    # Decimal locates candidates only; exact rational endpoint proof below.
-    a,b=F(lower),F(upper)
-    al,au=enclosure(0,a);bl,bu=enclosure(0,b)
-    assert al>F(1,2) and bu<F(1,2)
-    j0=enclosure(0,F(3));j1=enclosure(1,F(3))
-    abs0=max(abs(v) for v in j0);abs1=max(abs(v) for v in j1)
-    energy=abs0*abs0+abs1*abs1
-    assert energy<F(1,4)
-    # On [0,2], J1 >= x/2*(1-x*x/8)>0 for x>0.
-    # Thus J0'=-J1 makes the threshold crossing unique there.
-    # On [2,3], q in [1,9/4], alternating P3<=J0<=P2.
-    # P3'= -1+q/2-q*q/12 <0 (negative discriminant).
-    # P2=(1-q/2)^2 <=1/4 across that interval.
-    q=F(9,4);p3=1-q+q*q/4-q**3/36
-    assert p3>F(-1,2)
-    # Series identities J0'=-J1 and J1'=J0-J1/x yield
-    # (J0^2+J1^2)'=-2*J1^2/x<=0 for x>0.
-    # Certified energy(3)<1/4 therefore establishes |J0(x)|<1/2
-    # on the remaining ray, without using asymptotic approximations.
-    # Pin the portable source's proposed strict comparison constants. These
-    # decimal candidates are certified above using rational arithmetic; no
-    # floating-point result is used as evidence.
-    expected_lower='1.5211440576687651481513018730625235342837878902941129591913817089'
-    expected_upper='1.5211440576687651481513018730625235342837878902941129591913817090'
-    assert str(lower)==expected_lower and str(upper)==expected_upper
-    # Bind the mathematical endpoint proof to the constants actually used by
-    # the portable implementation, rather than certifying unused literals.
-    from pathlib import Path
-    source=(Path(__file__).parent/'math-library.bc').read_text()
-    assert 'if (x<'+expected_lower+')' in source
-    assert 'if (x>'+expected_upper+')' in source
-    result=dict(kind='Exact rational feasibility only; no runtime or elapsed result',
-        lower=str(lower),upper=str(upper),endpoint_terms=80,
-        lower_above_half=float(al-F(1,2)),upper_below_half=float(F(1,2)-bu),
-        energy_at_three_upper=float(energy),p3_minimum=str(p3),
-        coefficient_derivation='docs/utilities/bc-zero-scale-bessel.md',
-        qualified=False)
-    print(json.dumps(result,indent=2))
+if __name__ == '__main__':
+    print(json.dumps(certify(), indent=2))
