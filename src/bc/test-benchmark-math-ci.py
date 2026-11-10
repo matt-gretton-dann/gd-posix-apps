@@ -387,6 +387,7 @@ class MathEvidenceOrchestration(unittest.TestCase):
                         instrumented='--diagnostic-profile' in argv,
                         source_revision=revision, binary_sha256=bench.digest_file(binary)))
                     (target / 'implementations.json').write_text(json.dumps(dict(implementations=[entry])))
+                    (target / 'build-manifest.json').write_text('completed build fixture')
                     if script == 'build-gd-bc.py':
                         library = target / 'source/src/bc/math-library.bc'
                         library.parent.mkdir(parents=True)
@@ -398,6 +399,13 @@ class MathEvidenceOrchestration(unittest.TestCase):
                     return
                 if script != 'bench-bc.py':
                     raise AssertionError('unexpected orchestration command: ' + script)
+                first = root / 'evidence/first-sample-check.json'
+                if not first.exists():
+                    manifest = root / 'evidence/elapsed-images/manifest.json'
+                    first.write_text(json.dumps(dict(
+                        images=json.loads(manifest.read_text()) if manifest.exists() else None,
+                        recipes=[(root / 'evidence' / role / 'build-manifest.json').is_file()
+                                 for role in ('gd', 'aa', 'base', 'profile', 'howard')])))
                 target = Path(argv[argv.index('--output') + 1])
                 target.mkdir()
                 events.append(('elapsed', target.name))
@@ -476,6 +484,16 @@ class MathEvidenceOrchestration(unittest.TestCase):
                              b'fixture image; must never be executed')
             for copied in row['input_artifacts']:
                 self.assertEqual((manifest.parent / copied['archive_path']).read_bytes(), b'scale=20\n')
+
+    def test_first_calibration_child_already_has_ordinary_images_and_recipes(self):
+        status, root, events = self.exercise()
+        self.assertEqual(status, 0)
+        first = json.loads((root / 'evidence/first-sample-check.json').read_text())
+        self.assertIsNotNone(first['images'])
+        self.assertFalse(first['images']['inspection_requested'])
+        self.assertEqual({r['name'] for r in first['images']['observations']},
+                         {'gd-portable', 'gd-aa', 'gd-base', 'howard-standard', 'howard-portable'})
+        self.assertEqual(first['recipes'], [True] * 5)
 
     def test_failed_elapsed_run_still_preserves_completed_ordinary_assets(self):
         status, root, events = self.exercise(fail_elapsed=True)

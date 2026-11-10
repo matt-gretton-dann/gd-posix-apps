@@ -9,7 +9,6 @@ import json
 import os
 from pathlib import Path
 import platform
-import shutil
 import subprocess
 import sys
 
@@ -238,6 +237,9 @@ def main():
                    'aa': [entries[0], entries[2]]}
         for name, implementations in configs.items():
             write(root / (name + '.json'), {'implementations': implementations})
+        codegen = load('collect-bc-codegen')
+        codegen.preserve_builds(root, evidence, ('base', 'candidate', 'aa', 'howard'))
+        codegen.collect(entries + howard, evidence / 'elapsed-images', inspect=False)
         reports = []
         for preset in (('full', 'holdout') if args.broad else ('full',)):
             names = selected_cases(bench, preset, args.broad)
@@ -329,22 +331,11 @@ def main():
               'split_point': args.split_point, 'candidate_prepared_divisors': args.candidate_prepared_divisors,
               'sparse_qualification': args.sparse_qualification,
               'commands': builder.commands})
-        for path in root.glob('command-*.log'):
-            shutil.copyfile(str(path), str(evidence / path.name))
-        for name in ('base', 'candidate', 'aa', 'howard'):
-            source = root / name
-            target = evidence / name
-            target.mkdir(exist_ok=True)
-            for path in source.glob('*'):
-                if path.is_file():
-                    shutil.copyfile(str(path), str(target / path.name))
-            if (source / 'prepared-policy').is_dir():
-                shutil.copytree(str(source / 'prepared-policy'), str(target / 'prepared-policy'))
-            if (source / 'logs').is_dir():
-                shutil.copytree(str(source / 'logs'), str(target / 'logs'))
+        codegen = load('collect-bc-codegen')
+        codegen.preserve_builds(root, evidence, ('base', 'candidate', 'aa', 'howard'))
         # Every timed child has finished. Preserve every measured GD and Howard
         # image without rebuilding, relinking or changing compiler flags.
-        load('collect-bc-codegen').collect(entries + howard, evidence / 'codegen')
+        codegen.collect(entries + howard, evidence / 'codegen')
 
 
 if __name__ == '__main__':
