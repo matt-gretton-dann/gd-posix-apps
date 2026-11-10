@@ -1,0 +1,154 @@
+name: bc integrated reconstruction qualification
+
+on:
+  pull_request:
+    branches: [main]
+    types: [ready_for_review]
+    paths:
+      - 'src/bc/**'
+      - '.github/workflows/bc-reconstruction-qualification.yml'
+      - 'docs/utilities/bc-reconstruction-qualification/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bc-reconstruction-qualification-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  qualify:
+    # Opening a draft runs correctness only. Mark ready once, after exact-head
+    # correctness and original evidence review, to measure this same source.
+    if: github.head_ref == 'codex/bc-reconstruction-qualification'
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [ubuntu-24.04, macos-15, windows-2025]
+        suite: [full-low-0, full-low-1, full-low-2, full-low-3, full-low-4, full-low-5, full-middle-0, full-middle-1, full-middle-2, full-middle-3, full-middle-4, full-middle-5, full-high-0, full-high-1, full-high-2, full-high-3, full-high-4, full-high-5, holdout-low-0, holdout-low-1, holdout-low-2, holdout-low-3, holdout-low-4, holdout-low-5, holdout-middle-0, holdout-middle-1, holdout-middle-2, holdout-middle-3, holdout-middle-4, holdout-middle-5, holdout-high-0, holdout-high-1, holdout-high-2, holdout-high-3, holdout-high-4, holdout-high-5, validation-low-0, validation-low-1, validation-low-2, validation-middle-0, validation-middle-1, validation-middle-2, validation-high-0, validation-high-1, validation-high-2, arithmetic-startup]
+    name: Reconstruction / ${{ matrix.image }} / ${{ matrix.suite }}
+    runs-on: ${{ matrix.image }}
+    timeout-minutes: 720
+    env:
+      BC_CANDIDATE: ${{ github.event.pull_request.head.sha }}
+      BC_BASE: '3beebb1461ac7549832707f9b84e547127e3c14a'
+      BC_SUITE: ${{ matrix.suite }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.BC_CANDIDATE }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Record the prospective source and protocol
+        shell: python
+        run: |
+          import hashlib,json,os,shutil,subprocess
+          from pathlib import Path
+          if os.environ['GITHUB_RUN_ATTEMPT'] != '1':
+              raise SystemExit('A frozen cohort cannot be restarted for acceptance')
+          source=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          assert source==os.environ['BC_CANDIDATE']
+          root=Path('cohort');root.mkdir()
+          (root/'source.txt').write_text(source+'\n',encoding='utf-8')
+          (root/'comparison.txt').write_text(os.environ['BC_SUITE']+' base='+os.environ['BC_BASE']+
+              ' reconstruction-runtime=6d9db73c native-scalar=default-OFF native-functions=default-ON split=126\n',encoding='utf-8')
+          directory=Path('docs/utilities/bc-reconstruction-qualification')
+          shutil.copyfile(directory/'qualification.md',root/'protocol.md')
+          shutil.copyfile(directory/'qualification-hashes.json',root/'qualification-hashes.json')
+          pinned=json.loads((directory/'qualification-hashes.json').read_text(encoding='utf-8'))
+          retained={}
+          for name,digest in pinned['files'].items():
+              raw=Path(name).read_bytes()
+              # Git checks out Windows text with CRLF; compare canonical source
+              # while retaining and hashing the actual native checkout bytes.
+              assert hashlib.sha256(raw.replace(b'\r\n',b'\n')).hexdigest()==digest,name
+              target=root/'source-inputs'/name
+              target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(raw)
+              retained[name]=hashlib.sha256(raw).hexdigest()
+          (root/'source-input-manifest.json').write_text(json.dumps(dict(source=source,files=retained,
+              scope='Actual native checkout bytes; canonical prospective source verified separately.'),indent=2)+'\n',encoding='utf-8')
+      - name: Establish native MSVC environment
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installation = & "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe" -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (!$installation) { throw 'Native x64 MSVC is unavailable' }
+          $variables = & cmd /c "`"$installation\Common7\Tools\VsDevCmd.bat`" -arch=x64 -host_arch=x64 >nul && set"
+          if ($LASTEXITCODE) { throw 'Cannot initialize MSVC' }
+          foreach ($line in $variables) {
+            if ($line -match '^(PATH|INCLUDE|LIB|LIBPATH|VCToolsInstallDir|VCINSTALLDIR|VSINSTALLDIR|WindowsSdkDir|WindowsSDKVersion|UniversalCRTSdkDir|UCRTVersion|Platform)=(.*)$') {
+              "$($matches[1])=$($matches[2])" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            }
+          }
+      - name: Collect the original elapsed and resource cohort
+        shell: python
+        run: |
+          import importlib.util,json,os,subprocess,sys
+          from pathlib import Path
+          if os.environ['GITHUB_RUN_ATTEMPT'] != '1':
+              raise SystemExit('A frozen cohort cannot be restarted for acceptance')
+          source=Path(os.environ['GITHUB_WORKSPACE']).resolve()
+          scripts=source/'src/bc/scripts'
+          cohort=source/'cohort'
+          spec=importlib.util.spec_from_file_location('deadline',scripts/'benchmark-math-ci.py')
+          deadline=importlib.util.module_from_spec(spec);spec.loader.exec_module(deadline)
+          driver=cohort/'driver';driver.mkdir()
+          commands=deadline.Commands(driver,40000)
+          suite=os.environ['BC_SUITE']
+          try:
+              if suite=='arithmetic-startup':
+                  integers=cohort/'declared-integers'
+                  subprocess.run([sys.executable,str(scripts/'integer-qualification-inputs.py'),
+                      '--output',str(integers)],check=True)
+                  pinned=json.loads((cohort/'qualification-hashes.json').read_text())
+                  import hashlib
+                  assert hashlib.sha256((integers/'manifest.json').read_bytes()).hexdigest()==pinned['selected_inputs'][suite]['manifest_sha256']
+                  results=source/'arithmetic-results'
+                  commands.run([sys.executable,str(scripts/'benchmark-ci.py'),
+                      '--source',str(source),'--base',os.environ['BC_BASE'],
+                      '--candidate',os.environ['BC_CANDIDATE'],'--output',str(results),
+                      '--broad','--sparse-qualification','--compare-resources','--samples','151',
+                      '--additional-replay-corpus',str(integers)])
+                  roles=[json.loads((results/role/'implementations.json').read_text())['implementations'][0]
+                         for role in ('base','aa','candidate')]
+                  config=cohort/'startup-config.json'
+                  config.write_text(json.dumps(dict(implementations=roles),indent=2)+'\n')
+                  commands.run([sys.executable,str(scripts/'startup-calibration.py'),
+                      '--config',str(config),'--output',str(source/'startup-results'),
+                      '--total-seconds','2400','--child-timeout-seconds','5'])
+              else:
+                  family,partition,shard=suite.split('-')
+                  preset='holdout' if family=='validation' else family
+                  shards=3 if family=='validation' else 6
+                  declared=cohort/'declared-corpus'
+                  subprocess.run([sys.executable,str(scripts/'reconstruction-qualification-inputs.py'),
+                      '--family','validation' if family=='validation' else 'controls',
+                      '--preset',preset,'--partition',partition,'--shard',shard,'--shards',str(shards),
+                      '--output',str(declared)],check=True)
+                  pinned=json.loads((cohort/'qualification-hashes.json').read_text())
+                  import hashlib
+                  assert hashlib.sha256((declared/'manifest.json').read_bytes()).hexdigest()==pinned['selected_inputs'][suite]['manifest_sha256']
+                  commands.run([sys.executable,str(scripts/'benchmark-math-ci.py'),
+                      '--source',str(source),'--base',os.environ['BC_BASE'],
+                      '--candidate',os.environ['BC_CANDIDATE'],'--output',str(source/'reconstruction-results'),
+                      '--broad','--compare-resources','--samples','31','--aa-samples','151',
+                      '--broad-preset',preset,'--input-corpus',str(declared),
+                      '--duration-seconds','.25','--calibration-seconds','.5',
+                      '--child-timeout-seconds','600','--total-seconds','36000'])
+          finally:
+              (driver/'orchestration.json').write_text(json.dumps(dict(
+                  source=os.environ['BC_CANDIDATE'],suite=suite,total_seconds=40000,
+                  commands=commands.commands,scope='Original bounded cohort; no retries or pooled evidence.'),
+                  indent=2)+'\n')
+      - name: Preserve every original outcome and available input
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bc-reconstruction-qualification-${{ matrix.image }}-${{ matrix.suite }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            cohort/
+            reconstruction-results/evidence/
+            arithmetic-results/evidence/
+            startup-results/
+          include-hidden-files: true
+          if-no-files-found: error

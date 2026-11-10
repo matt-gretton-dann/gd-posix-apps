@@ -33,9 +33,10 @@ class ReconstructionInputs(unittest.TestCase):
                                      ('controls','holdout',INPUTS.controls('holdout')),
                                      ('validation','holdout',self.fresh)]:
             union=[]
+            shards=6 if family=='controls' else 3
             for band in INPUTS.OLD.BANDS:
-                for shard in range(3):
-                    selected=INPUTS.OLD.select(rows,band,shard,3)
+                for shard in range(shards):
+                    selected=INPUTS.OLD.select(rows,band,shard,shards)
                     union+=selected
                     modes={}
                     for r in selected:
@@ -43,7 +44,7 @@ class ReconstructionInputs(unittest.TestCase):
                     self.assertTrue(all(v=={'one_shot','repeated'} for v in modes.values()))
                     with tempfile.TemporaryDirectory() as tmp:
                         directory=Path(tmp)/'inputs'
-                        INPUTS.write(selected,family,preset,band,shard,3,directory)
+                        INPUTS.write(selected,family,preset,band,shard,shards,directory)
                         restored,_=self.bench.declared_corpus(directory,'math')
                         self.assertEqual([r['name'] for r in restored],[r['name'] for r in selected])
                         for before, after in zip(selected,restored):
