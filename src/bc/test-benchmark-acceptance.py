@@ -121,6 +121,38 @@ class Acceptance(unittest.TestCase):
         result = POLICY.acceptance_review([row], 'Linux', 'math', 9)
         self.assertEqual(result['results'][0]['acceptance'], 'within regression limit')
 
+    def test_arithmetic_latency_never_uses_the_competitive_exception(self):
+        repeated = dict(name='divisor_changing_divide_600d_230d_x1000',
+                        comparison='paired', ratio=ratio(1.10, 1.20),
+                        confirmation=ratio(1.10, 1.20),
+                        candidate_over_howard=ratio(.50, .60),
+                        aa_control_status='pass', status='confirmed regression')
+        cases = [dict(name='startup'),
+                 dict(parameters=dict(timing_scope='whole-process latency')),
+                 dict(parameters=dict(mode='one_shot'))]
+        # Older arithmetic decision rows omitted the corpus parameters. Keep
+        # their declared cold workload names excluded during offline review.
+        for operation in ('divide', 'modulo'):
+            for dimensions in ('600d_230d', '675d_258d'):
+                cases.append(dict(name='divisor_cold_{}_{}_x1'.format(
+                    operation, dimensions)))
+        for changes in cases:
+            with self.subTest(changes=changes):
+                row = dict(repeated, **changes)
+                original = copy.deepcopy(row)
+                result = POLICY.acceptance_review([row], 'Linux', 'arithmetic', 9)
+                self.assertEqual(result['results'][0]['acceptance'],
+                                 'excluded observation')
+                self.assertEqual(row, original)
+        for parameters in (None, dict(timing_scope='repeated process workload',
+                                      iterations=1000)):
+            row = dict(repeated)
+            if parameters is not None:
+                row['parameters'] = parameters
+            result = POLICY.acceptance_review([row], 'Linux', 'arithmetic', 9)
+            self.assertEqual(result['results'][0]['acceptance'],
+                             'allowed with Howard margin')
+
 
 if __name__ == '__main__':
     unittest.main()

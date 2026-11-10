@@ -219,7 +219,10 @@ class NativeTrends(unittest.TestCase):
                     # Synthetic summaries exercise controller decisions, not timing inference.
                     if candidate == 'aa' and aa_first is not None:
                         ratio = aa_second if output.name.endswith('confirmation') and aa_second is not None else aa_first
-                    results.append({'name': name, 'candidate_over_reference': {candidate: ratio}})
+                    parameters = dict(timing_scope=('whole-process latency'
+                        if name.startswith('divisor_cold_') else 'repeated process workload'))
+                    results.append({'name': name, 'parameters': parameters,
+                                    'candidate_over_reference': {candidate: ratio}})
                     for round_number in range(9):
                         for implementation in implementations:
                             raw.append({'phase': 'measurement', 'workload': name,
@@ -299,6 +302,17 @@ class NativeTrends(unittest.TestCase):
             self.assertEqual(row['ratio']['median_paired_ratio'], 1.2)
             self.assertEqual(row['confirmation']['median_paired_ratio'], 1.2)
             self.assertEqual(row['aa_control_status'], 'pass')
+
+    def test_decision_rows_preserve_corpus_timing_scope(self):
+        root, _, result = self.exercise()
+        self.assertEqual(result, 0)
+        rows = json.loads((root / 'evidence/decisions.json').read_text())['results']
+        cold = [row for row in rows if row['name'].startswith('divisor_cold_')]
+        self.assertTrue(cold)
+        for row in rows:
+            expected = ('whole-process latency' if row in cold
+                        else 'repeated process workload')
+            self.assertEqual(row.get('parameters'), dict(timing_scope=expected))
 
     def test_aa_bias_in_either_direction_gets_one_distinct_confirmation(self):
         for ratio in (dict(median_paired_ratio=.91, ci95=[.90, .92]),
