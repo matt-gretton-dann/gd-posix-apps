@@ -18,7 +18,8 @@ def fixture(image=True, windows=False, ipo=False):
     files = {'revision.txt': (SOURCE + '\n').encode()}
     inputs = {name: hashlib.sha256(b'synthetic input').hexdigest() for name in (
         '.github/workflows/bc-bessel-zero-correctness.yml',
-        'src/bc/vm.cc', 'src/bc/test-bessel-zero-proof.py', 'src/bc/fixtures/math-bessel-classification-oracles.json', 'src/bc/math-library.bc',
+        'src/bc/vm.cc', 'src/bc/test-bessel-zero-proof.py',
+        'src/bc/test-bessel-precision-proof.py', 'src/bc/fixtures/math-bessel-classification-oracles.json', 'src/bc/math-library.bc',
         'build-native/src/bc/bc-math-library.hh')}
     if image:
         inputs['build-native/src/bc/bc-math-library-image.inc'] = next(iter(inputs.values()))
@@ -68,6 +69,7 @@ class RetentionTests(unittest.TestCase):
 
     def test_incomplete_metadata(self):
         for section, name in (('inputs', 'src/bc/test-bessel-zero-proof.py'),
+                              ('inputs', 'src/bc/test-bessel-precision-proof.py'),
                               ('inputs', 'src/bc/fixtures/math-bessel-classification-oracles.json'),
                               ('inputs', 'build-native/src/bc/bc-math-library-image.inc'),
                               ('images', 'test-bc-vm-lifetime')):

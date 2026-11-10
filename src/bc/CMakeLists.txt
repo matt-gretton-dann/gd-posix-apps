@@ -393,15 +393,18 @@ if(RUN_INTEGRATION_TESTS)
   add_test(NAME bc/bessel-zero-proof COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-bessel-zero-proof.py")
   set_tests_properties(bc/bessel-zero-proof PROPERTIES TIMEOUT 10)
+  add_test(NAME bc/bessel-precision-proof COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-bessel-precision-proof.py")
+  set_tests_properties(bc/bessel-precision-proof PROPERTIES TIMEOUT 60)
   add_test(NAME bc/bessel-zero-evidence COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-bessel-zero-evidence.py")
   set_tests_properties(bc/bessel-zero-evidence PROPERTIES TIMEOUT 10)
   add_test(NAME bc/bessel-classification-oracles COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate-bessel-classification-oracles.py" --check)
-  set_tests_properties(bc/bessel-classification-oracles PROPERTIES TIMEOUT 10)
+  set_tests_properties(bc/bessel-classification-oracles PROPERTIES TIMEOUT 60)
   add_test(NAME bc/bessel-oracle-portability COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-bessel-oracle-portability.py")
-  set_tests_properties(bc/bessel-oracle-portability PROPERTIES TIMEOUT 30)
+  set_tests_properties(bc/bessel-oracle-portability PROPERTIES TIMEOUT 300)
   # Native performance inputs use the 64-bit-host Number model's index range.
   # All layouts still have generic 8/16/32-bit storage tests on other targets.
   if(CMAKE_SIZEOF_VOID_P GREATER 4)

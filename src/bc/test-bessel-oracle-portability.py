@@ -26,7 +26,7 @@ class GeneratorPortability(unittest.TestCase):
                     target.write_bytes(canonical.replace(b'\n', generator_newline))
                     (root/'fixtures'/fixture.name).write_bytes(fixture_bytes.replace(b'\n', fixture_newline))
                     result = subprocess.run([sys.executable, str(target), '--check'],
-                                            capture_output=True, text=True, timeout=10)
+                                            capture_output=True, text=True, timeout=60)
                     self.assertEqual(result.returncode, 0, result.stderr)
 
 

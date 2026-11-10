@@ -1,4 +1,4 @@
-name: bc zero-scale Bessel correctness
+name: bc certified Bessel correctness
 
 on:
   pull_request:
@@ -61,7 +61,7 @@ jobs:
               "$($matches[1])=$($matches[2])" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
             }
           }
-      - name: Build and check certified zero-scale Bessel modes
+      - name: Build and check certified Bessel modes
         shell: bash
         run: |
           set -euo pipefail
@@ -142,7 +142,8 @@ jobs:
               'math-library.bc','math-library.cc','math-library.hh.in','math-library-image.hh',
               'preparse-math-library.cc','test-math-library-cli.py','test-math-library-source.py',
               'test-bessel-zero-evidence.py','scripts/verify-bessel-zero-evidence.py',
-              'test-bessel-zero-proof.py','test-bessel-oracle-portability.py',
+              'test-bessel-zero-proof.py','test-bessel-precision-proof.py',
+              'test-bessel-oracle-portability.py',
               'scripts/generate-bessel-classification-oracles.py',
               'fixtures/math-bessel-classification-oracles.json',
               'fixtures/math-oracles.json','fixtures/math-crossover-oracles.json',
@@ -193,7 +194,7 @@ jobs:
             grep -q 'All tests passed' evidence/native-tests.log
           fi
           ctest --test-dir build-native --no-tests=error --output-on-failure \
-            -R '^bc/(vm-lifetime(-ipo)?|signal-(normal|exception|delivery)|consumer-mode|divisor-cache-lifetime|bessel-zero-proof|bessel-classification-oracles|bessel-oracle-portability|bessel-zero-evidence|math-library-(cli|source|image|decisions)|math-imported|math-oracle)$' \
+            -R '^bc/(vm-lifetime(-ipo)?|signal-(normal|exception|delivery)|consumer-mode|divisor-cache-lifetime|bessel-zero-proof|bessel-precision-proof|bessel-classification-oracles|bessel-oracle-portability|bessel-zero-evidence|math-library-(cli|source|image|decisions)|math-imported|math-oracle)$' \
             2>&1 | tee evidence/ctest.log
           "$python_cmd" src/bc/test-cli.py "build-native/src/bc/bc${executable_suffix}" \
             --extensions ${{ matrix.mode.extensions }} 2>&1 | tee evidence/cli.log

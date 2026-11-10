@@ -147,3 +147,49 @@ both uncertain interiors, adjacent decimal inputs, signs of both order and
 argument, caller bases/state and the scope boundary. Additional exact
 reference cases include the excluded order two. Large-argument binding tests
 require the ordinary a/c/s calls for orders zero, one and minus one.
+
+## Positive-scale magnitude guards: proof and tests first
+
+The accepted ascending budget includes D=length(x), which counts the entire
+fractional coefficient. That can make every recurrence operation much wider
+than its output needs. For positive entry scale S, use
+M=max(length(x)-scale(x),1) and T=S+G+M+1, where G=floor(7*x/16)+1.
+The proposed W=S+G+M+2*d(T)+32 retains the same growth and quadratic guards.
+At scale zero retain the old coefficient-length formula, preserving the
+accepted arithmetic inside the certified-cell fallback brackets. The Hankel
+selector and its precision formula remain unchanged.
+
+This substitution does not weaken the accepted step-count argument. After
+the tiny-result branches, n<max(3*x,4*(S+1))<7*(W+1). Also
+x<16*W/7, so the same contracting-tail argument gives fewer than 8*(W+1)
+ascending steps. None of those bounds requires the original fractional
+coefficient length; M>=1 gives a positive T and W+1<=19*T as before.
+
+For completeness, argument clipping can use a coarser series-derived bound
+without depending on correct final rounding. The absolute Jn series is a
+subset of exp(x/2)*exp(x/2), so |Jn(x)|<=exp(x) for nonnegative x.
+Termwise coefficient identities give J0'=-J1 and, for n>=1,
+Jn'=(J(n-1)-J(n+1))/2: the two coefficient numerators add as
+(n+k)+k=n+2*k. Thus |Jn'|<=exp(x). Clipping downward by less than
+u=10^-W costs at most exp(x)*u; recurrence arithmetic at the clipped input
+has the accepted bound 10^6*(W+1)^2*exp(x)*u. Their sum is below
+2*10^6*(W+1)^2*exp(x)*u.
+
+The exact inequalities e<87/32 and 87^16<10^7*32^16 imply exp(x)<10^G.
+With T<10^d(T), M>=1 and W+1<=19*T, the pre-rounding error in output
+units is below 2*19^2*10^-27<1/2. Final rounding adds at most half an output
+unit. This proves the same one-decimal-ULP contract for the proposed budget;
+correct rounding of arbitrary near-midpoint positive-scale inputs is not
+claimed. Working-scale readback and ordinary resource errors remain required.
+
+The test-first rational model truncates both multiplication and division at
+each source operation, accounts for clipped inputs and squared coefficients,
+checks the step bounds, and compares against independent exact alternating
+enclosures. Twenty-two cases include 256-place inputs at S=1/20/100,
+leading fractional zeros and a large-order cancellation case. CLI tests check
+both signs, caller bases, scale and unchanged caller values without creating
+an extra user alias to the argument. Reproducible dense-input reference cases
+are added before the production formula changes. Reference values are reused
+across scales in the test generator; every exact enclosure remains identical.
+Expanded exact tests use bounded deadlines appropriate to those larger vectors;
+no benchmark acceptance threshold changes.

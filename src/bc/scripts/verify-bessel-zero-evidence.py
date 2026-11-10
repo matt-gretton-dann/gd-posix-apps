@@ -26,6 +26,7 @@ def validate(read, source):
         raise ValueError('duplicate canonical input paths')
     required = {'.github/workflows/bc-bessel-zero-correctness.yml',
                 'src/bc/vm.cc', 'src/bc/test-bessel-zero-proof.py',
+                'src/bc/test-bessel-precision-proof.py',
                 'src/bc/fixtures/math-bessel-classification-oracles.json',
                 'src/bc/math-library.bc', 'build-native/src/bc/bc-math-library.hh'}
     if not required <= set(inputs):

@@ -25,22 +25,34 @@ ORDER_ONE_ARGUMENTS = (FIRST_LOWER, FIRST_LOWER+'5', FIRST_UPPER,
 CASES = [(0, argument, 0) for argument in ARGUMENTS]
 CASES += [(1, argument, 0) for argument in ORDER_ONE_ARGUMENTS]
 CASES += [(-1, '1.5', 0), (1, '-1.5', 0), (-1, '-1.5', 0), (2, '2', 0)]
+# Rich fractional inputs test output-precision guards independently of the
+# zero-scale cells. Integer/turning references also remain in the base corpus.
+CASES += [(n, argument, scale) for n in (0, 1, 5)
+          for argument in ('1.'+'23456789'*32, '3.'+'9'*256)
+          for scale in (1, 20, 100)]
+CASES += [(5, '12.'+'34567890'*32, 20),
+          (0, '0.'+'0'*255+'1', 20), (1, '0.'+'0'*255+'1', 20)]
 
 
 def generate():
     cases = []
-    denominator = 10**100
+    # Reuse exact reference values across output scales and parity cases.
+    enclosures = {}
     for index, (order, argument, scale) in enumerate(CASES):
+        denominator = 10**(scale+100)
         n = abs(order)
         x = abs(F(argument))
-        term = total = (x/2)**n/factorial(n)
-        q = x*x/4
-        for k in range(1, 100):
-            term *= -q/(k*(n+k))
-            total += term
-        following = -term*q/(100*(n+100))
-        assert q/(100*(n+100)) < 1
-        lower, upper = sorted((total, total+following))
+        key = (n, x)
+        if key not in enclosures:
+            term = total = (x/2)**n/factorial(n)
+            q = x*x/4
+            for k in range(1, 100):
+                term *= -q/(k*(n+k))
+                total += term
+            following = -term*q/(100*(n+100))
+            assert q/(100*(n+100)) < 1
+            enclosures[key] = tuple(sorted((total, total+following)))
+        lower, upper = enclosures[key]
         if ((order < 0) != (F(argument) < 0)) and n % 2:
             lower, upper = -upper, -lower
         # Integer floor/ceiling enlarge the exact interval. No decimal or
@@ -52,7 +64,7 @@ def generate():
                           arguments=[str(order), argument], scale=scale, lower=str(lo), upper=str(hi)))
     # Provenance and canonical JSON comparisons normalize native newlines.
     # Original native artifacts separately retain/hash the physical bytes.
-    return dict(method='Exact 100-term alternating series plus first omitted term; outward 100-place rational bounds',
+    return dict(method='Exact 100-term alternating series plus first omitted term; outward rational bounds at 100 places beyond entry scale',
                 generator_sha256=hashlib.sha256(Path(__file__).read_text(encoding='utf-8').encode('utf-8')).hexdigest(),cases=cases)
 
 

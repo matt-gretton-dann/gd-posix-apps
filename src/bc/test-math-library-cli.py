@@ -17,6 +17,10 @@ ROOT = Path(__file__).resolve().parent
 SPEC = importlib.util.spec_from_file_location('math_oracle', ROOT / 'scripts/math_oracle.py')
 ORACLE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(ORACLE)
+PRECISION_SPEC = importlib.util.spec_from_file_location(
+    'bessel_precision_proof', ROOT / 'test-bessel-precision-proof.py')
+PRECISION = importlib.util.module_from_spec(PRECISION_SPEC)
+PRECISION_SPEC.loader.exec_module(PRECISION)
 if hasattr(sys, 'set_int_max_str_digits'):
     sys.set_int_max_str_digits(1000000)
 
@@ -401,6 +405,40 @@ class LibraryCli(unittest.TestCase):
             for index, (_, _, base, expected) in enumerate(cases):
                 self.assertEqual(lines[4*index:4*index+4],
                                  [str(expected), '0', str(base), '0'])
+
+    def test_bessel_positive_scale_dense_inputs_and_caller_values(self):
+        cases = []
+        for order, argument, scale in PRECISION.cases():
+            lower, upper = PRECISION.reference(order, Fraction(argument),
+                                               Fraction(1, 10**(scale+10)))
+            for sign_order in (1, -1):
+                for sign_argument in ('', '-'):
+                    parity = bool(order % 2) and ((sign_order < 0) != bool(sign_argument))
+                    lo, hi = (-upper, -lower) if parity else (lower, upper)
+                    for base in (2, 8, 16):
+                        cases.append((sign_order*order, sign_argument+argument, scale, base, lo, hi))
+        program = []
+        for order, argument, scale, base, _, _ in cases:
+            # Do not retain another user alias to x. The arithmetic roundtrip
+            # also gives the call a value independent of its literal cache.
+            program.extend(('ibase=A', 'n= '+str(order), 'x= '+argument, 'x+=1', 'x-=1',
+                            'scale='+str(scale), 'ibase='+str(base), 'r=j(n,x)', 'r',
+                            'scale', 'ibase', 'scale(r)', 'x', 'scale(x)', 'n', 'ibase=A'))
+        modes = [(BC, ('-l',), ()), (BC, (), (SOURCE,))]
+        if OTHER_BC:
+            modes.append((OTHER_BC, (), (SOURCE,)))
+        for binary, options, files in modes:
+            lines = self.checked_lines('\n'.join(program)+'\n', binary=binary,
+                                       options=options, files=files, timeout=120)
+            self.assertEqual(len(lines), 7*len(cases))
+            for index, (order, argument, scale, base, lower, upper) in enumerate(cases):
+                value = ORACLE.decimal_fraction(lines[7*index])
+                self.assertEqual(ORACLE.classify(value, lower, upper, scale), 'pass')
+                self.assertEqual(lines[7*index+1:7*index+4],
+                                 [str(scale), str(base), str(scale)])
+                self.assertEqual(ORACLE.decimal_fraction(lines[7*index+4]), Fraction(argument))
+                fractional = len(argument.split('.')[1]) if '.' in argument else 0
+                self.assertEqual(lines[7*index+5:7*index+7], [str(fractional), str(order)])
 
     def test_bessel_ascending_with_exact_rational_enclosures(self):
         arguments = ((0, 100, 150), (300, 300, 100), (1, '1.125', 100),
