@@ -1,0 +1,358 @@
+{
+  "cases": [
+    {
+      "arguments": [
+        "3.800873"
+      ],
+      "function": "a",
+      "id": "rational-validation-00",
+      "regime": "seeded short/dense input",
+      "scale": 0
+    },
+    {
+      "arguments": [
+        "3.0813783108290967483409328694698197803416836362958749919472481845026153972154068274585537515456492466843005724735349606795290835725549682861058098946654194411760132823494848206233725010785419206569045285616293258063948941764589683247465479531140752157627040"
+      ],
+      "function": "a",
+      "id": "rational-validation-01",
+      "regime": "seeded short/dense input",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "-2.678027190374"
+      ],
+      "function": "a",
+      "id": "rational-validation-02",
+      "regime": "seeded short/dense input",
+      "scale": 100
+    },
+    {
+      "arguments": [
+        "2.4194867180989183273833981848552379106110852674804671489128968698"
+      ],
+      "function": "a",
+      "id": "rational-validation-03",
+      "regime": "seeded short/dense input",
+      "scale": 1000
+    },
+    {
+      "arguments": [
+        "-1.562298"
+      ],
+      "function": "e",
+      "id": "rational-validation-04",
+      "regime": "seeded short/dense input",
+      "scale": 0
+    },
+    {
+      "arguments": [
+        "-2.7965821162464795890016987239628302104638490050523232040070845524351472735817992956360605890375501969754803088189015171605880476476254140933702226869798490574481946217547062389749010459728312249713947315262960226037237765849537879758422045146910674871436861"
+      ],
+      "function": "e",
+      "id": "rational-validation-05",
+      "regime": "seeded short/dense input",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "2.595946758154"
+      ],
+      "function": "e",
+      "id": "rational-validation-06",
+      "regime": "seeded short/dense input",
+      "scale": 100
+    },
+    {
+      "arguments": [
+        "1.5717137471292261790357655712422440380363093948919273761932515119"
+      ],
+      "function": "e",
+      "id": "rational-validation-07",
+      "regime": "seeded short/dense input",
+      "scale": 1000
+    },
+    {
+      "arguments": [
+        "3.740384"
+      ],
+      "function": "l",
+      "id": "rational-validation-08",
+      "regime": "seeded short/dense input",
+      "scale": 0
+    },
+    {
+      "arguments": [
+        "1.0941029176527802031050669537955786003245649728628586758299990809799032715993679630925441589024454815585616586294970022441407023673317363074964782733798467671555770110960352395231681603919812647459216580959702697203990394361521284746092753603056284007653991"
+      ],
+      "function": "l",
+      "id": "rational-validation-09",
+      "regime": "seeded short/dense input",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "3.452688798582"
+      ],
+      "function": "l",
+      "id": "rational-validation-10",
+      "regime": "seeded short/dense input",
+      "scale": 100
+    },
+    {
+      "arguments": [
+        "2.1228145704833416182268836309050152206797157209845063019703723778"
+      ],
+      "function": "l",
+      "id": "rational-validation-11",
+      "regime": "seeded short/dense input",
+      "scale": 1000
+    },
+    {
+      "arguments": [
+        "-1.639645"
+      ],
+      "function": "s",
+      "id": "rational-validation-12",
+      "regime": "seeded short/dense input",
+      "scale": 0
+    },
+    {
+      "arguments": [
+        "-2.9938349647325260095094751020990000286476961015455094410648939491400699872452137174393859803703981244865008292914175850965594132556957851082732543905943912886208167198543886637404455878936841041778130875921229324313190555751720645373909120698935196194763692"
+      ],
+      "function": "s",
+      "id": "rational-validation-13",
+      "regime": "seeded short/dense input",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "-1.025755430533"
+      ],
+      "function": "s",
+      "id": "rational-validation-14",
+      "regime": "seeded short/dense input",
+      "scale": 100
+    },
+    {
+      "arguments": [
+        "3.7036045339426061828198894210588642054048450647493624033550190806"
+      ],
+      "function": "s",
+      "id": "rational-validation-15",
+      "regime": "seeded short/dense input",
+      "scale": 1000
+    },
+    {
+      "arguments": [
+        "-1.063657"
+      ],
+      "function": "c",
+      "id": "rational-validation-16",
+      "regime": "seeded short/dense input",
+      "scale": 0
+    },
+    {
+      "arguments": [
+        "-2.2770039806073510611396278429768203404734208225070983855823655117908388449561337997956223565518538369938171702015887351828176245338220037719984949613920880864006850450134554977614981888124720769392503989403760769089491641421884685969685253103279272981891157"
+      ],
+      "function": "c",
+      "id": "rational-validation-17",
+      "regime": "seeded short/dense input",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "-3.894399406662"
+      ],
+      "function": "c",
+      "id": "rational-validation-18",
+      "regime": "seeded short/dense input",
+      "scale": 100
+    },
+    {
+      "arguments": [
+        "3.2226171300115331130096914754806344357004410971608962287276457172"
+      ],
+      "function": "c",
+      "id": "rational-validation-19",
+      "regime": "seeded short/dense input",
+      "scale": 1000
+    },
+    {
+      "arguments": [
+        "1",
+        "2.696998"
+      ],
+      "function": "j",
+      "id": "rational-validation-20",
+      "regime": "seeded short/dense input",
+      "scale": 0
+    },
+    {
+      "arguments": [
+        "1",
+        "1.4328001651725001353304989085631330475823488811540358888834271567995670176039180395200175018343954425813950084466162072802787747150521890836366567437686292422892463529517581330690684789650223698251461588122144061578154570063454704231882881694640691259632041"
+      ],
+      "function": "j",
+      "id": "rational-validation-21",
+      "regime": "seeded short/dense input",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "1",
+        "2.347016829029"
+      ],
+      "function": "j",
+      "id": "rational-validation-22",
+      "regime": "seeded short/dense input",
+      "scale": 100
+    },
+    {
+      "arguments": [
+        "1",
+        "2.9305805869097689869771909300900236875195183895966407470561953331"
+      ],
+      "function": "j",
+      "id": "rational-validation-23",
+      "regime": "seeded short/dense input",
+      "scale": 1000
+    },
+    {
+      "arguments": [
+        "0",
+        "2.686838457012"
+      ],
+      "function": "j",
+      "id": "rational-validation-24",
+      "regime": "additional integer order",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "0",
+        "2.984604489566"
+      ],
+      "function": "j",
+      "id": "rational-validation-25",
+      "regime": "additional integer order",
+      "scale": 1000
+    },
+    {
+      "arguments": [
+        "2",
+        "2.851725851100"
+      ],
+      "function": "j",
+      "id": "rational-validation-26",
+      "regime": "additional integer order",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "2",
+        "2.390389779790"
+      ],
+      "function": "j",
+      "id": "rational-validation-27",
+      "regime": "additional integer order",
+      "scale": 1000
+    },
+    {
+      "arguments": [
+        "0.000000000000000000000000000000000000000000000000000000000000000000000000006299354906276"
+      ],
+      "function": "l",
+      "id": "rational-validation-28",
+      "regime": "normalization cutoff neighbor",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "0.0000000000000000000000000000000000000000000000000000000000000000000000003636883275183"
+      ],
+      "function": "l",
+      "id": "rational-validation-29",
+      "regime": "normalization cutoff neighbor",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "24171056324890000000000000000000000000000000000000000000000000000000000000.253111"
+      ],
+      "function": "l",
+      "id": "rational-validation-30",
+      "regime": "normalization cutoff neighbor",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "2250493313725000000000000000000000000000000000000000000000000000000000000000.302854"
+      ],
+      "function": "l",
+      "id": "rational-validation-31",
+      "regime": "normalization cutoff neighbor",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "1.44866156255"
+      ],
+      "function": "l",
+      "id": "rational-validation-32",
+      "regime": "root-free band",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "2.27419786358"
+      ],
+      "function": "l",
+      "id": "rational-validation-33",
+      "regime": "root-free band",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "17130.633814037067"
+      ],
+      "function": "s",
+      "id": "rational-validation-34",
+      "regime": "large argument reduction",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "16904.168569467478"
+      ],
+      "function": "s",
+      "id": "rational-validation-35",
+      "regime": "large argument reduction",
+      "scale": 1000
+    },
+    {
+      "arguments": [
+        "15203.310215957526"
+      ],
+      "function": "c",
+      "id": "rational-validation-36",
+      "regime": "large argument reduction",
+      "scale": 20
+    },
+    {
+      "arguments": [
+        "18248.028219760351"
+      ],
+      "function": "c",
+      "id": "rational-validation-37",
+      "regime": "large argument reduction",
+      "scale": 1000
+    }
+  ],
+  "schema": 1,
+  "scope": "Seeded new fractional inputs in the original validation regimes before successor timing.",
+  "seed": 1125434893519705814551556314586531745674646498968,
+  "source_seed": "c5223efae0722c1e41bd2fab71afaa52648ee52f"
+}

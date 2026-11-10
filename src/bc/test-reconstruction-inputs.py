@@ -20,7 +20,8 @@ class ReconstructionInputs(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.bench = INPUTS.OLD.bench_module()
-        cls.fresh = INPUTS.validation()
+        cls.previous = INPUTS.validation()
+        cls.fresh = INPUTS.validation(fresh=True)
 
     def test_all224_original_programs_oracles_and_dimensions_survive(self):
         originals = INPUTS.OLD.exposed('full')+INPUTS.OLD.exposed('holdout')+INPUTS.OLD.fresh(self.bench)
@@ -31,7 +32,8 @@ class ReconstructionInputs(unittest.TestCase):
     def test_every_partition_is_disjoint_and_keeps_both_modes(self):
         for family, preset, rows in [('controls','full',INPUTS.controls('full')),
                                      ('controls','holdout',INPUTS.controls('holdout')),
-                                     ('validation','holdout',self.fresh)]:
+                                     ('validation','holdout',self.previous),
+                                     ('fresh','holdout',self.fresh)]:
             union=[]
             shards=6 if family=='controls' else 3
             for band in INPUTS.OLD.BANDS:
@@ -57,8 +59,8 @@ class ReconstructionInputs(unittest.TestCase):
         self.assertEqual(len(self.fresh),76)
         self.assertEqual({r['parameters']['function'] for r in self.fresh},set('aelscj'))
         self.assertEqual({r['parameters']['scale'] for r in self.fresh},{0,20,100,1000})
-        cases=ROOT/'fixtures/math-reconstruction-validation-cases.json'
-        report=json.loads((ROOT/'fixtures/math-reconstruction-validation-oracles.json').read_text())
+        cases=ROOT/'fixtures/math-rational-validation-cases.json'
+        report=json.loads((ROOT/'fixtures/math-rational-validation-oracles.json').read_text())
         self.assertEqual(report['case_file_sha256'],hashlib.sha256(cases.read_bytes()).hexdigest())
         self.assertEqual(report['endpoint_format'],'exact rational outward dyadic bounds')
         # Generator identity, source pin and old-value disjointness are also
@@ -68,7 +70,7 @@ class ReconstructionInputs(unittest.TestCase):
     @unittest.skipUnless(BINARY,'requires the actual test executable')
     def test_actual_implementation_checks_all_fresh_small_count_programs(self):
         # Counts are one/two, never the later calibrated performance loops.
-        for row in self.fresh:
+        for row in self.previous + self.fresh:
             with self.subTest(name=row['name']):
                 process=subprocess.run([BINARY,'-l'],input=row['program'].encode(),
                                        stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=60)

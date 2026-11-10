@@ -45,16 +45,23 @@ within the cumulative 864,000-second cap.
 The successor repeats all 300 mathematical inputs from #717, including the
 76 previously published validation records. It also repeats all five fixed
 integer validation programs. These are previously exposed controls.
+An additional 38 cases cover the same mathematical regimes with new seeded
+fractional inputs. The seed is the bounded-rational candidate revision
+`c5223efae0722c1e41bd2fab71afaa52648ee52f` XOR 197217207. The committed
+case file and independent FLINT/Arb enclosures supply 76 fresh one-shot and
+repeated records, kept separate from the previous 300 inputs.
 
-On each platform, split the original arithmetic and startup job into four
+On each platform, split the original arithmetic and startup job into five
 jobs. Full and holdout retain their complete arithmetic workloads, sparse
 latency and throughput, and preset resource diagnostics. The fixed integer
-partition retains its five programs and matched diagnostics once. Each
+partition retains its five programs and matched diagnostics once. Another
+partition uses the same integer generator with the bounded-rational revision
+XOR 207197200 to declare five fresh programs and their exact oracles. Each
 partition retains its original sample counts, seeds, roles and confirmation
 rules. Broad arithmetic stages have a 14,400-second command deadline.
 The startup job independently rebuilds the same three declared roles, keeps
 their recipes and exact ordinary images before collection, and runs the
-original calibration schedule. This matrix has 147 jobs across the three
+original calibration schedule. This matrix has 177 jobs across the three
 platforms. Every job retains its own original archives and results.
 
 The successor incorporates accepted PRs #718 and #719: the versioned cold-latency

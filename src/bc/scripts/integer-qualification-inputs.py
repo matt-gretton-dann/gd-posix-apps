@@ -12,8 +12,11 @@ import random
 SEED = int('9ac41aa0b2e23444dcaa12bdb8cfd9969add2568',16)^207197200
 
 
-def cases(small_counts=False):
-    rng=random.Random(SEED)
+SUCCESSOR_SEED = int('c5223efae0722c1e41bd2fab71afaa52648ee52f',16)^207197200
+
+
+def cases(small_counts=False, successor=False):
+    rng=random.Random(SUCCESSOR_SEED if successor else SEED)
     calls=(1<<22)+rng.randrange(1<<12)
     repetitions=1<<18
     if small_counts:
@@ -53,7 +56,8 @@ def cases(small_counts=False):
         else:
             program+='for(i=0;i<{};i++) r=f({})\n'.format(repetitions,input_value)
         program+='r\n{}\nscale\nibase\n'.format(parameter)
-        rows.append(dict(name='integer_validation_'+name,group=group,program=program,
+        prefix = 'integer_successor_validation_' if successor else 'integer_validation_'
+        rows.append(dict(name=prefix+name,group=group,program=program,
             expected=[str(expected),'73','0','10'],parameters=dict(mode='repeated',
                 iterations=calls if word else repetitions,argument=input_value,
                 scale=0,duration_target_seconds=.25,
@@ -62,12 +66,12 @@ def cases(small_counts=False):
     return rows
 
 
-def write(directory):
+def write(directory, successor=False):
     directory.mkdir(parents=True,exist_ok=False)
     work=directory/'workloads'
     work.mkdir()
     records=[]
-    for row in cases():
+    for row in cases(successor=successor):
         program=row['program'].encode('utf-8')
         oracle=('\n'.join(row['expected'])+'\n').encode('utf-8')
         (work/(row['name']+'.bc')).write_bytes(program)
@@ -76,7 +80,7 @@ def write(directory):
             program_sha256=hashlib.sha256(program).hexdigest(),
             oracle_sha256=hashlib.sha256(oracle).hexdigest()))
     manifest=dict(kind='unmeasured-integer-inputs-v1',suite='arithmetic',preset='holdout',
-        corpus_seed=SEED,corpus=records,generator_sha256=hashlib.sha256(
+        corpus_seed=SUCCESSOR_SEED if successor else SEED,corpus=records,generator_sha256=hashlib.sha256(
             Path(__file__).read_bytes().replace(b'\r\n',b'\n')).hexdigest(),
         scope='Five fixed exact-integer validation workloads; not prior performance evidence.')
     (directory/'manifest.json').write_bytes((json.dumps(manifest,indent=2,sort_keys=True)+'\n').encode())
@@ -85,4 +89,6 @@ def write(directory):
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output',type=Path,required=True)
-    write(parser.parse_args().output)
+    parser.add_argument('--successor', action='store_true')
+    args = parser.parse_args()
+    write(args.output, successor=args.successor)
