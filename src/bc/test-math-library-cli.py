@@ -85,6 +85,60 @@ class LibraryCli(unittest.TestCase):
                 self.assertEqual(lines[4 * index + 1:4 * index + 4],
                                  [str(case['scale']), '10', str(case['scale'])])
 
+    def test_bounded_kernels_and_generic_boundaries(self):
+        cases = json.loads((ROOT / 'fixtures/math-rational-kernel-oracles.json').read_text())['cases']
+        program = []
+        for case in cases:
+            program += ['scale=' + str(case['scale']),
+                        'r=' + case['function'] + '(' + ','.join(case['arguments']) + ')',
+                        'r', 'scale', 'ibase', 'scale(r)']
+        recipes = [('embedded', dict()),
+                   ('ordinary source', dict(options=(), files=(SOURCE,)))]
+        if OTHER_BC is not None:
+            recipes.append(('other source interpreter',
+                            dict(options=(), files=(SOURCE,), binary=OTHER_BC)))
+        for label, options in recipes:
+            lines = self.checked_lines('\n'.join(program) + '\n', timeout=300, **options)
+            self.assertEqual(len(lines), 4 * len(cases), label)
+            for index, case in enumerate(cases):
+                with self.subTest(recipe=label, case=case['id']):
+                    value = ORACLE.decimal_fraction(lines[4 * index])
+                    self.assertEqual(ORACLE.classify(value, Fraction(case['lower']),
+                        Fraction(case['upper']), case['scale']), 'pass')
+                    self.assertEqual(lines[4 * index + 1:4 * index + 4],
+                                     [str(case['scale']), '10', str(case['scale'])])
+
+    def test_redefined_period_preserves_calls_and_bounded_domain_fallback(self):
+        cases = [('s', '3.2'), ('s', '3.2000000000000000000001'),
+                 ('s', '-3.2'), ('s', '8'), ('c', '3.2'),
+                 ('c', '3.2000000000000000000001'), ('c', '-3.2'), ('c', '8')]
+        # a(1)=100 supplies a period of 800. These inputs do not wrap, so
+        # their true sin/cos references still apply while the reduced kernel
+        # crosses its actual domain boundary. The public call has a side effect.
+        program = ['define a(x) { z+=1;return(100) }', 'scale=20', 'z=0']
+        for function, argument in cases:
+            program += [function + '(' + argument + ')', 'z', 'scale', 'ibase']
+        lines = self.checked_lines('\n'.join(program) + '\n', options=(), files=(SOURCE,))
+        self.assertEqual(len(lines), 4 * len(cases))
+        references = json.loads((ROOT / 'fixtures/math-rational-kernel-oracles.json').read_text())['cases']
+        references = {(r['function'], r['arguments'][0]): r for r in references
+                      if r['scale'] == 20 and r['function'] in ('s', 'c')}
+        for i, identity in enumerate(cases):
+            reference = references[identity]
+            value = ORACLE.decimal_fraction(lines[4 * i])
+            self.assertEqual(ORACLE.classify(value, Fraction(reference['lower']),
+                Fraction(reference['upper']), 20), 'pass')
+            self.assertEqual(lines[4 * i + 1:4 * i + 4], [str(i+1), '20', '10'])
+
+    def test_period_redefinition_changing_input_base_keeps_generic_behavior(self):
+        # These are the original generic library's observable outputs, not
+        # sin/cos(4): the callback changes how later decimal constants parse.
+        program = ('define a(x) { ibase=2;return(1) }\nscale=20\n'
+                   's(4)\nibase\nibase=A\nc(4)\nibase\n')
+        expected = ['-4.03628594162818967804', '10', '-.16299125763286368412', '10']
+        for options in (dict(), dict(options=(), files=(SOURCE,))):
+            self.assertEqual(self.checked_lines(program, **options), expected)
+
     def test_adaptive_precision_boundaries_and_caller_state(self):
         report = json.loads((ROOT / 'fixtures/math-adaptive-budget-oracles.json').read_text())
         cases = report['cases']

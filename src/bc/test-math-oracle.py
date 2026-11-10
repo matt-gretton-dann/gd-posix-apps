@@ -138,6 +138,34 @@ class CertifiedFixtures(unittest.TestCase):
                     self.assertEqual(ORACLE.classify(candidate + 3 * ulp, lower, upper,
                                                     case['scale']), 'fail')
 
+    def test_rational_kernel_reference_identities_and_enclosures(self):
+        source = ROOT / 'fixtures/math-rational-kernel-cases.json'
+        report = json.loads((ROOT / 'fixtures/math-rational-kernel-oracles.json').read_text())
+        specification = json.loads(source.read_text())
+        self.assertEqual(report['case_file_sha256'], hashlib.sha256(source.read_bytes()).hexdigest())
+        for key, name in [('generator_sha256', 'generate-math-case-list-oracles.py'),
+                          ('underlying_generator_sha256', 'generate-math-oracles.py')]:
+            self.assertEqual(report[key], hashlib.sha256((ROOT / 'scripts' / name).read_bytes()).hexdigest())
+        self.assertEqual((report['python_flint_version'], report['flint_version']), ('0.9.0', '3.6.0'))
+        declared = {case['id']: case for case in specification['cases']}
+        self.assertEqual(len(declared), 4917)
+        self.assertEqual(len(report['cases']), len(declared))
+        self.assertEqual({case['id'] for case in report['cases']}, set(declared))
+        self.assertEqual({case['function'] for case in declared.values()}, set('scalej'))
+        for case in report['cases']:
+            with self.subTest(case=case['id']):
+                for key in ('function', 'arguments', 'scale'):
+                    self.assertEqual(case[key], declared[case['id']][key])
+                lo, hi = Fraction(case['lower']), Fraction(case['upper'])
+                self.assertLessEqual(lo, hi)
+                self.assertLessEqual(hi-lo, ORACLE.decimal_ulp(case['scale'])/10**report['guard_digits'])
+                for endpoint in (lo, hi):
+                    self.assertEqual(endpoint.denominator & (endpoint.denominator-1), 0)
+                result = Fraction(ORACLE.nearest_decimal(lo, hi, case['scale']))
+                self.assertEqual(ORACLE.classify(result, lo, hi, case['scale']), 'pass')
+                self.assertEqual(ORACLE.classify(result+3*ORACLE.decimal_ulp(case['scale']),
+                                               lo, hi, case['scale']), 'fail')
+
     def test_adaptive_reference_identities_and_enclosures(self):
         source = ROOT / 'fixtures/math-adaptive-budget-cases.json'
         report = json.loads((ROOT / 'fixtures/math-adaptive-budget-oracles.json').read_text())

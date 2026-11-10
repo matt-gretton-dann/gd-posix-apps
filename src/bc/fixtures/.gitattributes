@@ -18,3 +18,5 @@ math-adaptive-budget-cases.json text eol=lf
 math-adaptive-budget-oracles.json -text
 math-reconstruction-validation-cases.json text eol=lf
 math-reconstruction-validation-oracles.json -text
+math-rational-kernel-cases.json text eol=lf
+math-rational-kernel-oracles.json -text

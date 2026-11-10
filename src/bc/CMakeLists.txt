@@ -424,6 +424,9 @@ if(RUN_INTEGRATION_TESTS)
   add_test(NAME bc/math-budget-proof COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-math-budget-proof.py")
   set_tests_properties(bc/math-budget-proof PROPERTIES TIMEOUT 20)
+  add_test(NAME bc/rational-kernel-proof COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-rational-kernel-proof.py")
+  set_tests_properties(bc/rational-kernel-proof PROPERTIES TIMEOUT 30)
   add_test(NAME bc/reconstruction-inputs COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-reconstruction-inputs.py" "$<TARGET_FILE:bc>")
   set_tests_properties(bc/reconstruction-inputs PROPERTIES TIMEOUT 120)
