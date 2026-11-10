@@ -467,6 +467,56 @@ class ResourceComparison(unittest.TestCase):
         self.assertNotIn('candidate_over_base', report['events']['new'])
         self.assertIsNone(report['total']['allocated_bytes']['candidate_over_base'])
 
+    def test_declared_input_survives_real_child_working_directory(self):
+        resource, bench = self.module, self.bench
+        math = load('benchmark-math-ci')
+        with tempfile.TemporaryDirectory() as temporary:
+            workspace = Path(temporary).resolve()
+            declared = workspace / 'cohort/declared-corpus'
+            work = declared / 'workloads'
+            work.mkdir(parents=True)
+            case = bench.corpus('quick', suite='math')[0]
+            program, oracle = case['program'].encode(), bench.oracle_payload(case)
+            (work / (case['name'] + '.bc')).write_bytes(program)
+            (work / (case['name'] + '.expected')).write_bytes(oracle)
+            manifest = dict(kind='unmeasured-math-inputs-v1', suite='math', preset='quick',
+                reference_fixture_sha256='a' * 64, corpus=[dict(name=case['name'], group=case['group'],
+                    parameters=case['parameters'], program_sha256=hashlib.sha256(program).hexdigest(),
+                    oracle_sha256=hashlib.sha256(oracle).hexdigest())])
+            (declared / 'manifest.json').write_text(json.dumps(manifest), encoding='utf-8')
+            driver = workspace / 'fixture-resource-driver.py'
+            # The child loads the real declaration validator. Its only work is
+            # reading fixture files; it never launches a production executable.
+            driver.write_text(
+                'import importlib.util,sys\nfrom pathlib import Path\n'
+                's=importlib.util.spec_from_file_location("bench",' + repr(str(SCRIPTS.resolve() / 'bench-bc.py')) + ')\n'
+                'b=importlib.util.module_from_spec(s);s.loader.exec_module(b)\n'
+                'rows,_=b.declared_corpus(Path(sys.argv[sys.argv.index("--additional-corpus")+1]),"math")\n'
+                'assert len(rows)==1\nprint(rows[0]["name"])\n', encoding='utf-8')
+            results, evidence = workspace / 'results', workspace / 'evidence'
+            results.mkdir()
+            evidence.mkdir()
+            commands = math.Commands(results, 20)
+            roles = {name: dict(name=name, argv=[sys.executable]) for name in ('base', 'candidate')}
+            previous = Path.cwd()
+            try:
+                os.chdir(workspace)
+                with mock.patch.object(resource, '__file__', str(driver)):
+                    try:
+                        resource.run_diagnostics(commands.run, roles, roles, ('full',), 'math', evidence,
+                            additional_corpora={'full': Path('cohort/declared-corpus')})
+                    except math.CommandFailure:
+                        self.fail((results / 'command-001.log').read_text())
+            finally:
+                os.chdir(previous)
+            self.assertEqual(len(commands.commands), 1)
+            command = commands.commands[0]
+            self.assertEqual(command['cwd'], str(results))
+            forwarded = Path(command['argv'][command['argv'].index('--additional-corpus') + 1])
+            self.assertEqual(forwarded, declared)
+            self.assertEqual((results / command['log']).read_text().strip(), case['name'])
+
+
     def test_math_resource_configs_use_the_same_library_arguments(self):
         calls = []
         self.module.run_diagnostics(lambda argv: calls.append(argv), self.profiles,
