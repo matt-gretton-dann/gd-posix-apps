@@ -39,6 +39,7 @@ def declaration():
         'src/bc/test-integer-recurrence.cc','src/bc/test-native-expression.cc','src/bc/test-number.cc',
         'src/bc/test-math-budget-proof.py','src/bc/test-reconstruction-inputs.py',
         'src/bc/test-integer-qualification-inputs.py',
+        'src/bc/test-reconstruction-declaration.py',
         'src/bc/fixtures/math-reconstruction-validation-cases.json',
         'src/bc/fixtures/math-reconstruction-validation-oracles.json',
         'src/bc/scripts/reconstruction-qualification-inputs.py',
@@ -84,7 +85,8 @@ if __name__=='__main__':
     args=parser.parse_args()
     raw=(json.dumps(declaration(),indent=2,sort_keys=True)+'\n').encode('utf-8')
     if args.check:
-        assert args.output.read_bytes()==raw,'prospective declaration differs from source or inputs'
+        # Compare canonical text while preserving raw checkout bytes in evidence.
+        assert args.output.read_bytes().replace(b'\r\n',b'\n')==raw,'prospective declaration differs from source or inputs'
     else:
         args.output.write_bytes(raw)
     print('Verified prospective source and46 input partitions; no implementation executed')
