@@ -11,7 +11,6 @@ import math
 import os
 from pathlib import Path
 import platform
-import shutil
 import subprocess
 import sys
 
@@ -271,6 +270,10 @@ def main():
                    'aa': [entries[0], entries[2]]}
         for name, implementations in configs.items():
             write(root / (name + '.json'), {'implementations': implementations})
+        codegen = load('collect-bc-codegen')
+        codegen.preserve_builds(root, evidence,
+            ('base', 'candidate', 'aa', 'howard', 'base-profile', 'candidate-profile'))
+        codegen.collect(entries + howard, evidence / 'elapsed-images', inspect=False)
         reports = []
         cohorts = [(preset, None) for preset in (('full', 'holdout') if args.broad else ('full',))]
         if fresh_cases is not None:
@@ -333,11 +336,11 @@ def main():
                         # Identical bytes can still time differently under separate launch paths.
                         status = 'confirmed timing bias (identical binaries)'
                     reports.append({'preset': preset, 'comparison': comparison, 'name': row['name'],
+                                    'parameters': row['parameters'],
                                     'ratio': ratio, 'confirmation': second,
                                     'status': status, 'aa_control_status': controls[row['name']],
                                     'candidate_over_howard': competitive,
-                                    **(dict(parameters=row['parameters'],
-                                             duration_target_met=row.get('duration_target_met'),
+                                    **(dict(duration_target_met=row.get('duration_target_met'),
                                              fixed_samples=args.samples) if replay else {})})
         if args.sparse_qualification:
             reports.extend(qualify_sparse(builder, evidence, entries))
@@ -384,22 +387,11 @@ def main():
                   (args.additional_replay_corpus/'manifest.json').read_bytes()).hexdigest()
                   if args.additional_replay_corpus else None),
               'commands': builder.commands})
-        for path in root.glob('command-*.log'):
-            shutil.copyfile(str(path), str(evidence / path.name))
-        for name in ('base', 'candidate', 'aa', 'howard', 'base-profile', 'candidate-profile'):
-            source = root / name
-            target = evidence / name
-            target.mkdir(exist_ok=True)
-            for path in source.glob('*'):
-                if path.is_file():
-                    shutil.copyfile(str(path), str(target / path.name))
-            if (source / 'prepared-policy').is_dir():
-                shutil.copytree(str(source / 'prepared-policy'), str(target / 'prepared-policy'))
-            if (source / 'logs').is_dir():
-                shutil.copytree(str(source / 'logs'), str(target / 'logs'))
-        # Every timed child has finished. Preserve every measured GD and Howard
-        # image without rebuilding, relinking or changing compiler flags.
-        load('collect-bc-codegen').collect(entries + howard, evidence / 'codegen')
+        codegen = load('collect-bc-codegen')
+        codegen.preserve_builds(root, evidence,
+            ('base', 'candidate', 'aa', 'howard', 'base-profile', 'candidate-profile'))
+        # Every timed child has finished; inspect the actual preserved roles.
+        codegen.collect(entries + howard, evidence / 'codegen')
         if profiles:
             load('compare-bc-resources').preserve_profiles(profiles, evidence / 'profile-images')
 

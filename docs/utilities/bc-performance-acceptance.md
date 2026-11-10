@@ -23,6 +23,16 @@ always apply. The primary Howard duration must also pass when using the
 exception; a short Howard role does not invalidate an otherwise qualified
 ordinary regression-cap pass. Portable-library controls remain separately recorded.
 
+Arithmetic decision rows retain their corpus parameters. The shared policy
+excludes `mode=one_shot`, `timing_scope=whole-process latency`, and startup
+from the competitive exception. Retained arithmetic rows from older collectors
+may lack parameters; their declared `divisor_cold_{divide,modulo}_..._x1`
+names remain excluded too. This compatibility rule does not classify every
+single-iteration arithmetic workload as latency. Repeated workloads keep the
+same controls and regression limits. Policy version
+`2026-11-10-competitive-margin-v2` fixes this exclusion; it does not change the
+approved thresholds or revise original outcomes.
+
 Otherwise the original caps apply. A missing competitive interval supplies no
 exception. An allowance on one row does not cancel a loss or inconclusive result
 on another. The change must deliver a worthwhile measured gain elsewhere, and

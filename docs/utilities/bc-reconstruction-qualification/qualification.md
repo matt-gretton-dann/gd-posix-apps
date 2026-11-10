@@ -46,6 +46,12 @@ source/control identities for correctness retention, retaining the historical
 baseline and original input dimensions; it is not a new elapsed authorization.
 The cumulative 864,000-second total pursuit cap is unchanged.
 
+The successor incorporates accepted PRs #718 and #719: the versioned cold-latency
+exclusion and ordinary pre-sampling snapshots. Both ordinary and matched-profile
+build recipes are retained before elapsed children. The cumulative acceptance
+rules, original outcomes and startup requirements are unchanged; these evidence
+repairs are not performance qualification.
+
 ## Original publication and one original run
 
 Opening the final draft starts correctness only. All three legacy automatic

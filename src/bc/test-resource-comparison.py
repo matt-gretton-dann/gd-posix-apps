@@ -649,7 +649,7 @@ raise SystemExit('worker did not stop at the second RSS child')
                 (source / 'src/bc/math-library.bc').write_text('scale=20\n')
                 ci = load('benchmark-math-ci' if kind == 'math' else 'benchmark-ci')
                 helper, calls = ci.load('build-bc-comparators'), []
-                early_profiles = []
+                early_profiles, early_recipes = [], []
 
                 class Commands:
                     def __init__(self, root, timeout):
@@ -669,6 +669,11 @@ raise SystemExit('worker did not stop at the second RSS child')
                         if script == 'bench-bc.py':
                             manifest = output / 'evidence/profile-images-early/manifest.json'
                             early_profiles.append(manifest.is_file())
+                            roles = (('base', 'candidate', 'aa', 'howard', 'base-profile', 'candidate-profile')
+                                     if kind == 'arithmetic' else
+                                     ('gd', 'aa', 'base', 'profile', 'base-profile', 'howard'))
+                            early_recipes.append(all((output / 'evidence' / role / 'build-manifest.json').is_file()
+                                                     for role in roles))
                             directory = Path(argv[argv.index('--output') + 1])
                             directory.mkdir()
                             (directory / 'summary.json').write_text('{"workloads":[]}')
@@ -695,6 +700,7 @@ raise SystemExit('worker did not stop at the second RSS child')
                             configuration=dict(diagnostic_profile=profile, portable_scalar_policy=dict(
                                 status='recorded', mode=mode, enabled=enabled))))
                         (directory / 'implementations.json').write_text(json.dumps(dict(implementations=[entry])))
+                        (directory / 'build-manifest.json').write_text('completed build fixture')
 
                 # Bind only fixture hashing to the recorder, never invoke bc.
                 Commands.bench = self.bench
@@ -714,7 +720,8 @@ raise SystemExit('worker did not stop at the second RSS child')
                         return types.SimpleNamespace(Builder=Commands, BuildError=helper.BuildError,
                                                      HOWARD_REVISION=helper.HOWARD_REVISION, digest=helper.digest)
                     if name == 'collect-bc-codegen':
-                        return types.SimpleNamespace(collect=capture)
+                        return types.SimpleNamespace(collect=capture,
+                            preserve_builds=original_load(name).preserve_builds)
                     return original_load(name)
 
                 output = source / 'results'
@@ -734,6 +741,7 @@ raise SystemExit('worker did not stop at the second RSS child')
                 self.assertTrue(timings)
                 self.assertTrue(early_profiles)
                 self.assertTrue(all(early_profiles), 'profile images must precede every elapsed child')
+                self.assertTrue(all(early_recipes), 'all ordinary/profile recipes must precede elapsed children')
                 self.assertTrue(all(calls.index(c) > max(timings) for c in resource_calls))
                 builds = [i for i, c in enumerate(calls) if Path(c[1]).name.startswith('build-')]
                 self.assertTrue(all(i < min(timings) for i in builds))

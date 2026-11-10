@@ -219,6 +219,7 @@ class NativeTrends(unittest.TestCase):
                 if script in ('build-gd-bc.py', 'build-bc-comparators.py'):
                     (output / 'prepared-policy').mkdir()
                     (output / 'prepared-policy/libbc.vcxproj').write_text('retained fixture')
+                    (output / 'build-manifest.json').write_text('completed build fixture')
                     name = argv[argv.index('--name') + 1] if '--name' in argv else 'howard-7.0.3'
                     (output / 'implementations.json').write_text(json.dumps(
                         {'implementations': [{'name': name, 'argv': ['fixture'], 'metadata': dict(
@@ -226,6 +227,13 @@ class NativeTrends(unittest.TestCase):
                             configuration=dict(prepared_divisors_policy=dict(
                                 status='recorded', mode='ON', enabled=True)))}]}))
                     return
+                first = root / 'evidence/first-sample-check.json'
+                if not first.exists():
+                    snapshot = root / 'evidence/elapsed-images/manifest.json'
+                    first.write_text(json.dumps(dict(
+                        images=json.loads(snapshot.read_text()) if snapshot.exists() else None,
+                        recipes=[(root / 'evidence' / role / 'build-manifest.json').is_file()
+                                 for role in ('base', 'candidate', 'aa', 'howard')])))
                 if fail:
                     raise helper.BuildError('fixture incorrect output')
                 config = json.loads(Path(argv[argv.index('--config') + 1]).read_text())
@@ -240,9 +248,12 @@ class NativeTrends(unittest.TestCase):
                     # Synthetic summaries exercise controller decisions, not timing inference.
                     if candidate == 'aa' and aa_first is not None:
                         ratio = aa_second if output.name.endswith('confirmation') and aa_second is not None else aa_first
-                    result={'name': name, 'candidate_over_reference': {candidate: ratio}}
+                    parameters = dict(timing_scope=('whole-process latency'
+                        if name.startswith('divisor_cold_') else 'repeated process workload'))
+                    result = {'name': name, 'parameters': parameters,
+                              'candidate_over_reference': {candidate: ratio}}
                     if '--replay-corpus' in argv:
-                        result.update(parameters=dict(mode='repeated',iterations=2,
+                        result.update(parameters=dict(mode='repeated', iterations=2,
                                       duration_target_seconds=.25),
                                       duration_target_met={role: not shortfall for role in implementations})
                     results.append(result)
@@ -254,15 +265,17 @@ class NativeTrends(unittest.TestCase):
                 (output / 'summary.json').write_text(json.dumps({'workloads': results}))
                 (output / 'samples.jsonl').write_text('\n'.join(json.dumps(row) for row in raw))
 
-        def capture(entries, directory):
+        def capture(entries, directory, **options):
             directory.mkdir()
             (directory / 'manifest.json').write_text(json.dumps(dict(
                 names=[entry['name'] for entry in entries],
+                inspect=options.get('inspect', True),
                 commands_before_capture=len(calls))))
 
         def modules(name):
             if name == 'collect-bc-codegen':
-                return types.SimpleNamespace(collect=capture)
+                return types.SimpleNamespace(collect=capture,
+                    preserve_builds=original_load(name).preserve_builds)
             if name == 'build-bc-comparators':
                 return types.SimpleNamespace(Builder=Builder, BuildError=helper.BuildError)
             return original_load(name)
@@ -340,6 +353,15 @@ class NativeTrends(unittest.TestCase):
         self.assertTrue(all(row['status'] == 'pass' for row in aa))
         self.assertTrue((root / 'evidence/summary.md').is_file())
 
+    def test_first_elapsed_child_already_has_ordinary_images_and_recipes(self):
+        root, _, result = self.exercise()
+        self.assertEqual(result, 0)
+        first = json.loads((root / 'evidence/first-sample-check.json').read_text())
+        self.assertIsNotNone(first['images'])
+        self.assertEqual(first['images']['names'], ['base', 'candidate', 'aa', 'howard-7.0.3'])
+        self.assertFalse(first['images']['inspect'])
+        self.assertEqual(first['recipes'], [True] * 4)
+
     def test_identical_candidate_retains_slow_samples_without_source_attribution(self):
         root, _, result = self.exercise(identical=True)
         self.assertEqual(result, 0)
@@ -352,6 +374,17 @@ class NativeTrends(unittest.TestCase):
             self.assertEqual(row['ratio']['median_paired_ratio'], 1.2)
             self.assertEqual(row['confirmation']['median_paired_ratio'], 1.2)
             self.assertEqual(row['aa_control_status'], 'pass')
+
+    def test_decision_rows_preserve_corpus_timing_scope(self):
+        root, _, result = self.exercise()
+        self.assertEqual(result, 0)
+        rows = json.loads((root / 'evidence/decisions.json').read_text())['results']
+        cold = [row for row in rows if row['name'].startswith('divisor_cold_')]
+        self.assertTrue(cold)
+        for row in rows:
+            expected = ('whole-process latency' if row in cold
+                        else 'repeated process workload')
+            self.assertEqual(row.get('parameters'), dict(timing_scope=expected))
 
     def test_aa_bias_in_either_direction_gets_one_distinct_confirmation(self):
         for ratio in (dict(median_paired_ratio=.91, ci95=[.90, .92]),

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Preserve actual timing executables and inspect code after sampling finishes.
+"""Preserve actual timing executables; inspect code after sampling finishes.
 
 No compiler/linker flags change. PE code identities exclude non-code sections
 and the COFF timestamp field, but include encoded addresses and raw padding.
@@ -16,6 +16,7 @@ import platform
 import re
 import shutil
 import struct
+import tempfile
 import time
 
 
@@ -98,10 +99,49 @@ def native_commands(binary, system):
     return [[tool, *args, str(binary)] for args in arguments] if tool else []
 
 
-def collect(entries, directory, timeout=60, deadline=None):
+def preserve_builds(root, evidence, roles):
+    """Copy completed recipes/logs before sampling and refresh them on exit.
+
+    Atomic replacement keeps an earlier complete copy if the controller is
+    killed during final archival. Owned source/build trees are not copied.
+    """
+    root, evidence = Path(root), Path(evidence)
+
+    def retain(source, target):
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if target.is_file() and digest(source) == digest(target):
+            return
+        temporary = None
+        try:
+            with tempfile.NamedTemporaryFile(dir=str(target.parent), delete=False) as stream:
+                temporary = Path(stream.name)
+                with source.open('rb') as original:
+                    shutil.copyfileobj(original, stream)
+            temporary.replace(target)
+        finally:
+            if temporary is not None and temporary.exists():
+                temporary.unlink()
+
+    for path in root.glob('command-*.log'):
+        retain(path, evidence / path.name)
+    for role in roles:
+        source, target = root / role, evidence / role
+        target.mkdir(exist_ok=True)
+        for path in source.glob('*'):
+            if path.is_file():
+                retain(path, target / path.name)
+        for name in ('prepared-policy', 'logs'):
+            for path in (source / name).rglob('*'):
+                if path.is_file():
+                    retain(path, target / path.relative_to(source))
+
+
+def collect(entries, directory, timeout=60, deadline=None, inspect=True):
     """Archive declared, uninstrumented binaries; unavailable tools are explicit.
 
-    Call only after every elapsed child has finished. Hash mismatch/missing
+    Use inspect=False for a durable snapshot before the first elapsed child;
+    native inspection is allowed only after every elapsed child has finished.
+    Hash mismatch/missing
     declared binaries are hard errors; diagnostics cannot legitimize a changed
     executable or declared input. Copy every role before optional inspection.
     An absolute monotonic deadline bounds inspection, not asset preservation;
@@ -114,8 +154,11 @@ def collect(entries, directory, timeout=60, deadline=None):
         raise ValueError('inspection deadline must be a finite monotonic timestamp')
     directory = Path(directory)
     directory.mkdir(exist_ok=False)
-    report = dict(schema=1, purpose='post-sampling executable/code-generation evidence; not timing or performance acceptance',
+    purpose = ('post-sampling executable/code-generation evidence' if inspect else
+               'pre-sampling executable/input snapshot without native inspection')
+    report = dict(schema=1, purpose=purpose + '; not timing or performance acceptance',
                   collector_sha256=digest(__file__), system=platform.system(), observations=[],
+                  inspection_requested=inspect,
                   inspection_timeout_seconds=timeout, inspection_deadline_monotonic=deadline)
     names, snapshots = set(), []
     failed = False
@@ -169,6 +212,9 @@ def collect(entries, directory, timeout=60, deadline=None):
         # A slow/unavailable inspector must not prevent later roles being copied.
         for row, source, binary, inputs in snapshots:
             target = directory / row['name']
+            if not inspect:
+                row['disassembly'] = dict(status='unavailable', reason='pre-sampling snapshot; inspection not requested')
+                continue
             if deadline is not None and time.monotonic() >= deadline:
                 row['disassembly'] = dict(status='unavailable', reason='collection deadline exhausted')
                 continue
