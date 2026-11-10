@@ -632,6 +632,50 @@ TEST_CASE("Compact short functions keep runtime radix and owned literal sidecars
   CHECK(execute(*code) == "2\n11\n11\n");
 }
 
+TEST_CASE("Recursive scalar bindings preserve dynamically visible caller locals",
+          "[bc][vm][execution][bindings]")
+{
+  // g has no local x or y. It must update f's nearest active x and global y.
+  // Recursion also grows the frame pool while earlier bindings remain active.
+  std::string const source =
+    "x=97\ny=89\nz=83\n"
+    "define g() {\nx+=1\ny+=2\nreturn(x+y)\n}\n"
+    "define f(n) {\nauto x\nx=n\nif(n==0) return(g())\n"
+    "return(g()+f(n-1)+x)\n}\nf(64)\nx\ny\nz\n";
+  GD::Bc::Parser parser(
+    std::make_unique<GD::Bc::Lexer>(std::make_unique<GD::Bc::StringReader>(source)), false);
+  auto code = parser.parse();
+  REQUIRE(code != nullptr);
+  CHECK(execute(*code) == "14364\n97\n219\n83\n");
+}
+
+TEST_CASE("Alternating scalar local masks start at zero and retain owned returns",
+          "[bc][vm][execution][bindings]")
+{
+  std::string source = "a=11\nb=22\nz=33\nx=10000000000000000000000001\n"
+                       "define f(n) {\nauto ";
+  bool first = true;
+  for (auto letter : std::string("abcdefghijklmnopqrstuvwxyz")) {
+    if (letter != 'n') {
+      if (!first)
+        source += ',';
+      source += letter;
+      first = false;
+    }
+  }
+  source += "\nif(n==0) return(a+z)\na=5\nz=7\nreturn(a+z)\n}\n"
+            "define g() {\nauto z\nreturn(z)\n}\n"
+            "define h(x) {\nauto y\ny=x\nreturn(y)\n}\n"
+            "for(k=0;k<32;k++) {\nr=f(1)\ns=g()\nt=f(0)\n}\n"
+            "r\ns\nt\na\nb\nz\nq=h(x)\nx+=1\nq\nx\n";
+  GD::Bc::Parser parser(
+    std::make_unique<GD::Bc::Lexer>(std::make_unique<GD::Bc::StringReader>(source)), false);
+  auto code = parser.parse();
+  REQUIRE(code != nullptr);
+  CHECK(execute(*code) == "12\n0\n0\n11\n22\n33\n"
+                          "10000000000000000000000001\n10000000000000000000000002\n");
+}
+
 TEST_CASE("Function bodies can retain an incoming parameter result",
           "[bc][vm][execution]")
 {

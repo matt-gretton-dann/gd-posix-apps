@@ -530,6 +530,12 @@ public:
   /** \brief  Does the mask contain array \a letter?  */
   [[nodiscard]] auto contains(Array a) const -> bool;
 
+  /** Number of scalar bindings; array bindings are counted separately. */
+  [[nodiscard]] auto variable_count() const -> unsigned
+  {
+    return static_cast<unsigned>(std::popcount(variable_mask_));
+  }
+
   /** Equality operator. */
   auto operator==(VariableMask rhs) const -> bool;
 
