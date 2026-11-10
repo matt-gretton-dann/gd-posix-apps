@@ -25,7 +25,28 @@ are unplanned observations with explicit provenance/image limitations. None
 of these timings, controls, hosts or intervals qualifies this final source.
 Historical source and declarations remain unchanged.
 
-## Publication and one original run
+## Successor correctness candidate: bounded rational kernels
+
+The `codex/bc-bounded-rational-math` successor carries the exact numerical
+certificates and 4,917 independent correctness enclosures documented in
+[the bounded-kernel appendix](../bc-bounded-rational-kernels.md). Its ordinary
+math source differs from the original frozen #717 head. All 138 original #717
+outcomes have now been retained and reviewed: 133 successes and five failures;
+see [the completed review](https://github.com/matt-gretton-dann/gd-posix-apps/pull/717#issuecomment-6778593795).
+That source remains unqualified, including inconclusive macOS startup and
+missing Linux image/startup evidence. No old timing qualifies this successor.
+
+Only correctness is enabled for this successor branch. The legacy elapsed
+workflows exclude it, and the existing ready-for-review qualification workflow
+still selects only the original `codex/bc-reconstruction-qualification` branch.
+Do not mark the successor ready to infer an elapsed dispatch: a complete new
+prospective protocol, accepted baseline, evidence-retention fixes and exact-head
+hosted preflight are required first. The declaration below records current
+source/control identities for correctness retention, retaining the historical
+baseline and original input dimensions; it is not a new elapsed authorization.
+The cumulative 864,000-second total pursuit cap is unchanged.
+
+## Original publication and one original run
 
 Opening the final draft starts correctness only. All three legacy automatic
 elapsed workflows exclude this branch. The new qualification workflow listens

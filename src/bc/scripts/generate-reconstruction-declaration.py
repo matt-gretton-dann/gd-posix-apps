@@ -29,6 +29,11 @@ def declaration():
     files=set(old['files'])
     files.update([
         '.github/workflows/bc-reconstruction-qualification.yml',
+        'docs/utilities/bc-bounded-rational-kernels.md',
+        'src/bc/test-rational-kernel-proof.py','src/bc/test-math-oracle.py',
+        'src/bc/fixtures/.gitattributes',
+        'src/bc/fixtures/math-rational-kernel-cases.json',
+        'src/bc/fixtures/math-rational-kernel-oracles.json',
         '.github/workflows/bc-bessel-zero-correctness.yml',
         'docs/utilities/bc-reconstruction-qualification/qualification.md',
         'docs/utilities/bc-portable-math.md','docs/utilities/bc-native-functions.md',

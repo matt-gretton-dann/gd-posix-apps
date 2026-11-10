@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   correctness:
-    if: github.head_ref == 'codex/bc-zero-scale-bessel' || github.head_ref == 'codex/bc-adaptive-math-reconstruction' || github.head_ref == 'codex/bc-reconstruction-qualification'
+    if: github.head_ref == 'codex/bc-zero-scale-bessel' || github.head_ref == 'codex/bc-adaptive-math-reconstruction' || github.head_ref == 'codex/bc-reconstruction-qualification' || github.head_ref == 'codex/bc-bounded-rational-math'
     name: Bessel zero / ${{ matrix.os }} / ${{ matrix.mode.name }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
@@ -140,7 +140,8 @@ jobs:
                  'docs/utilities/bc-native-functions.md','docs/utilities/bc-function-slot-storage.md',
                  'docs/utilities/bc-reconstruction-qualification/qualification.md',
                  'docs/utilities/bc-reconstruction-qualification/qualification-hashes.json',
-                 'docs/utilities/bc-atan-ratio-proof/test-proof.py']
+                 'docs/utilities/bc-atan-ratio-proof/test-proof.py',
+                 'docs/utilities/bc-bounded-rational-kernels.md']
           files+=['src/bc/'+name for name in (
               'bc.hh','vm.cc','test-vm-lifetime.cc',
               'function-slot.hh','test-function-slot.cc',
@@ -158,6 +159,8 @@ jobs:
               'preparse-math-library.cc','test-math-library-cli.py','test-math-library-source.py',
               'test-bessel-zero-evidence.py','scripts/verify-bessel-zero-evidence.py',
               'test-bessel-zero-proof.py','test-bessel-precision-proof.py','test-math-budget-proof.py',
+              'test-rational-kernel-proof.py','test-math-oracle.py',
+              'fixtures/math-rational-kernel-cases.json','fixtures/math-rational-kernel-oracles.json',
               'scripts/generate-math-case-list-oracles.py','scripts/generate-math-oracles.py',
               'fixtures/math-adaptive-budget-cases.json','fixtures/math-adaptive-budget-oracles.json',
               'test-resource-comparison.py','scripts/compare-bc-resources.py',
@@ -216,7 +219,7 @@ jobs:
             grep -q 'All tests passed' evidence/native-tests.log
           fi
           ctest --test-dir build-native --no-tests=error --output-on-failure \
-            -R '^bc/(vm-lifetime(-ipo)?|function-slot|library-lifetime|signal-(normal|exception|delivery)|consumer-mode|divisor-cache-lifetime|bessel-zero-proof|bessel-precision-proof|math-budget-proof|resource-comparison|reconstruction-(inputs|declaration)|integer-qualification-inputs|bessel-classification-oracles|bessel-oracle-portability|bessel-zero-evidence|math-library-(cli|source|image|decisions)|math-imported|math-oracle)$' \
+            -R '^bc/(vm-lifetime(-ipo)?|function-slot|library-lifetime|signal-(normal|exception|delivery)|consumer-mode|divisor-cache-lifetime|bessel-zero-proof|bessel-precision-proof|math-budget-proof|rational-kernel-proof|resource-comparison|reconstruction-(inputs|declaration)|integer-qualification-inputs|bessel-classification-oracles|bessel-oracle-portability|bessel-zero-evidence|math-library-(cli|source|image|decisions)|math-imported|math-oracle)$' \
             2>&1 | tee evidence/ctest.log
           "$python_cmd" docs/utilities/bc-atan-ratio-proof/test-proof.py 2>&1 | tee evidence/atan-proof.log
           "$python_cmd" src/bc/test-cli.py "build-native/src/bc/bc${executable_suffix}" \
