@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   correctness:
-    if: github.head_ref == 'codex/bc-zero-scale-bessel'
+    if: github.head_ref == 'codex/bc-zero-scale-bessel' || github.head_ref == 'codex/bc-adaptive-math-reconstruction'
     name: Bessel zero / ${{ matrix.os }} / ${{ matrix.mode.name }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
@@ -135,14 +135,18 @@ jobs:
               assert (macro+'=1' in command)==(expected[option]=='ON'),macro
           inputs={}
           files=['CMakeLists.txt','.github/workflows/bc-bessel-zero-correctness.yml',
-                 'docs/utilities/bc-zero-scale-bessel.md','docs/utilities/bc-portable-math.md']
+                 'docs/utilities/bc-zero-scale-bessel.md','docs/utilities/bc-portable-math.md',
+                 'docs/utilities/bc-atan-ratio-proof/test-proof.py']
           files+=['src/bc/'+name for name in (
               'bc.hh','vm.cc','test-vm-lifetime.cc',
               'number.hh','digit-storage.hh','profiling.hh','CMakeLists.txt',
               'math-library.bc','math-library.cc','math-library.hh.in','math-library-image.hh',
               'preparse-math-library.cc','test-math-library-cli.py','test-math-library-source.py',
               'test-bessel-zero-evidence.py','scripts/verify-bessel-zero-evidence.py',
-              'test-bessel-zero-proof.py','test-bessel-precision-proof.py',
+              'test-bessel-zero-proof.py','test-bessel-precision-proof.py','test-math-budget-proof.py',
+              'scripts/generate-math-case-list-oracles.py','scripts/generate-math-oracles.py',
+              'fixtures/math-adaptive-budget-cases.json','fixtures/math-adaptive-budget-oracles.json',
+              'test-resource-comparison.py','scripts/compare-bc-resources.py',
               'test-bessel-oracle-portability.py',
               'scripts/generate-bessel-classification-oracles.py',
               'fixtures/math-bessel-classification-oracles.json',
@@ -194,8 +198,9 @@ jobs:
             grep -q 'All tests passed' evidence/native-tests.log
           fi
           ctest --test-dir build-native --no-tests=error --output-on-failure \
-            -R '^bc/(vm-lifetime(-ipo)?|signal-(normal|exception|delivery)|consumer-mode|divisor-cache-lifetime|bessel-zero-proof|bessel-precision-proof|bessel-classification-oracles|bessel-oracle-portability|bessel-zero-evidence|math-library-(cli|source|image|decisions)|math-imported|math-oracle)$' \
+            -R '^bc/(vm-lifetime(-ipo)?|signal-(normal|exception|delivery)|consumer-mode|divisor-cache-lifetime|bessel-zero-proof|bessel-precision-proof|math-budget-proof|resource-comparison|bessel-classification-oracles|bessel-oracle-portability|bessel-zero-evidence|math-library-(cli|source|image|decisions)|math-imported|math-oracle)$' \
             2>&1 | tee evidence/ctest.log
+          "$python_cmd" docs/utilities/bc-atan-ratio-proof/test-proof.py 2>&1 | tee evidence/atan-proof.log
           "$python_cmd" src/bc/test-cli.py "build-native/src/bc/bc${executable_suffix}" \
             --extensions ${{ matrix.mode.extensions }} 2>&1 | tee evidence/cli.log
           "$python_cmd" src/bc/test-vm-cli.py "build-native/src/bc/bc${executable_suffix}" \
