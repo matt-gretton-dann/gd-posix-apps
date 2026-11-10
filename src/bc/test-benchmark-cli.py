@@ -7,6 +7,7 @@ import importlib.util
 import io
 import hashlib
 import json
+import os
 import re
 from pathlib import Path
 import subprocess
@@ -431,7 +432,10 @@ class BenchmarkCli(unittest.TestCase):
         failure = json.loads((output / 'failure.json').read_text())
         receipt = failure.get('failed_output')
         self.assertIsNotNone(receipt)
-        self.assertEqual(bytes.fromhex(receipt['prefix_hex']), b'3\n')
+        expected = ('3' + os.linesep).encode('ascii')
+        self.assertEqual(bytes.fromhex(receipt['prefix_hex']), expected)
+        self.assertEqual(receipt['output_bytes'], len(expected))
+        self.assertEqual(receipt['output_sha256'], hashlib.sha256(expected).hexdigest())
         self.assertTrue(receipt['prefix_complete'])
         self.assertFalse(receipt['checked'])
         self.assertEqual(receipt['workload'], 'startup')
