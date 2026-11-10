@@ -165,6 +165,56 @@ public:
     }
   }
 
+  /** Build an integer coefficient without narrowing through the limb type. */
+  static auto from_machine_unsigned(std::uint64_t value) -> BasicDigits
+  {
+    BasicDigits result;
+    if (value != 0) {
+      result.digits_ = DigitVector();
+      while (value != 0) {
+        if constexpr (base_ > std::numeric_limits<std::uint64_t>::max()) {
+          result.digits_->push_back(static_cast<NumType>(value));
+          break;
+        }
+        else {
+          constexpr auto radix = static_cast<std::uint64_t>(base_);
+          result.digits_->push_back(static_cast<NumType>(value % radix));
+          value /= radix;
+        }
+      }
+    }
+    return result;
+  }
+
+  /** Borrow a coefficient within an explicit machine bound, without detaching.
+   * Leading zero limbs are permitted. Test before every multiply/add so this
+   * also rejects coefficients wider than uint64_t without overflowing it.
+   */
+  [[nodiscard]] auto to_machine_unsigned(std::uint64_t limit) const noexcept
+    -> std::optional<std::uint64_t>
+  {
+    std::uint64_t result = 0;
+    if (digits_) {
+      for (auto it = digits_->rbegin(); it != digits_->rend(); ++it) {
+        if constexpr (base_ > std::numeric_limits<std::uint64_t>::max()) {
+          if (result != 0 || *it > limit) {
+            return std::nullopt;
+          }
+          result = static_cast<std::uint64_t>(*it);
+        }
+        else {
+          constexpr auto radix = static_cast<std::uint64_t>(base_);
+          auto const digit = static_cast<std::uint64_t>(*it);
+          if (digit > limit || result > (limit - digit) / radix) {
+            return std::nullopt;
+          }
+          result = result * radix + digit;
+        }
+      }
+    }
+    return result;
+  }
+
   /** Populate coefficient limbs directly from validated decimal text.
    * The caller supplies the sole radix-point position (or npos) and retains
    * its decimal scale. Leading coefficient zeros need no storage; fractional
@@ -2481,6 +2531,44 @@ public:
   explicit BasicNumber(NumType value) : digits_(), sign_(Sign::positive), scale_(0)
   {
     digits_.mac(base_, value);
+  }
+
+  /** Exact scale-zero boxing for guarded machine-integer execution.
+   * Unsigned subtraction forms the magnitude even for INT64_MIN; negating
+   * that value in the signed domain would be undefined behavior.
+   */
+  static auto from_machine_integer(std::int64_t value) -> BasicNumber
+  {
+    BasicNumber result;
+    auto const bits = static_cast<std::uint64_t>(value);
+    auto const magnitude = value < 0 ? std::uint64_t(0) - bits : bits;
+    result.digits_ = Details::BasicDigits<Traits>::from_machine_unsigned(magnitude);
+    result.sign_ = value < 0 ? Sign::negative : Sign::positive;
+    return result;
+  }
+
+  /** Guarded conversion, distinct from register/subscript to_unsigned().
+   * Reject a nonzero declared scale even when its fractional digits are zero:
+   * machine execution must not silently change bc's intermediate scales.
+   * Rejection neither reports an error nor mutates coefficient ownership.
+   */
+  [[nodiscard]] auto to_machine_integer() const noexcept -> std::optional<std::int64_t>
+  {
+    if (scale_ != 0) {
+      return std::nullopt;
+    }
+    constexpr auto maximum = static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max());
+    auto const magnitude = digits_.to_machine_unsigned(maximum + (sign_ == Sign::negative));
+    if (!magnitude) {
+      return std::nullopt;
+    }
+    if (sign_ == Sign::positive) {
+      return static_cast<std::int64_t>(*magnitude);
+    }
+    if (*magnitude == maximum + 1) {
+      return std::numeric_limits<std::int64_t>::min();
+    }
+    return -static_cast<std::int64_t>(*magnitude);
   }
 
   /** Convert a nonnegative bc value to its truncated integer part.
