@@ -423,7 +423,7 @@ auto deferred_library_failures(GD::Bc::VM::ExecutionChecks checks) -> bool
       GD::Bc::Library::load(vm);
       auto call = parse("q=s(0)\n");
       auto query = parse("q\n");
-      auto replacement = parse("define s(x) { return(x+7) }\n");
+      auto replacement = parse("define s(x) {\nreturn(x+7)\n}\n");
       auto user_call = parse("q=s(5)\n");
       if (!call || !query || !replacement || !user_call)
         return false;
