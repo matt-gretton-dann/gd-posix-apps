@@ -78,6 +78,24 @@ class CodegenEvidence(unittest.TestCase):
             self.assertEqual(row['pe_code']['status'], 'unavailable')
             self.assertEqual(row['file_bytes'], source.stat().st_size)
 
+    def test_pre_sampling_snapshot_preserves_inputs_without_native_inspection(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source, library = root / 'binary', root / 'library.bc'
+            source.write_bytes(image())
+            library.write_bytes(b'scale=20\n')
+            entry = self.entry(source)
+            entry['input_artifacts'] = [dict(path=str(library), sha256=CG.digest(library))]
+            with mock.patch.object(CG, 'native_commands') as inspector:
+                report = CG.collect([entry], root / 'snapshot', inspect=False)
+            inspector.assert_not_called()
+            self.assertEqual(report['status'], 'preserved')
+            self.assertFalse(report['inspection_requested'])
+            row = report['observations'][0]
+            self.assertEqual((root / 'snapshot' / row['binary']).read_bytes(), source.read_bytes())
+            copied = row['input_artifacts'][0]
+            self.assertEqual((root / 'snapshot' / copied['archive_path']).read_bytes(), library.read_bytes())
+
     def test_versioned_comparators_preserve_both_exact_executables(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

@@ -198,6 +198,7 @@ class NativeTrends(unittest.TestCase):
                 if script in ('build-gd-bc.py', 'build-bc-comparators.py'):
                     (output / 'prepared-policy').mkdir()
                     (output / 'prepared-policy/libbc.vcxproj').write_text('retained fixture')
+                    (output / 'build-manifest.json').write_text('completed build fixture')
                     name = argv[argv.index('--name') + 1] if '--name' in argv else 'howard-7.0.3'
                     (output / 'implementations.json').write_text(json.dumps(
                         {'implementations': [{'name': name, 'argv': ['fixture'], 'metadata': dict(
@@ -205,6 +206,13 @@ class NativeTrends(unittest.TestCase):
                             configuration=dict(prepared_divisors_policy=dict(
                                 status='recorded', mode='ON', enabled=True)))}]}))
                     return
+                first = root / 'evidence/first-sample-check.json'
+                if not first.exists():
+                    snapshot = root / 'evidence/elapsed-images/manifest.json'
+                    first.write_text(json.dumps(dict(
+                        images=json.loads(snapshot.read_text()) if snapshot.exists() else None,
+                        recipes=[(root / 'evidence' / role / 'build-manifest.json').is_file()
+                                 for role in ('base', 'candidate', 'aa', 'howard')])))
                 if fail:
                     raise helper.BuildError('fixture incorrect output')
                 config = json.loads(Path(argv[argv.index('--config') + 1]).read_text())
@@ -228,10 +236,11 @@ class NativeTrends(unittest.TestCase):
                 (output / 'summary.json').write_text(json.dumps({'workloads': results}))
                 (output / 'samples.jsonl').write_text('\n'.join(json.dumps(row) for row in raw))
 
-        def capture(entries, directory):
+        def capture(entries, directory, **options):
             directory.mkdir()
             (directory / 'manifest.json').write_text(json.dumps(dict(
                 names=[entry['name'] for entry in entries],
+                inspect=options.get('inspect', True),
                 commands_before_capture=len(calls))))
 
         def modules(name):
@@ -286,6 +295,15 @@ class NativeTrends(unittest.TestCase):
         aa = [row for row in report['results'] if row['comparison'] == 'aa' and row['name'] != 'startup']
         self.assertTrue(all(row['status'] == 'pass' for row in aa))
         self.assertTrue((root / 'evidence/summary.md').is_file())
+
+    def test_first_elapsed_child_already_has_ordinary_images_and_recipes(self):
+        root, _, result = self.exercise()
+        self.assertEqual(result, 0)
+        first = json.loads((root / 'evidence/first-sample-check.json').read_text())
+        self.assertIsNotNone(first['images'])
+        self.assertEqual(first['images']['names'], ['base', 'candidate', 'aa', 'howard-7.0.3'])
+        self.assertFalse(first['images']['inspect'])
+        self.assertEqual(first['recipes'], [True] * 4)
 
     def test_identical_candidate_retains_slow_samples_without_source_attribution(self):
         root, _, result = self.exercise(identical=True)
