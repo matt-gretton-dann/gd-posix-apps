@@ -428,7 +428,8 @@ def run_diagnostics(run, profiles, ordinary, presets, suite, evidence, timeout=6
         if additional_corpora is not None:
             if suite != 'math' or set(additional_corpora) != set(presets):
                 raise ValueError('additional math inputs must match the declared presets')
-            arguments += ['--additional-corpus', str(additional_corpora[preset])]
+            # Commands.run may launch the child from the results directory.
+            arguments += ['--additional-corpus', str(Path(additional_corpora[preset]).resolve())]
         run(arguments)
 
 
