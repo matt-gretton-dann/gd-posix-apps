@@ -77,7 +77,7 @@ def main():
     cases = []
     for filename in ('math-oracles.json', 'math-crossover-oracles.json', 'math-trig-oracles.json',
                      'math-bessel-zero-oracles.json', 'math-bessel-classification-oracles.json',
-                     'math-adaptive-budget-oracles.json'):
+                     'math-adaptive-budget-oracles.json', 'math-rational-kernel-oracles.json'):
         cases.extend(json.loads((ROOT / 'fixtures' / filename).read_text())['cases'])
     # At this intermediate precision the selector still attempts Hankel, but
     # contraction ends before the terms vanish. Reuse a finer enclosure.
@@ -101,13 +101,42 @@ def main():
     domain_plain, domain_outcomes = strip_probes(domain.stdout)
     assert domain_plain == ['0', '0']
     outcomes.update(domain_outcomes)
+    references = {(case['function'], tuple(case['arguments']), case['scale']): case
+                  for case in cases}
+    # Public period callbacks force both sides of the bounded kernel domains.
+    # Certify the actual reduced arguments, rather than treating a changed
+    # period as the standard sin/cos of the original argument.
+    for value, argument, reduced in (('100', '8', '8'), ('64', '384', '-128')):
+        program = ('define a(x) { return(' + value + ') }\nscale=20\n'
+                   's(' + argument + ')\nc(' + argument + ')\n')
+        result = run(args.bc, transformed, program)
+        assert result.returncode == 0 and not result.stderr, result.stderr
+        values, dependency_outcomes = strip_probes(result.stdout)
+        assert len(values) == 2
+        for function, output in zip(('s', 'c'), values):
+            reference = references[function, (reduced,), 20]
+            assert classify(decimal_fraction(output), Fraction(reference['lower']),
+                            Fraction(reference['upper']), 20) == 'pass'
+        outcomes.update(dependency_outcomes)
+    program = ('define a(x) { ibase=2;return(1) }\nscale=20\n'
+               's(4)\nibase\nibase=A\nc(4)\nibase\n')
+    result = run(args.bc, transformed, program)
+    assert result.returncode == 0 and not result.stderr, result.stderr
+    values, base_outcomes = strip_probes(result.stdout)
+    assert values == ['-4.03628594162818967804', '10', '-.16299125763286368412', '10']
+    outcomes.update(base_outcomes)
     # GD rejects an unrepresentable scale before readback. A separate portable
     # host model clips precisely one setter at a time and must reach that
     # setter's defensive error branch, without returning a numeric result.
     modeled = set()
     j_guards = [item['line'] for item in decisions
                 if item['function'] == 'j' and item['expression'] == 'scale!=w']
-    assert len(j_guards) == 2
+    assert len(j_guards) == 3
+    atan_guards = [item['line'] for item in decisions
+                   if item['function'] == 'a' and item['expression'] == 'scale!=w']
+    log_guards = [item['line'] for item in decisions
+                  if item['function'] == 'l' and item['expression'] == 'scale!=w']
+    assert len(atan_guards) == len(log_guards) == 2
     for decision in decisions:
         if decision['expression'] != 'scale!=w':
             continue
@@ -121,7 +150,11 @@ def main():
         call = {'a': 'a(0)', 'e': 'e(0)', 'l': 'l(1)',
                 's': 's(4)', 'c': 'c(4)'}.get(function)
         if function == 'j':
-            call = 'j(0,1000)' if decision['line'] == j_guards[0] else 'j(0,1)'
+            call = ['j(0,1000)', 'j(0,1)', 'scale=21\nj(0,1)'][j_guards.index(decision['line'])]
+        if function == 'a' and decision['line'] == atan_guards[1]:
+            call = 'a(.5)'
+        if function == 'l' and decision['line'] == log_guards[1]:
+            call = 'l(1.1)'
         fault = run(args.bc, model, call + '\n')
         assert fault.returncode != 0 and fault.stderr
         fault_plain, fault_outcomes = strip_probes(fault.stdout)
@@ -131,6 +164,7 @@ def main():
     report = dict(schema=1, source_sha256=hashlib.sha256(source.encode()).hexdigest(),
                   scope='test-side interpreted decision outcomes; not compiler MC/DC',
                   certified_results=len(cases), undefined_domain_guard_calls=2,
+                  public_dependency_accuracy_calls=4, observable_base_guard_calls=2,
                   fault_model='each working-scale setter independently clipped to zero',
                   decisions=[])
     for decision in decisions:
@@ -144,8 +178,15 @@ def main():
             # Positive Taylor terms, positive squaring and a positive
             # reciprocal cannot produce a negative exponential coefficient.
             expected = {'r>=0': {'false'}, 'r<0': {'true'}}
-            assert item['function'] == 'e' and missing == expected.get(item['expression']), item
-            item['exception'] = 'exponential coefficient remains nonnegative by construction'
+            if item['function'] == 'e' and missing == expected.get(item['expression']):
+                item['exception'] = 'exponential coefficient remains nonnegative by construction'
+            elif item['function'] == 'l' and item['expression'] == 'k<=1024' and missing == {'false'}:
+                # The original normalizer bounds the low-scale magnitude.
+                # The exact ten-root certificate is checked independently by
+                # test-rational-kernel-proof.py and documented in the appendix.
+                item['exception'] = 'unchanged normalization bounds low-scale root multiplier by 1024'
+            else:
+                raise AssertionError(item)
         report['decisions'].append(item)
     report['total_outcomes'] = 2 * len(decisions)
     report['observed_outcomes'] = sum(len(item['observed']) for item in report['decisions'])

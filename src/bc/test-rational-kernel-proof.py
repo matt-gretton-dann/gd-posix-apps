@@ -114,6 +114,16 @@ def fixed_polynomial(c, q, unit):
 
 
 class RationalKernelProof(unittest.TestCase):
+    def test_log_normalization_bounds_the_low_scale_root_multiplier(self):
+        # Without normalization, |decimal exponent|<64+floor(S/2)<=74.
+        # Normalization gives a mantissa in [1,10). Use a common log bound
+        # 75*log(10)<175 and the unchanged <.001 root-perturbation bound.
+        self.assertGreater(sum((F(7, 3)**i/factorial(i) for i in range(11)), F()), 10)
+        # Positive atanh coefficients give log(1.2)>2/11 and
+        # -log(.8)=log(1.25)>2/9. Ten roots therefore enter [.8,1.2].
+        self.assertLess(F(175, 1024)+F(1, 1000), F(2, 11))
+        self.assertLess(F(175, 1024)+F(1, 1000), F(2, 9))
+
     def test_exact_residuals_and_all_elementary_scale_budgets(self):
         for kind in KERNELS:
             tail, error = certificate(kind)

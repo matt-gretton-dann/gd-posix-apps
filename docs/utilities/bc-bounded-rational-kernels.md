@@ -152,6 +152,17 @@ the exact stored offset. The tail and final rounding keep the full error below
 .505U. Larger multipliers/scales and the existing high-scale block algorithm
 retain their generic behavior.
 
+The multiplier guard is defensive: its false outcome is infeasible under the
+unchanged normalizer at S=1..20. An unnormalized input has decimal exponent
+m with |m|<64+floor(S/2)<=74; a normalized mantissa lies in [1,10). Thus
+|log(x)|<75*log(10)<175 before roots. The existing root-error certificate
+bounds the accumulated logarithmic perturbation by .001. Ten roots suffice
+because 175/1024+.001<2/11<log(1.2), and also <2/9<log(1.25)=-log(.8).
+The two lower bounds follow from the first positive term of the atanh
+identity; exp(7/3)>10 bounds log(10). The exact proof test checks these
+inequalities. Decision coverage records this one infeasible outcome separately
+rather than claiming it was executed; no feasible outcome is waived.
+
 ## Bessel weighted finite Horner evaluation
 
 After the existing zero guards, symmetries and Hankel attempt, use this path
@@ -229,3 +240,12 @@ The ordinary and embedded source CLI checks also cover caller bases/state,
 public redefinitions and clamped-scale failures. Portable external execution,
 cross-platform hosted correctness, branch coverage, allocation failures,
 startup/resources and exact-source paired qualification remain required.
+
+The regenerated interpreted decision ledger checks 5,787 certified numerical
+results, two undefined-domain guard calls, four certified custom-period calls
+and two observable input-base cases. It observes 333 of 350 outcomes directly;
+independent working-scale clipping models bring the covered feasible total to
+347. The three explicitly infeasible outcomes are the two existing negative
+exponential-result branches and the proven low-scale logarithm multiplier
+limit. All 14 working-scale setters are independently fault-modeled. This is
+interpreted-library decision evidence, not compiler MC/DC or elapsed evidence.
