@@ -185,6 +185,12 @@ def gd_build_command(args, name, revision, directory, cc, cxx):
     return command
 
 
+def profile_build_command(args, name, revision, directory, cc, cxx):
+    command = gd_build_command(args, name, revision, directory, cc, cxx)
+    command[command.index('--name') + 1] = name + '-profile'
+    return command + ['--diagnostic-profile']
+
+
 def main():
     helper = load('build-bc-comparators')
     gd = load('build-gd-bc')
@@ -194,6 +200,7 @@ def main():
     parser.add_argument('--candidate', type=gd.revision_value, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--broad', action='store_true')
+    parser.add_argument('--compare-resources', action='store_true')
     parser.add_argument('--sparse-qualification', action='store_true')
     parser.add_argument('--candidate-prepared-divisors', action='store_true')
     parser.add_argument('--samples', type=int, default=9)
@@ -210,6 +217,7 @@ def main():
     cc, cxx = ('cl', 'cl') if os.name == 'nt' else ('cc', 'c++')
     entries = []
     howard = []
+    profiles = {}
     try:
         # Independent A/A build measures source/build noise; no build runs
         # concurrently with any measured executable. No tuned-binary cache.
@@ -232,6 +240,13 @@ def main():
                 builder.run([sys.executable, str(SCRIPTS.parent / 'test-divisor-reuse-cli.py'),
                              entry['argv'][0]])
         bench = load('bench-bc')
+        if args.compare_resources:
+            for role, revision in (('base', args.base), ('candidate', args.candidate)):
+                directory = root / (role + '-profile')
+                builder.run(profile_build_command(args, role, revision, directory, cc, cxx))
+                profiles[role] = json.loads((directory / 'implementations.json').read_text())['implementations'][0]
+            load('compare-bc-resources').validate_roles(bench, profiles,
+                dict(base=entries[0], candidate=entries[1]))
         base_digest = entries[0]['metadata'].get('binary_sha256')
         identical_binaries = bool(base_digest) and base_digest == entries[1]['metadata'].get('binary_sha256')
         configs = {'paired': [entries[0], entries[1]] + howard,
@@ -295,6 +310,10 @@ def main():
                                     'candidate_over_howard': competitive})
         if args.sparse_qualification:
             reports.extend(qualify_sparse(builder, evidence, entries))
+        if args.compare_resources:
+            load('compare-bc-resources').run_diagnostics(builder.run, profiles,
+                dict(base=entries[0], candidate=entries[1]),
+                ('full', 'holdout') if args.broad else ('full',), 'arithmetic', evidence)
         write(evidence / 'acceptance.json', acceptance_report(reports, args.samples))
         write(evidence / 'decisions.json', {'advisory': True, 'results': reports,
               'aa_policy_sha256': AA_POLICY.source_sha256(),
@@ -326,11 +345,11 @@ def main():
         # Preserve exact recipes/logs without uploading cloned source/build trees.
         write(evidence / 'orchestration.json', {'base': args.base, 'candidate': args.candidate,
               'split_point': args.split_point, 'candidate_prepared_divisors': args.candidate_prepared_divisors,
-              'sparse_qualification': args.sparse_qualification,
+              'sparse_qualification': args.sparse_qualification, 'compare_resources': args.compare_resources,
               'commands': builder.commands})
         for path in root.glob('command-*.log'):
             shutil.copyfile(str(path), str(evidence / path.name))
-        for name in ('base', 'candidate', 'aa', 'howard'):
+        for name in ('base', 'candidate', 'aa', 'howard', 'base-profile', 'candidate-profile'):
             source = root / name
             target = evidence / name
             target.mkdir(exist_ok=True)
@@ -344,6 +363,8 @@ def main():
         # Every timed child has finished. Preserve every measured GD and Howard
         # image without rebuilding, relinking or changing compiler flags.
         load('collect-bc-codegen').collect(entries + howard, evidence / 'codegen')
+        if profiles:
+            load('compare-bc-resources').preserve_profiles(profiles, evidence / 'profile-images')
 
 
 if __name__ == '__main__':
