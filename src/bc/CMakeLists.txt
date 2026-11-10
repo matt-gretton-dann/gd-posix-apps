@@ -57,7 +57,15 @@ if(ENABLE_NON_POSIX_EXTENSIONS)
   # bc.hh exposes mode-dependent inline code, so every consumer needs this.
   target_compile_definitions(bc-language-mode INTERFACE ENABLE_EXTENSIONS=1)
 endif()
-option(ENABLE_BC_STACK_EXECUTION "Enable experimental scalar operand-stack execution" OFF)
+# Keep diagnostic and cross builds on the register path unless requested.
+set(_bc_stack_default ON)
+if(CMAKE_CROSSCOMPILING OR ENABLE_BC_COVERAGE OR ENABLE_BC_PROFILE
+   OR ENABLE_BC_VM_PGO_GENERATE OR BC_VM_PGO_PROFILE OR ENABLE_BC_PREPARED_DIVISORS)
+  set(_bc_stack_default OFF)
+endif()
+option(ENABLE_BC_STACK_EXECUTION "Enable verified scalar operand-stack execution"
+       ${_bc_stack_default})
+unset(_bc_stack_default)
 if(ENABLE_BC_STACK_EXECUTION)
   target_sources(libbc PRIVATE stack-execution.cc)
   target_compile_definitions(libbc PRIVATE GD_BC_STACK_EXECUTION=1)

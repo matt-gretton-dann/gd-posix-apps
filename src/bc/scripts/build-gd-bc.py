@@ -460,6 +460,10 @@ def main():
                                   diagnostic_profile=args.diagnostic_profile, builder=builder)
         observed_layout = verified_array_layout(helper, build, args.array_storage)
         metadata['configuration']['array_storage'] = observed_layout
+        cache = cache_values(build / 'CMakeCache.txt')
+        metadata['configuration']['stack_execution'] = (
+            cache.get('ENABLE_BC_STACK_EXECUTION') == 'ON'
+            and cache.get('ENABLE_BC_PREPARED_DIVISORS') != 'ON')
         image = build / 'src/bc/bc-math-library-image.inc'
         if args.preparsed_library and not image.is_file():
             raise helper.BuildError('requested preparsed math-library image was not built')
