@@ -2,9 +2,10 @@
 
 This workflow measures the exact #726 candidate `4fbcf17d` against main
 `19ef8016` on Ubuntu 24.04 x64, Windows 2025 x64 and macOS 15 arm64.
-It uses the existing qualification collectors from `1f189965`. Git archives
-supply their canonical bytes on every host. Each job records the three
-immutable revisions, the actual collector file hashes and its command plan.
+It uses the existing qualification collectors from `1f189965`. Each job
+records the immutable revisions, the hashes of the archived inputs and the
+command plan. Verify hashes against the actual runner bytes. Git archive
+can materialize text with native line endings on Windows.
 
 The arithmetic jobs cover the complete existing full and held-out corpora
 separately with 151 samples per paired stage, the sparse checks and matched
@@ -30,9 +31,19 @@ the collector inputs. The original arithmetic and startup jobs retain their
 evidence and timing schedules. All outcomes, including the initial setup
 failures and the earlier #726 advisory results, remain available separately.
 The existing performance, accuracy, startup and resource criteria still apply.
-This work concerns the standalone Bessel change. The broader #197 integration
-and its original qualification records remain separate.
+The [original run](https://github.com/matt-gretton-dann/gd-posix-apps/actions/runs/43077415941)
+preserved 26 of its 27 archives. The Windows arithmetic holdout completed
+collection and failed during upload. Linux startup qualified. Windows and
+macOS startup remained inconclusive.
+
+The [math recovery](https://github.com/matt-gretton-dann/gd-posix-apps/actions/runs/43079058051)
+completed 13 of 18 partitions. Three finished collection and failed during
+upload. Both Windows scale-1000 paired stages reached the math command
+deadline and retained partial samples. These five partitions provide no
+qualification. The standalone change remains unqualified. The broader
+#197 integration has its own qualification records.
 
 For a read-only review of the partition and command plan, invoke
 `collect.py --suite math-full-20 --output DIRECTORY --plan-only` from the
-repository root. Plan mode builds no executable and runs no timed child.
+repository root with a new output directory. Plan mode builds no executable
+and runs no timed child.
