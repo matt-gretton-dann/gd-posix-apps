@@ -1,0 +1,73 @@
+name: bc standalone Bessel qualification
+
+on:
+  pull_request:
+    branches: [main]
+    types: [synchronize]
+    paths:
+      - '.github/workflows/bc-bessel-turning-qualification.yml'
+      - 'docs/utilities/bc-bessel-turning-qualification/**'
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    # Recover only the original math jobs that stopped before calibration.
+    if: >-
+      github.head_ref == 'codex/bc-bessel-turning-qualification' &&
+      github.event.before == '610ceefa9d42563dd07be415e9de24fe82917754'
+    name: Standalone Bessel / ${{ matrix.image }} / ${{ matrix.suite }}
+    runs-on: ${{ matrix.image }}
+    timeout-minutes: 330
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [ubuntu-24.04, macos-15, windows-2025]
+        suite: [math-full-20, math-full-100, math-full-1000,
+                math-holdout-20, math-holdout-100, math-holdout-1000]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Establish native MSVC environment
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installation = & "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe" -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (!$installation) { throw 'Native x64 MSVC is unavailable' }
+          $variables = & cmd /c "`"$installation\Common7\Tools\VsDevCmd.bat`" -arch=x64 -host_arch=x64 >nul && set"
+          if ($LASTEXITCODE) { throw 'Cannot initialize MSVC' }
+          foreach ($line in $variables) {
+            if ($line -match '^(PATH|INCLUDE|LIB|LIBPATH|VCToolsInstallDir|VCINSTALLDIR|VSINSTALLDIR|WindowsSdkDir|WindowsSDKVersion|UniversalCRTSdkDir|UCRTVersion|Platform)=(.*)$') {
+              "$($matches[1])=$($matches[2])" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            }
+          }
+      - name: Collect the fixed comparison partition
+        shell: pwsh
+        env:
+          BC_STUDY_SUITE: ${{ matrix.suite }}
+        run: |
+          python docs/utilities/bc-bessel-turning-qualification/collect.py --suite $env:BC_STUDY_SUITE --output qualification
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Preserve original inputs and available evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bc-bessel-turning-${{ matrix.image }}-${{ matrix.suite }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            qualification/plan.json
+            qualification/declared/
+            qualification/driver/
+            qualification/performance/evidence/
+            qualification/startup-config.json
+            qualification/startup-images/
+            qualification/startup-results/
+            qualification/base/
+            qualification/aa/
+            qualification/candidate/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 30
