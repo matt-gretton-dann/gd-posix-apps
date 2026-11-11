@@ -535,7 +535,10 @@ private:
   }
 
   using Param = std::variant<ArrayValues, Number>;  ///< Parameter to a function
-  using Params = std::vector<Param, Profile::Allocator<Param, Profile::AllocationKind::frames>>;
+  template<typename Value>
+  using FrameValues =
+    std::vector<Value, Profile::Allocator<Value, Profile::AllocationKind::frames>>;
+  using Params = FrameValues<Param>;
   struct ParamMark
   {
     std::size_t begin;
@@ -566,7 +569,8 @@ private:
   std::array<Number, Letter::count_> variables_;  ///< Array of scalar variables, indexed by Letter.
   Params parameters_;                             ///< Contiguous values for active argument packs.
   ParamMarks param_marks_;                        ///< Pack offsets; indices survive vector growth.
-  Params saved_locals_;                           ///< Contiguous saved locals for active calls.
+  FrameValues<Number> saved_scalars_;            ///< Saved scalar bindings for active calls.
+  FrameValues<ArrayValues> saved_arrays_;        ///< Saved array bindings for active calls.
   std::deque<ActivationResults,
              Profile::Allocator<ActivationResults, Profile::AllocationKind::frames>>
     result_buffers_;  ///< Reusable buffers, indexed by simultaneous activation depth.
@@ -1286,28 +1290,30 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
   }
 #endif
 
-  // Retain offsets rather than references across execute(): recursive calls
-  // may grow the same buffer. Capacity remains available after restoration.
-  auto const saved_begin = saved_locals_.size();
+  // Recursive calls can grow either buffer. Keep offsets across execute(),
+  // and retain each buffer's capacity after restoring the bindings.
+  auto const scalar_begin = saved_scalars_.size();
+  auto const array_begin = saved_arrays_.size();
   auto const saved_scale = scale_;
   auto const saved_ibase = ibase_;
   auto const saved_obase = obase_;
   auto restore = [&](bool partial) noexcept {
-    auto saved = saved_begin;
-    auto const end = saved_locals_.size();
-    // Allocation can fail during frame setup. In that case restore only the
-    // prefix that was saved, in the same scalar-then-array order.
+    auto scalar = scalar_begin;
+    auto array = array_begin;
+    auto const scalar_end = saved_scalars_.size();
+    auto const array_end = saved_arrays_.size();
+    // Allocation can fail during either save loop. In that case each buffer
+    // holds only the prefix of bindings already replaced in that loop.
     locals.for_each_variable([&](Letter l) {
-      if (!partial || saved < end)
-        variables_.at(static_cast<unsigned>(l)) =
-          std::move(std::get<Number>(saved_locals_[saved++]));
+      if (!partial || scalar < scalar_end)
+        variables_.at(static_cast<unsigned>(l)) = std::move(saved_scalars_[scalar++]);
     });
     locals.for_each_array([&](Letter l) {
-      if (!partial || saved < end)
-        arrays_.at(static_cast<unsigned>(l)) =
-          std::move(std::get<ArrayValues>(saved_locals_[saved++]));
+      if (!partial || array < array_end)
+        arrays_.at(static_cast<unsigned>(l)) = std::move(saved_arrays_[array++]);
     });
-    saved_locals_.resize(saved_begin);
+    saved_scalars_.resize(scalar_begin);
+    saved_arrays_.resize(array_begin);
     if (save_specials_) {
       scale_ = saved_scale;
       ibase_ = saved_ibase;
@@ -1317,11 +1323,11 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
 
   try {
     locals.for_each_variable([this](Letter l) {
-      saved_locals_.emplace_back(std::move(variables_.at(static_cast<unsigned>(l))));
+      saved_scalars_.emplace_back(std::move(variables_.at(static_cast<unsigned>(l))));
       variables_.at(static_cast<unsigned>(l)) = Number(0);
     });
     locals.for_each_array([this](Letter l) {
-      saved_locals_.emplace_back(std::move(arrays_.at(static_cast<unsigned>(l))));
+      saved_arrays_.emplace_back(std::move(arrays_.at(static_cast<unsigned>(l))));
       arrays_.at(static_cast<unsigned>(l)).reset();
     });
 

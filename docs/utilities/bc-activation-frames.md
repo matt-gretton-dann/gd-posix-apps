@@ -16,11 +16,14 @@ instruction profiling execute the original bytecode. Windows also uses the
 original call path because the fused build exceeded the 5% regression limit
 in the native comparison cohort.
 
-Saved locals occupy a separate contiguous vector. A call records its starting
-offset, moves the selected scalar and array values into it, and installs empty
-locals. After execution it restores those values from the recorded offsets.
-Recursive calls can grow the same vector without invalidating the offsets.
-The previous redundant copy of the entire saved-local list is removed.
+Saved locals occupy two typed contiguous buffers, one for scalar values and
+one for arrays. Each call records both starting offsets, moves its selected
+bindings into the corresponding buffers, and installs empty locals.
+Restoration reads the typed values directly. Recursive calls can grow either
+buffer while the saved offsets remain valid. If allocation fails during setup,
+the two buffer lengths identify exactly which bindings need restoration.
+The buffers can retain capacity independently for scalar and array-heavy
+calls.
 
 Each simultaneous instruction-pack activation borrows a result vector from a
 VM-owned deque. Deque growth preserves caller references. The pack destructor
