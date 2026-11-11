@@ -1,0 +1,36 @@
+name: Upload bc benchmark evidence
+description: Preserve the current evidence once, retrying a failed upload without rerunning the collector.
+inputs:
+  name:
+    description: Immutable artifact name for this job and run attempt.
+    required: true
+  path:
+    description: Path to the completed or partial evidence.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Upload evidence
+      id: initial
+      if: ${{ !cancelled() }}
+      continue-on-error: true
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ inputs.path }}
+        if-no-files-found: error
+        retention-days: 30
+    - name: Wait briefly after the upload failure
+      if: ${{ !cancelled() && steps.initial.outcome == 'failure' }}
+      shell: python
+      run: |
+        import time
+        time.sleep(30)
+    - name: Retry evidence upload
+      if: ${{ !cancelled() && steps.initial.outcome == 'failure' }}
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ inputs.path }}
+        if-no-files-found: error
+        retention-days: 30

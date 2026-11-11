@@ -1,0 +1,47 @@
+name: bc evidence upload test
+
+on:
+  pull_request:
+    paths:
+      - '.github/actions/bc-upload-evidence/**'
+      - '.github/workflows/bc-evidence-upload-test.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  upload:
+    name: Evidence upload / ${{ matrix.image }}
+    runs-on: ${{ matrix.image }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [ubuntu-24.04, windows-2025, macos-15]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Prepare synthetic evidence
+        shell: python
+        run: |
+          from pathlib import Path
+          Path('synthetic-evidence').mkdir()
+          Path('synthetic-evidence/sample.json').write_bytes(b'{"fixture":true}\n')
+      - name: Publish synthetic evidence
+        uses: ./.github/actions/bc-upload-evidence
+        with:
+          name: bc-upload-fixture-${{ matrix.image }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: synthetic-evidence/
+      - name: Check that unavailable evidence still fails
+        id: missing
+        continue-on-error: true
+        uses: ./.github/actions/bc-upload-evidence
+        with:
+          name: bc-upload-missing-${{ matrix.image }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: absent-evidence/
+      - name: Require a hard failure for missing evidence
+        if: steps.missing.outcome != 'failure'
+        shell: python
+        run: raise SystemExit('missing evidence unexpectedly passed')
