@@ -47,7 +47,8 @@ new recursion-depth guarantee.
 
 ## Exact integer self recurrences
 
-A prepared definition can carry a portable reduction for a narrow family.
+On the first verified call, the VM can prepare a portable reduction for a
+narrow family.
 The verified instructions must extract one scalar parameter, choose between
 a base return and a single decreasing self call, and combine the recursive
 result with the parameter by addition or multiplication. The base returns
@@ -67,7 +68,9 @@ and consumes the argument pack only after it has the complete result.
 
 Full-check execution, unproved definitions, unsupported inputs and
 interrupted or failed reductions retain the original call path. Replacing
-a definition also replaces its reduction. Differential tests compare
+a definition discards its reduction. The VM allocates the reduction table
+only when it finds a match. It sits outside the ordinary function entries
+and after the other VM state, preserving the offsets of existing fields. Differential tests compare
 ordinary recursion with the prepared path. An allocation fault sweep
 checks retry and preservation of the outer binding, and instrumented
 tests count one VM call for a wide factorial and a stepped sum. These

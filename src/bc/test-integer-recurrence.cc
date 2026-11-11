@@ -106,8 +106,11 @@ TEST_CASE("Integer reduction rejects effects and retains generic call semantics"
   }
   std::string const inputs = "define f(n) {\nif(n<=1)return(1)\nreturn(n*f(n-1))\n}\n"
                              "f(-1)\nf(.5)\nf(4.0)\nf(5.5)\n"
-                             "define f(n) {\nif(n<=2)return(7)\nreturn(n+f(n-2))\n}\nf(7)\n";
-  CHECK(run(inputs, VM::ExecutionChecks::verified) == run(inputs, VM::ExecutionChecks::full));
+                             "define f(n) {\nif(n<=2)return(7)\nreturn(n+f(n-2))\n}\nf(7)\n"
+                             "g=3\ndefine f(n) {\ng+=n\nreturn(g)\n}\nf(7)\ng\n";
+  auto const expected = run(inputs, VM::ExecutionChecks::full);
+  CHECK(expected.ends_with("22\n10\n10\n"));
+  CHECK(run(inputs, VM::ExecutionChecks::verified) == expected);
 }
 
 TEST_CASE("Integer reduction bounds and interruptions preserve the output owner",

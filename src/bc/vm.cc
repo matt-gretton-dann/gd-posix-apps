@@ -275,7 +275,11 @@ public:
   FunctionCode(FunctionCode&&) noexcept = default;
   auto operator=(FunctionCode const&) -> FunctionCode& = default;
   auto operator=(FunctionCode&&) noexcept -> FunctionCode& = default;
-  auto view(bool full_checks, VariableMask locals, Letter self) -> VerifiedInstructions
+#if !defined(_WIN32)
+  auto view(bool full_checks, [[maybe_unused]] VariableMask locals) -> VerifiedInstructions
+#else
+  auto view(bool full_checks) -> VerifiedInstructions
+#endif
   {
     if (!full_checks && !prepared_) {
       // Publish the plans together so a failed allocation leaves the
@@ -283,15 +287,14 @@ public:
       auto consumption = plan_consumption(instructions_, true);
       auto slots = plan_result_slots(instructions_, sizeof(ResultSlot), consumption);
       auto layout = prepare_layout(instructions_, std::move(slots), true, true);
-      auto const recurrence = IntegerRecurrence::match(instructions_, locals, self);
 #if !GD_BC_PROFILE && !defined(_WIN32)
       auto parameter = prove_scalar_parameter();
       if (parameter && !locals.contains(*parameter)) {
         parameter.reset();
       }
-      prepared_.emplace(std::move(consumption), std::move(layout), recurrence, parameter);
+      prepared_.emplace(std::move(consumption), std::move(layout), parameter);
 #else
-      prepared_.emplace(std::move(consumption), std::move(layout), recurrence);
+      prepared_.emplace(std::move(consumption), std::move(layout));
 #endif
     }
     auto const& plans = prepared_ ? *prepared_ : empty_plans_;
@@ -349,7 +352,6 @@ private:
   {
     ConsumptionPlan consumption;
     ExecutionLayout layout;
-    std::optional<IntegerRecurrence> recurrence;
 #if !GD_BC_PROFILE && !defined(_WIN32)
     std::optional<Variable> scalar_parameter;
 #endif
@@ -450,7 +452,14 @@ struct VMState
                                             Number const* borrowed = nullptr) -> Number;
 #endif
 
-  // Keep the rare reduction and its Number temporaries out of ordinary calls.
+  // Keep preparation and the reduction's temporaries out of ordinary calls.
+#if defined(_MSC_VER)
+  __declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+  [[gnu::noinline]]
+#endif
+  void prepare_integer_recurrence(FunctionCode const& code, VariableMask locals, Letter self);
+
 #if defined(_MSC_VER)
   __declspec(noinline)
 #elif __has_cpp_attribute(gnu::noinline)
@@ -633,6 +642,21 @@ private:
     return stack;
   }
 #endif
+
+  // Allocate only when a reduction matches. Keep existing function entries
+  // and the offsets of the ordinary interpreter's state unchanged.
+  using RecurrencePlans = std::array<std::optional<IntegerRecurrence>, Letter::count_>;
+  struct RecurrencePlansDelete
+  {
+    void operator()(RecurrencePlans* plans) const noexcept
+    {
+      delete plans;
+#if GD_BC_PROFILE
+      Profile::deallocated(Profile::AllocationKind::frames, sizeof(RecurrencePlans));
+#endif
+    }
+  };
+  std::unique_ptr<RecurrencePlans, RecurrencePlansDelete> recurrence_plans_;
 };
 
 /** \brief  An executable instruction pack.
@@ -1020,10 +1044,13 @@ void GD::Bc::Details::VMState::function(Letter func, Instructions::const_iterato
   if (full_checks()) {
     validate(instrs, true);
   }
-  functions_.at(static_cast<unsigned>(func)) =
+  auto const index = static_cast<unsigned>(func);
+  functions_.at(index) =
     std::make_optional(std::make_tuple(FunctionCode(std::move(instrs)), mask, loc));
+  if (recurrence_plans_)
+    (*recurrence_plans_)[index].reset();
 #if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
-  stack_plans_[static_cast<unsigned>(func)] = {};
+  stack_plans_[index] = {};
 #endif
 }
 
@@ -1042,12 +1069,35 @@ void GD::Bc::Details::VMState::defer_library_function(Letter name, std::string_v
 {
   auto const index = static_cast<unsigned>(name);
   functions_.at(index).reset();
+  if (recurrence_plans_)
+    (*recurrence_plans_)[index].reset();
 #if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
   stack_plans_[index] = {};
 #endif
   deferred_functions_.at(index) = {image, decode};
 }
 #endif
+
+void GD::Bc::Details::VMState::prepare_integer_recurrence(FunctionCode const& code,
+                                                           VariableMask locals, Letter self)
+{
+  auto const recurrence = IntegerRecurrence::match(code.instructions_, locals, self);
+  if (!recurrence)
+    return;
+  if (!recurrence_plans_) {
+    try {
+      recurrence_plans_.reset(new RecurrencePlans{});
+    }
+    catch (std::bad_alloc const&) {
+      // The ordinary verified plan is ready even without the optional cache.
+      return;
+    }
+#if GD_BC_PROFILE
+    Profile::allocated(Profile::AllocationKind::frames, sizeof(RecurrencePlans));
+#endif
+  }
+  (*recurrence_plans_)[static_cast<unsigned>(self)] = recurrence;
+}
 
 auto GD::Bc::Details::VMState::try_integer_recurrence(IntegerRecurrence const& recurrence,
                                                       Number const* borrowed)
@@ -1304,15 +1354,27 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
   auto const use_source = full_checks();
 #endif
   auto& code = std::get<0>(def);
+  auto const first_verified_call = !use_source && !code.prepared_;
+#if defined(_WIN32)
+  // Preserve the ordinary Windows prologue used by the accepted interpreter.
+  auto const func_instructions = code.view(use_source);
   auto const locals = std::get<1>(def);
-  auto const func_instructions = code.view(use_source, locals, func);
-  if (!use_source && code.prepared_->recurrence && code.prepared_->recurrence->self == func) {
-#if GD_BC_FORWARD_SCALAR_ARGUMENT
-    if (auto result = try_integer_recurrence(*code.prepared_->recurrence, argument))
 #else
-    if (auto result = try_integer_recurrence(*code.prepared_->recurrence, nullptr))
+  auto const locals = std::get<1>(def);
+  auto const func_instructions = code.view(use_source, locals);
 #endif
-      return std::move(*result);
+  if (first_verified_call)
+    prepare_integer_recurrence(code, locals, func);
+  if (recurrence_plans_ && !use_source) {
+    auto const& recurrence = (*recurrence_plans_)[index];
+    if (recurrence) {
+#if GD_BC_FORWARD_SCALAR_ARGUMENT
+      if (auto result = try_integer_recurrence(*recurrence, argument))
+#else
+      if (auto result = try_integer_recurrence(*recurrence, nullptr))
+#endif
+        return std::move(*result);
+    }
   }
 
 #if GD_BC_FORWARD_SCALAR_ARGUMENT
