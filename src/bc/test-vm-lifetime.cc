@@ -642,8 +642,8 @@ auto native_leaf_rejection_cache() -> bool
 #endif
 
 namespace {
-auto call_allocation_failures(char const* setup_text, char const* call_text,
-                              char const* expected, char const* label) -> bool
+auto call_allocation_failures(char const* setup_text, char const* call_text, char const* expected,
+                              char const* label) -> bool
 {
   using namespace GD::Bc;
   auto parse = [](std::string const& text) {
@@ -678,14 +678,14 @@ auto call_allocation_failures(char const* setup_text, char const* call_text,
       // leave the outer binding and parameter ownership ready for retry.
       if ((threw && !injected) || (threw && vm.execute(*call)) || vm.execute(*query) ||
           output.str() != expected || !errors.str().empty()) {
-        std::fprintf(stderr, "%s call sweep failed at %zu (injected=%d, threw=%d)\n",
-                     label, point, int(injected), int(threw));
+        std::fprintf(stderr, "%s call sweep failed at %zu (injected=%d, threw=%d)\n", label, point,
+                     int(injected), int(threw));
         return false;
       }
     }
     if (outstanding.load(std::memory_order_relaxed) != live) {
-      std::fprintf(stderr, "%s call sweep retained %td allocations at %zu\n",
-                   label, outstanding.load(std::memory_order_relaxed) - live, point);
+      std::fprintf(stderr, "%s call sweep retained %td allocations at %zu\n", label,
+                   outstanding.load(std::memory_order_relaxed) - live, point);
       return false;
     }
     if (!injected) {
@@ -724,15 +724,15 @@ auto main() -> int
     std::fprintf(stderr, "Native leaf permanent rejection was not cached\n");
     return 1;
   }
-  if (!call_allocation_failures("x=17\ndefine f(x) {\nreturn(x*x+1)\n}\n",
-                                "q=f(999999999)\n", "17\n999999998000000002\n", "Native leaf")) {
+  if (!call_allocation_failures("x=17\ndefine f(x) {\nreturn(x*x+1)\n}\n", "q=f(999999999)\n",
+                                "17\n999999998000000002\n", "Native leaf")) {
     std::fprintf(stderr, "Native leaf call allocation failure damaged arguments or retry\n");
     return 1;
   }
 #endif
   if (!call_allocation_failures(
-        "x=17\ndefine f(x) {\nif(x<=1)return(1)\nreturn(x*f(x-1))\n}\n",
-        "q=f(50)\n", "17\n30414093201713378043612608166064768844377641568960512000000000000\n",
+        "x=17\ndefine f(x) {\nif(x<=1)return(1)\nreturn(x*f(x-1))\n}\n", "q=f(50)\n",
+        "17\n30414093201713378043612608166064768844377641568960512000000000000\n",
         "Integer recurrence")) {
     std::fprintf(stderr, "Integer recurrence allocation failure damaged arguments or retry\n");
     return 1;

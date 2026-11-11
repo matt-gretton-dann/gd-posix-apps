@@ -1050,7 +1050,7 @@ void GD::Bc::Details::VMState::defer_library_function(Letter name, std::string_v
 #endif
 
 auto GD::Bc::Details::VMState::try_integer_recurrence(IntegerRecurrence const& recurrence,
-                                                    Number const* borrowed)
+                                                      Number const* borrowed)
   -> std::optional<Number>
 {
   if (param_marks_.empty())
