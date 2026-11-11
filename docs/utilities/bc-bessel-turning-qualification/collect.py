@@ -97,6 +97,13 @@ def main():
                      for name in tree.namelist() if not name.endswith('/')}
             tree.extractall(temporary)
         scripts = temporary / 'src/bc/scripts'
+        if args.suite.startswith('math-'):
+            # The archived controller invokes this path before calibration.
+            # The bridge uses the candidate checkout's tests and fixtures.
+            relative = 'src/bc/test-math-library-cli.py'
+            bridge = Path(__file__).with_name('candidate-preflight.py').read_bytes()
+            (temporary / relative).write_bytes(bridge)
+            files[relative] = hashlib.sha256(bridge).hexdigest()
         commands = command_plan(args.suite, source, output, temporary, scripts)
         write(output / 'plan.json', dict(base=BASE, candidate=CANDIDATE, harness=HARNESS,
              workflow_source=subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),

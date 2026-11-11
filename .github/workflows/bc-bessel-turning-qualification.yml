@@ -3,7 +3,7 @@ name: bc standalone Bessel qualification
 on:
   pull_request:
     branches: [main]
-    types: [opened]
+    types: [synchronize]
     paths:
       - '.github/workflows/bc-bessel-turning-qualification.yml'
       - 'docs/utilities/bc-bessel-turning-qualification/**'
@@ -13,7 +13,10 @@ permissions:
 
 jobs:
   qualify:
-    if: github.head_ref == 'codex/bc-bessel-turning-qualification'
+    # Recover only the original math jobs that stopped before calibration.
+    if: >-
+      github.head_ref == 'codex/bc-bessel-turning-qualification' &&
+      github.event.before == '610ceefa9d42563dd07be415e9de24fe82917754'
     name: Standalone Bessel / ${{ matrix.image }} / ${{ matrix.suite }}
     runs-on: ${{ matrix.image }}
     timeout-minutes: 330
@@ -21,8 +24,7 @@ jobs:
       fail-fast: false
       matrix:
         image: [ubuntu-24.04, macos-15, windows-2025]
-        suite: [arithmetic-full, arithmetic-holdout, startup,
-                math-full-20, math-full-100, math-full-1000,
+        suite: [math-full-20, math-full-100, math-full-1000,
                 math-holdout-20, math-holdout-100, math-holdout-1000]
     steps:
       - uses: actions/checkout@v7

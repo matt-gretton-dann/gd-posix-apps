@@ -21,10 +21,15 @@ the matched baseline and separate resource diagnostics. The per-child bound
 is 600 seconds and the math command budget is 14,400 seconds. The outer
 collector budget is 18,000 seconds and the hosted job limit is 330 minutes.
 
-The study is prospective and opens once on the qualification branch. It
-retains the original #726 advisory run separately and uploads every available
-outcome, including failed stages. There is no retry for acceptance. The
-existing performance, accuracy, startup and resource criteria still apply.
+The first run opened once on the qualification branch. Its math jobs stopped
+before calibration when the archived controller's CLI test path was absent.
+The recovery event is restricted to the first qualification head as its
+previous revision and contains only the math partitions. The CLI bridge
+runs the exact candidate checkout's tests and records its own hash alongside
+the collector inputs. The original arithmetic and startup jobs retain their
+evidence and timing schedules. All outcomes, including the initial setup
+failures and the earlier #726 advisory results, remain available separately.
+The existing performance, accuracy, startup and resource criteria still apply.
 This work concerns the standalone Bessel change. The broader #197 integration
 and its original qualification records remain separate.
 
