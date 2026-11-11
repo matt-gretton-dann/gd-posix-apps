@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   correctness:
-    if: github.head_ref == 'codex/bc-zero-scale-bessel' || github.head_ref == 'codex/bc-adaptive-math-reconstruction' || github.head_ref == 'codex/bc-reconstruction-qualification' || github.head_ref == 'codex/bc-bounded-rational-math'
+    if: github.head_ref == 'codex/bc-zero-scale-bessel' || github.head_ref == 'codex/bc-adaptive-math-reconstruction' || github.head_ref == 'codex/bc-reconstruction-qualification' || github.head_ref == 'codex/bc-bounded-rational-math' || github.head_ref == 'codex/bc-bessel-turning-horner'
     name: Bessel zero / ${{ matrix.os }} / ${{ matrix.mode.name }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60

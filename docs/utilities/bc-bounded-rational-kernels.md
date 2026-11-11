@@ -218,6 +218,44 @@ Every one of the 180 band/scale cases has tail <.004U and combined error
 including final rounding <.505U. Generic zero/high-scale/out-of-domain paths
 remain available; the earlier Hankel call order preserves public dependencies.
 
+### Turning-region order bound
+
+For 16<x<=128 and n>=x, a shorter table uses bands (L,A] with n>=L.
+At a fixed omitted index k=N+1, the absolute term increases with x and
+decreases with n throughout these bands. In particular, increasing n
+multiplies the term by (x/2)/(n+k+1), which is at most one. The first
+omitted term and following contraction therefore give the bound
+
+    (A/2)^L * (A*A/4)^(N+1) /
+      ((N+1)! * (L+N+1)! * (1-(A*A/4)/((N+2)*(L+N+2)))).
+
+Use the same N=floor((h*S+p)/d) representation.
+
+| L | A | h | p | d |
+|---:|---:|---:|---:|---:|
+| 16 | 24 | 10 | 275 | 11 |
+| 24 | 32 | 17 | 558 | 18 |
+| 32 | 48 | 15 | 665 | 14 |
+| 48 | 64 | 11 | 595 | 10 |
+| 64 | 96 | 10 | 848 | 9 |
+| 96 | 128 | 15 | 1542 | 13 |
+
+For y=x/2, the normalized absolute polynomial and its derivative with
+respect to Q are bounded by exp(Q/(n+1)). Each remaining leading-factor
+product is bounded by exp(y), since its consecutive denominators are
+at least the corresponding factorial. Thus exp(y+y*y/(n+1)) bounds the
+growth of the absolute series and each weighted arithmetic perturbation.
+Since n>=x, y+y*y/(n+1)<=3x/4. Use E=10^(floor(21*x/64)+1) in the same
+roundoff budget ((2*n+3)*E+4)u, and compute W=S+floor(21*x/64)+1+
+length(2*n+3)+4 at scale zero. The arithmetic allowance is below .0002U,
+and the exact proof checks the .004U tail allowance for every band and
+entry scale. The argument-coercion and final-rounding bounds still apply.
+
+For j(20,20) at scale 20, the bounds select 43 Horner steps and 33 working
+places. The general bounded table selects 62 steps and 41 places for the
+same input. These are counts derived from the source. Elapsed qualification
+requires a prospective hosted comparison.
+
 ## Validation and remaining qualification
 
 `test-rational-kernel-proof.py` checks exact residuals, positive denominators,
@@ -243,9 +281,9 @@ startup/resources and exact-source paired qualification remain required.
 
 The regenerated interpreted decision ledger checks 5,787 certified numerical
 results, two undefined-domain guard calls, four certified custom-period calls
-and two observable input-base cases. It observes 333 of 350 outcomes directly;
+and two observable input-base cases. It observes 349 of 366 outcomes directly;
 independent working-scale clipping models bring the covered feasible total to
-347. The three explicitly infeasible outcomes are the two existing negative
+363. The three explicitly infeasible outcomes are the two existing negative
 exponential-result branches and the proven low-scale logarithm multiplier
 limit. All 14 working-scale setters are independently fault-modeled. This is
 interpreted-library decision evidence, not compiler MC/DC or elapsed evidence.

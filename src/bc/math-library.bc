@@ -663,13 +663,32 @@ define j(n,x) {
           if (x<=2) {g=2;h=8;p=64;d=15}
           if (x<=1) {g=1;h=7;p=53;d=17}
           if (x<=.5) {g=.5;h=5;p=30;d=14}
+          w=0
+          /* Order-aware Bessel degree rules for the turning region and
+             higher orders. Each upper endpoint uses the previous endpoint
+             as a lower bound on n. The weighted growth is <=exp(3*x/4). */
+          if (x>16) {
+            if (n>=x) {
+              h=15
+              p=1542
+              d=13
+              if (x<=96) {h=10;p=848;d=9}
+              if (x<=64) {h=11;p=595;d=10}
+              if (x<=48) {h=15;p=665;d=14}
+              if (x<=32) {h=17;p=558;d=18}
+              if (x<=24) {h=10;p=275;d=11}
+              w=s+(21*x)/64+1+length(2*n+3)+4
+            }
+          }
           k=(h*s+p)/d
-          m=3*g
-          if (m<4*(s+1)) m=4*(s+1)
-          /* length(2*m) is ceil(log10(2*n_max+3)), n_max=m-1.
-             The guard exp(g)<10^ceil(7*g/16) uses exact integer
-             arithmetic; the half-unit band also rounds up to one. */
-          w=s+(7*g+15)/16+length(2*m)+4
+          if (w==0) {
+            m=3*g
+            if (m<4*(s+1)) m=4*(s+1)
+            /* length(2*m) is ceil(log10(2*n_max+3)), n_max=m-1.
+               The guard exp(g)<10^ceil(7*g/16) uses exact integer
+               arithmetic; the half-unit band also rounds up to one. */
+            w=s+(7*g+15)/16+length(2*m)+4
+          }
           scale=w
           if (scale!=w) return(1/0)
           u=x/2

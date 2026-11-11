@@ -203,8 +203,12 @@ class RationalKernelProof(unittest.TestCase):
         start = source.find('Order-aware Bessel degree rules')
         self.assertNotEqual(start, -1)
         block = source[start:source.index('k=(h*s+p)/d', start)]
-        entries = [tuple(map(int, match)) for match in re.findall(
-            r'if \(x<=([0-9]+)\) \{h=([0-9]+);p=([0-9]+);d=([0-9]+)\}', block)]
+        initial = re.search(r'\n +h=([0-9]+)\n +p=([0-9]+)\n +d=([0-9]+)', block)
+        self.assertIsNotNone(initial)
+        self.assertIn('w=s+(21*x)/64+1+length(2*n+3)+4', block)
+        entries = [(128, *map(int, initial.groups()))]
+        entries.extend(tuple(map(int, match)) for match in re.findall(
+            r'if \(x<=([0-9]+)\) \{h=([0-9]+);p=([0-9]+);d=([0-9]+)\}', block))
         self.assertEqual([entry[0] for entry in entries], [128, 96, 64, 48, 32, 24])
         lower = 16
         for upper, slope, intercept, divisor in reversed(entries):

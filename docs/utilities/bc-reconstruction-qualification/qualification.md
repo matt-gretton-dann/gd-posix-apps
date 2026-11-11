@@ -78,6 +78,10 @@ build recipes are retained before elapsed children. The cumulative acceptance
 rules, original outcomes and startup requirements are unchanged; these evidence
 repairs are not performance qualification.
 
+The turning-region Horner follow-up runs hosted correctness on the separate
+`codex/bc-bessel-turning-horner` branch. The 180-job original attempt remains
+attached to the immutable #721 source. This follow-up has yet to qualify.
+
 ## Original publication and one run per immutable source
 
 Opening the final draft starts correctness only. All three legacy automatic
