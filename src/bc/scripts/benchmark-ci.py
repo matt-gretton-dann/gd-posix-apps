@@ -130,7 +130,7 @@ def sparse_duration_sufficient(row):
                for role in ('base', 'aa', 'candidate'))
 
 
-def qualify_sparse(builder, evidence, entries):
+def qualify_sparse(builder, evidence, entries, child_timeout_seconds=30):
     """Fixed latency and throughput cohorts; never retry until a result passes.
 
     Retain full-size operands and their exact product oracle. Increase only the
@@ -150,6 +150,7 @@ def qualify_sparse(builder, evidence, entries):
             command = [sys.executable, str(SCRIPTS / 'bench-bc.py'), '--config', str(config),
                        '--output', str(target), '--reference', 'base', '--preset', preset,
                        '--workload', name, '--samples', str(samples), '--warmups', '3',
+                       '--timeout', str(child_timeout_seconds),
                        '--seed', '197588', '--corpus-seed',
                        '197201' if preset == 'holdout' else '197200', '--require-provenance']
             if kind == 'long':
@@ -187,6 +188,7 @@ def gd_build_command(args, name, revision, directory, cc, cxx):
 def main():
     helper = load('build-bc-comparators')
     gd = load('build-gd-bc')
+    bench = load('bench-bc')
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source', type=Path, required=True)
     parser.add_argument('--base', type=gd.revision_value, required=True)
@@ -196,6 +198,8 @@ def main():
     parser.add_argument('--sparse-qualification', action='store_true')
     parser.add_argument('--candidate-prepared-divisors', action='store_true')
     parser.add_argument('--samples', type=int, default=9)
+    parser.add_argument('--child-timeout-seconds', type=bench.positive_timeout, default=30,
+                        help='deadline for each bc invocation in the arithmetic study')
     parser.add_argument('--split-point', type=gd.positive_point, default=126)
     args = parser.parse_args()
     if args.samples < 3:
@@ -230,7 +234,6 @@ def main():
             for entry in entries:
                 builder.run([sys.executable, str(SCRIPTS.parent / 'test-divisor-reuse-cli.py'),
                              entry['argv'][0]])
-        bench = load('bench-bc')
         base_digest = entries[0]['metadata'].get('binary_sha256')
         identical_binaries = bool(base_digest) and base_digest == entries[1]['metadata'].get('binary_sha256')
         configs = {'paired': [entries[0], entries[1]] + howard,
@@ -249,7 +252,8 @@ def main():
                 command = [sys.executable, str(SCRIPTS / 'bench-bc.py'), '--config',
                            str(root / (comparison + '.json')), '--output', str(target),
                            '--reference', 'base', '--preset', preset, '--samples', str(args.samples),
-                           '--warmups', '1', '--seed', '197216', '--corpus-seed',
+                           '--warmups', '1', '--timeout', str(args.child_timeout_seconds),
+                           '--seed', '197216', '--corpus-seed',
                            '197201' if preset == 'holdout' else '197200', '--require-provenance']
                 for name in names:
                     command += ['--workload', name]
@@ -297,7 +301,7 @@ def main():
                                     'status': status, 'aa_control_status': controls[row['name']],
                                     'candidate_over_howard': competitive})
         if args.sparse_qualification:
-            reports.extend(qualify_sparse(builder, evidence, entries))
+            reports.extend(qualify_sparse(builder, evidence, entries, args.child_timeout_seconds))
         write(evidence / 'acceptance.json', acceptance_report(reports, args.samples))
         write(evidence / 'decisions.json', {'advisory': True, 'results': reports,
               'aa_policy_sha256': AA_POLICY.source_sha256(),
@@ -330,6 +334,7 @@ def main():
         write(evidence / 'orchestration.json', {'base': args.base, 'candidate': args.candidate,
               'split_point': args.split_point, 'candidate_prepared_divisors': args.candidate_prepared_divisors,
               'sparse_qualification': args.sparse_qualification,
+              'child_timeout_seconds': args.child_timeout_seconds,
               'commands': builder.commands})
         codegen = load('collect-bc-codegen')
         codegen.preserve_builds(root, evidence, ('base', 'candidate', 'aa', 'howard'))
