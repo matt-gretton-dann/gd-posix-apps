@@ -45,10 +45,17 @@ jobs:
 
       - name: Configure
         run: |
-          # Install analysis build dependencies without upgrading unrelated
-          # runner packages or pulling browser snaps before CodeQL starts.
-          sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends build-essential cmake clang-format ninja-build
+          # The runner image supplies the analysis build tools.
+          have_build_tools() {
+            for tool in cc c++ cmake ninja clang-format; do
+              command -v "$tool" >/dev/null || return 1
+            done
+          }
+          if ! have_build_tools; then
+            sudo apt-get update
+            sudo apt-get install --yes --no-install-recommends build-essential cmake clang-format ninja-build
+            have_build_tools
+          fi
           mkdir -p "${GITHUB_WORKSPACE}/build"
           cmake -S "${GITHUB_WORKSPACE}" -B "${GITHUB_WORKSPACE}/build" -G Ninja -D FORCE_SUPPLEMENTAL_LIBRARY:BOOL=TRUE  -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo
 
