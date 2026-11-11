@@ -24,6 +24,10 @@
 #include "number.hh"
 #include "verification.hh"
 
+#if defined(GD_BC_PREPARSED_LIBRARY)
+#  include "function-slot.hh"
+#endif
+
 #if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
 #  include "stack-execution.hh"
 #endif
@@ -548,21 +552,24 @@ private:
   using NumType = Number::NumType;     ///< Number type
   using FunctionDefinition =
     std::tuple<FunctionCode, VariableMask, Location>;  ///< Function definition.
-
-  static constexpr NumType default_base_ = 10;
-  std::ostream& output_;                            ///< Stream for "normal output."
-  std::ostream& error_;                             ///< Stream for error output.
-  std::array<ArrayValues, Letter::count_> arrays_;  ///< Array of arrays, indexed by Letter.
-  std::array<std::optional<FunctionDefinition>, Letter::count_>
-    functions_;  ///< Array of (optional) functions, indexed by letter.
 #if defined(GD_BC_PREPARSED_LIBRARY)
   struct DeferredDefinition
   {
     std::string_view image;
     Instructions (*decode)(std::string_view) = nullptr;
   };
-  std::array<DeferredDefinition, Letter::count_> deferred_functions_{};
+  // A name is either absent, deferred, or decoded. Reuse the owning slot's
+  // space for its deferred descriptor instead of enlarging every VM instance.
+  using FunctionStorage = FunctionSlot<FunctionDefinition, DeferredDefinition>;
+#else
+  using FunctionStorage = std::optional<FunctionDefinition>;
 #endif
+
+  static constexpr NumType default_base_ = 10;
+  std::ostream& output_;                            ///< Stream for "normal output."
+  std::ostream& error_;                             ///< Stream for error output.
+  std::array<ArrayValues, Letter::count_> arrays_;  ///< Array of arrays, indexed by Letter.
+  std::array<FunctionStorage, Letter::count_> functions_;  ///< Definitions, indexed by letter.
   std::array<Number, Letter::count_> variables_;  ///< Array of scalar variables, indexed by Letter.
   Params parameters_;                             ///< Contiguous values for active argument packs.
   ParamMarks param_marks_;                        ///< Pack offsets; indices survive vector growth.
@@ -1032,11 +1039,10 @@ void GD::Bc::Details::VMState::defer_library_function(Letter name, std::string_v
                                                      Instructions (*decode)(std::string_view))
 {
   auto const index = static_cast<unsigned>(name);
-  functions_.at(index).reset();
+  functions_.at(index).defer({image, decode});
 #if defined(GD_BC_STACK_EXECUTION) && !GD_BC_PREPARED_DIVISORS
   stack_plans_[index] = {};
 #endif
-  deferred_functions_.at(index) = {image, decode};
 }
 #endif
 
@@ -1236,8 +1242,11 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
   auto& func_ptr = functions_.at(index);
 #if defined(GD_BC_PREPARSED_LIBRARY)
   if (!func_ptr.has_value()) {
-    auto& deferred = deferred_functions_.at(index);
-    if (deferred.decode != nullptr) {
+    auto const* pending = func_ptr.pending();
+    if (pending != nullptr && pending->decode != nullptr) {
+      // Registration below replaces this alternative. Keep the descriptor
+      // by value, and leave the slot retryable if decoding/validation throws.
+      auto const deferred = *pending;
       auto const code = deferred.decode(deferred.image);
       validate(code);
       // The generator records only isolated definition items here. Outer
@@ -1248,7 +1257,6 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
       function(func, code.cbegin() + 1, code.cend() - 1,
                std::get<VariableMask>(code.front().op1()),
                std::get<Location>(code.front().op2()));
-      deferred = {};
     }
   }
 #endif
