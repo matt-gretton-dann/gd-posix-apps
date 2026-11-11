@@ -474,6 +474,55 @@ define j(n,x) {
     }
   }
   scale=0
+  /* Finite Bessel Horner evaluation near and above the turning order.
+     For each argument band (L,A], n>=x>L bounds the omitted tail
+     with order L. The weighted growth is bounded by exp(3*x/4). */
+  if (x>16) {
+    if (x<=128) {
+      if (n>=x) {
+        if (s>0) {
+          if (s<=20) {
+            h=15
+            p=1542
+            d=13
+            if (x<=96) {h=10;p=848;d=9}
+            if (x<=64) {h=11;p=595;d=10}
+            if (x<=48) {h=15;p=665;d=14}
+            if (x<=32) {h=17;p=558;d=18}
+            if (x<=24) {h=10;p=275;d=11}
+            k=(h*s+p)/d
+            w=s+(21*x)/64+1+length(2*n+3)+4
+            scale=w
+            if (scale!=w) return(1/0)
+            u=x/2
+            t=1
+            for (i=1;i<=n;i++) {
+              t=t*u/i
+              if (t==0) break
+            }
+            r=t
+            if (t!=0) {
+              q=u*u
+              r=1
+              while (k>0) {
+                r=1-q*r/(k*(n+k))
+                k-=1
+              }
+              r=t*r
+            }
+            if (v==1) r= -r
+            t=10^(-s)/2
+            if (r>=0) r+=t
+            if (r<0) r-=t
+            scale=s
+            r=r/1
+            ibase=b
+            return(r)
+          }
+        }
+      }
+    }
+  }
   /* Try the ascending series without guards for every input place.
      DLMF 10.9.2 gives |J_n'(x)|<=1 for real x and integer n, so
      truncating x at working precision adds less than one working unit. */

@@ -113,11 +113,14 @@ def selected_cases(bench, preset, broad):
         if previous is None or abs(case['parameters']['scale'] - 100) < abs(previous['parameters']['scale'] - 100):
             chosen[key] = case
     names = {case['name'] for case in chosen.values()}
-    # Cover the default-scale shortcuts and high-precision logarithm.
-    extra = {('a', 20), ('l', 20), ('l', 1000)}
-    names.update(case['name'] for case in cases
-                 if case['parameters']['mode'] == 'repeated' and
-                 (case['parameters']['function'], case['parameters']['scale']) in extra)
+    # Retain the default-scale shortcuts, Bessel latency and throughput,
+    # and high-precision logarithm.
+    extra = {('a', 'repeated', 20), ('l', 'repeated', 20), ('l', 'repeated', 1000),
+             ('j', 'one_shot', 20), ('j', 'repeated', 20)}
+    for case in cases:
+        parameters = case['parameters']
+        if (parameters['function'], parameters['mode'], parameters['scale']) in extra:
+            names.add(case['name'])
     return [case['name'] for case in cases if case['name'] in names]
 
 
