@@ -141,7 +141,8 @@ endif()
 set_warnings(libbc)
 gd_apply_ipo(libbc)
 
-target_sources(libbc PRIVATE cli-interrupt.cc execution-plan.cc instruction.cc lexer.cc number-division-cache.cc number-remainder.cc
+target_sources(libbc PRIVATE cli-interrupt.cc execution-plan.cc instruction.cc integer-recurrence.cc
+                            lexer.cc number-division-cache.cc number-remainder.cc
                             number-sqrt.cc number-sqrt-sparse.cc parser.cc parser-expression.cc reader.cc
                             token.cc verification.cc vm.cc)
 if(WIN32)
@@ -237,6 +238,7 @@ if(RUN_UNIT_TESTS)
                  test-benchmark-support.cc
                  test-format.cc
                  test-instruction.cc
+                 test-integer-recurrence.cc
                  test-token-format.cc
                  test-lexer.cc
                  test-lexer-shebang.cc
