@@ -11,13 +11,19 @@ env:
 
 jobs:
   posix-build:
-    name: Build and test on ${{ matrix.os }} - extensions enabled - ${{matrix.extensions}}
+    name: Build and test on ${{ matrix.check_os }} - extensions enabled - ${{matrix.extensions}}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-24.04, macos-latest]
         extensions: [OFF, ON]
+        include:
+          # Retain the established check names while pinning the Linux image.
+          - os: ubuntu-24.04
+            check_os: ubuntu-latest
+          - os: macos-latest
+            check_os: macos-latest
 
     steps:
       - uses: actions/checkout@v7
@@ -63,13 +69,35 @@ jobs:
       - name: Reject corrupted VM reuse cost evidence
         if: ${{ matrix.extensions == 'ON' }}
         run: python3 docs/utilities/bc-vm-reuse-evidence/test-verifier.py
-      - name: Package install (Ubuntu)
-        if: ${{ matrix.os  == 'ubuntu-latest' }}
+      - name: Check build tools (Ubuntu)
+        if: runner.os == 'Linux'
         run: |
-          # Install test dependencies without upgrading unrelated runner
-          # packages or pulling browser snaps before compilation starts.
-          sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends build-essential cmake clang clang-format ninja-build clang-tidy llvm
+          # Use the runner's tools before contacting the package mirrors.
+          have_build_tools() {
+            for tool in cc c++ cmake ctest ninja clang-format clang-tidy; do
+              command -v "$tool" >/dev/null || return 1
+            done
+            [[ -x /usr/bin/clang && -x /usr/bin/clang++ ]]
+          }
+          profile_tool() {
+            # Prefer llvm-profdata from the same LLVM installation as Clang.
+            local tool
+            tool="$(dirname "$(readlink -f /usr/bin/clang)")/llvm-profdata"
+            if [[ -x "$tool" ]]; then
+              printf '%s\n' "$tool"
+            elif [[ -x /usr/bin/llvm-profdata ]]; then
+              printf '%s\n' /usr/bin/llvm-profdata
+            else
+              return 1
+            fi
+          }
+          if ! have_build_tools || ! profdata=$(profile_tool); then
+            sudo apt-get update
+            sudo apt-get install --yes --no-install-recommends build-essential cmake clang clang-format ninja-build clang-tidy llvm
+            have_build_tools
+            profdata=$(profile_tool)
+          fi
+          printf 'BC_CI_LLVM_PROFDATA=%s\n' "$profdata" >> "$GITHUB_ENV"
       - name: Package install (macOS)
         if: ${{ matrix.os == 'macos-latest' }}
         run: |
@@ -90,7 +118,7 @@ jobs:
           if [ "${RUNNER_OS}" = macOS ]; then
             profdata=$(xcrun --find llvm-profdata)
           else
-            profdata=/usr/bin/llvm-profdata
+            profdata="${BC_CI_LLVM_PROFDATA}"
           fi
           profile_dir="${RUNNER_TEMP}/bc-vm-pgo"
           mkdir -p "${profile_dir}/raw"
