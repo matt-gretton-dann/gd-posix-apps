@@ -1,0 +1,84 @@
+name: bc Windows startup deployment diagnostic
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened]
+    paths:
+      - '.github/workflows/bc-windows-startup-deployment.yml'
+      - 'docs/utilities/bc-windows-startup-deployment/**'
+
+permissions:
+  contents: read
+
+jobs:
+  investigate:
+    if: github.head_ref == 'codex/bc-windows-startup-deployment' && github.run_attempt == 1
+    runs-on: windows-2025
+    timeout-minutes: 55
+    env:
+      BC_RUNTIME: '19ef80161fd2bdb24bf9ba7e93942caa97ea6ea1'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check the study with synthetic observations
+        run: python docs/utilities/bc-windows-startup-deployment/test-collect.py
+      - name: Establish native MSVC environment
+        shell: pwsh
+        run: |
+          $installation = & "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe" -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (!$installation) { throw 'Native x64 MSVC is unavailable' }
+          $variables = & cmd /c "`"$installation\Common7\Tools\VsDevCmd.bat`" -arch=x64 -host_arch=x64 >nul && set"
+          if ($LASTEXITCODE) { throw 'Cannot initialize MSVC' }
+          foreach ($line in $variables) {
+            if ($line -match '^(PATH|INCLUDE|LIB|LIBPATH|VCToolsInstallDir|VCINSTALLDIR|VSINSTALLDIR|WindowsSdkDir|WindowsSDKVersion|UniversalCRTSdkDir|UCRTVersion|Platform)=(.*)$') {
+              "$($matches[1])=$($matches[2])" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            }
+          }
+      - name: Independently build fixed accepted runtime twice
+        shell: pwsh
+        run: |
+          foreach ($role in @('base', 'aa')) {
+            python src/bc/scripts/build-gd-bc.py --source $env:GITHUB_WORKSPACE --revision $env:BC_RUNTIME --split-point 126 --output "startup-builds/$role" --name $role --c-compiler cl --cxx-compiler cl
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          }
+      - name: Declare the independently built controls
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+          entries = [
+              json.loads(Path('startup-builds', role, 'implementations.json').read_text(encoding='utf-8'))['implementations'][0]
+              for role in ('base', 'aa')
+          ]
+          config = dict(implementations=[*entries, dict(entries[0], name='candidate')])
+          Path('startup-config.json').write_text(json.dumps(config, indent=2) + '\n', encoding='utf-8')
+      - name: Collect the fixed path crossover
+        run: python docs/utilities/bc-windows-startup-deployment/collect.py --config startup-config.json --output study
+      - name: Preserve original executables, recipes and observations
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bc-windows-startup-deployment-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            startup-config.json
+            study/manifest.json
+            study/input.bc
+            study/expected.txt
+            study/samples.jsonl
+            study/originals/
+            startup-builds/base/*.json
+            startup-builds/base/*.log
+            startup-builds/base/*.hh
+            startup-builds/base/*.inc
+            startup-builds/base/prepared-policy/
+            startup-builds/aa/*.json
+            startup-builds/aa/*.log
+            startup-builds/aa/*.hh
+            startup-builds/aa/*.inc
+            startup-builds/aa/prepared-policy/
+          if-no-files-found: error
+          retention-days: 30
