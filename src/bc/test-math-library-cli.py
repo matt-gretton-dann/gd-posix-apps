@@ -5,6 +5,7 @@ from decimal import Decimal, localcontext
 from fractions import Fraction
 import importlib.util
 import json
+from math import factorial
 import os
 import re
 from pathlib import Path
@@ -300,29 +301,62 @@ class LibraryCli(unittest.TestCase):
         program = 'scale=0\n' + ''.join(f'j(0,{x})\n' for x in arguments)
         self.assertEqual(self.checked_lines(program), ['1', '0'])
 
-    def test_bessel_ascending_with_exact_rational_enclosures(self):
-        arguments = ((0, 100, 150), (300, 300, 100), (1, '1.125', 100),
-                     (1, '1.' + '23456789' * 12, 20))
+    def test_bessel_turning_degree_bounds(self):
+        source = Path(SOURCE).read_text(encoding='utf-8')
+        start = source.index('Finite Bessel Horner evaluation')
+        block = source[start:source.index('scale=w', start)]
+        self.assertIn('k=(h*s+p)/d', block)
+        self.assertIn('w=s+(21*x)/64+1+length(2*n+3)+4', block)
+        defaults = re.search(r'h=(\d+)\s+p=(\d+)\s+d=(\d+)', block)
+        self.assertIsNotNone(defaults)
+        entries = [(128, *map(int, defaults.groups()))]
+        entries.extend(tuple(map(int, match)) for match in re.findall(
+            r'if \(x<=(\d+)\) \{h=(\d+);p=(\d+);d=(\d+)\}', block))
+        self.assertEqual([entry[0] for entry in entries], [128, 96, 64, 48, 32, 24])
+        exponent = Fraction(16, 7)
+        partial = sum(exponent**k / factorial(k) for k in range(17))
+        tail = exponent**17 / factorial(17) / (1 - exponent/18)
+        self.assertLess(partial + tail, 10)
+        lower = 16
+        for upper, slope, intercept, divisor in reversed(entries):
+            square = Fraction(upper**2, 4)
+            for scale in range(1, 21):
+                degree = (slope*scale+intercept)//divisor
+                first = Fraction(upper, 2)**lower * square**(degree+1)
+                first /= factorial(degree+1) * factorial(lower+degree+1)
+                self.assertLessEqual(Fraction(upper, 2), lower+degree+2)
+                contraction = square / ((degree+2)*(lower+degree+2))
+                self.assertLess(contraction, 1)
+                self.assertLess(first / (1-contraction) * 10**scale, Fraction(1, 250))
+            lower = upper
+
+    def test_bessel_series_with_exact_rational_enclosures(self):
+        arguments = [(0, 100, 150), (300, 300, 100), (1, '1.125', 100),
+                     (1, '1.' + '23456789' * 12, 20),
+                     (20, '19.999999999999999999999999999999999', 20),
+                     (20, 20, 20), (23, '22.5', 20), (19, 20, 20),
+                     (20, 20, 0), (20, 20, 21)]
+        for endpoint in (16, 24, 32, 48, 64, 96, 128):
+            arguments.extend(((endpoint, endpoint, 1), (endpoint, endpoint, 20),
+                              (endpoint+1, f'{endpoint}.001', 20)))
         for order, argument, scale in arguments:
             with self.subTest(order=order, argument=argument, scale=scale):
-                x = Fraction(argument)
-                term = Fraction(1)
-                for j in range(1, order + 1):
-                    term *= x / (2 * j)
-                partial = term
-                for k in range(1, 2000):
-                    ratio = x**2 / (4 * k * (order + k))
-                    term *= -ratio
-                    if ratio < 1 and abs(term) < Fraction(1, 10**(scale + 2)):
-                        break
-                    partial += term
-                else:
-                    self.fail('Bessel rational enclosure did not converge')
-                # After the ratio falls below one, all subsequent ratios
-                # decrease. The first omitted term bounds the alternating tail.
-                lower, upper = sorted((partial, partial + term))
-                result, = self.checked_lines(f'scale={scale}\nj({order},{argument})\n')
+                lower, upper = ORACLE.bessel_series_enclosure(order, argument, scale)
+                program = (f'scale={scale}\nr=j({order},{argument})\n'
+                           'r\nscale\nibase\nscale(r)\n')
+                result, *state = self.checked_lines(program)
                 self.assertEqual(ORACLE.classify(Fraction(result), lower, upper, scale), 'pass')
+                self.assertEqual(state, [str(scale), '10', str(scale)])
+                if OTHER_BC is not None:
+                    result, *state = self.checked_lines(
+                        program, options=(), files=(SOURCE,), binary=OTHER_BC)
+                    self.assertEqual(ORACLE.classify(Fraction(result), lower, upper, scale), 'pass')
+                    self.assertEqual(state, [str(scale), '10', str(scale)])
+                if order == 23:
+                    signed, = self.checked_lines(f'scale={scale}\nj(-{order},{argument})\n')
+                    self.assertEqual(ORACLE.classify(Fraction(signed), -upper, -lower, scale), 'pass')
+                    signed, = self.checked_lines(f'scale={scale}\nj({order},-{argument})\n')
+                    self.assertEqual(ORACLE.classify(Fraction(signed), -upper, -lower, scale), 'pass')
 
     def test_identical_source_loads_as_ordinary_input(self):
         self.certified(options=(), files=(SOURCE,))
@@ -419,7 +453,7 @@ class LibraryCli(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             program = Path(directory) / 'clamped library.bc'
             program.write_text(changed, encoding='utf-8')
-            for call in ('e(0)', 'l(1)', 'a(0)', 's(0)', 'c(0)', 'j(0,0)'):
+            for call in ('e(0)', 'l(1)', 'a(0)', 's(0)', 'c(0)', 'j(0,0)', 'j(20,20)'):
                 with self.subTest(call=call):
                     result = self.invoke(call + '\n', options=(), files=(program,))
                     self.assertNotEqual(result.returncode, 0)

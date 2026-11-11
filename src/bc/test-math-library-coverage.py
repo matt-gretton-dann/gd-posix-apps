@@ -13,7 +13,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / 'scripts'))
 from math_library_coverage import instrument, strip_probes
-from math_oracle import classify, decimal_fraction
+from math_oracle import bessel_series_enclosure, classify, decimal_fraction
 
 
 def run(binary, source, program):
@@ -83,6 +83,16 @@ def main():
     hankel = next(case for case in cases
                   if case['id'] == 'j-argument-dominates' and case['scale'] == 100)
     cases.append(dict(hankel, scale=55))
+    # Exercise every finite-series band, both rounding signs and leading-factor
+    # underflow. Use exact alternating-tail enclosures independently of Horner.
+    turning = [(20, 20, 0), (20, 20, 21), (19, 20, 20), (-23, '22.5', 20),
+               (47, '16.01', 1), (129, 129, 20)]
+    turning.extend((endpoint, endpoint, 20) for endpoint in (24, 32, 48, 64, 96, 128))
+    for order, argument, scale in turning:
+        lower, upper = bessel_series_enclosure(order, argument, scale)
+        cases.append(dict(id='j-turning-{}-{}'.format(order, argument), function='j',
+                          arguments=[str(order), str(argument)], scale=scale,
+                          lower=lower, upper=upper))
     program = ''.join('scale={}\n{}({})\n'.format(
         case['scale'], case['function'], ','.join(case['arguments'])) for case in cases)
     result = run(args.bc, transformed, program)
@@ -106,7 +116,7 @@ def main():
     modeled = set()
     j_guards = [item['line'] for item in decisions
                 if item['function'] == 'j' and item['expression'] == 'scale!=w']
-    assert len(j_guards) == 2
+    assert len(j_guards) == 3
     for decision in decisions:
         if decision['expression'] != 'scale!=w':
             continue
@@ -120,7 +130,7 @@ def main():
         call = {'a': 'a(0)', 'e': 'e(0)', 'l': 'l(1)',
                 's': 's(4)', 'c': 'c(4)'}.get(function)
         if function == 'j':
-            call = 'j(0,1000)' if decision['line'] == j_guards[0] else 'j(0,1)'
+            call = ['j(0,1000)', 'j(20,20)', 'j(0,1)'][j_guards.index(decision['line'])]
         fault = run(args.bc, model, call + '\n')
         assert fault.returncode != 0 and fault.stderr
         fault_plain, fault_outcomes = strip_probes(fault.stdout)

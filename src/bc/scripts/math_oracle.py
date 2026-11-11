@@ -52,3 +52,24 @@ def nearest_decimal(lower, upper, scale):
     sign = '-' if coefficient < 0 else ''
     digits = str(abs(coefficient)).rjust(scale + 1, '0')
     return sign + (digits[:-scale] + '.' + digits[-scale:] if scale else digits)
+
+
+def bessel_series_enclosure(order, argument, scale):
+    """Enclose J_n using exact ascending terms and the first omitted term."""
+    x = Fraction(argument)
+    sign = -1 if order % 2 and ((order < 0) != (x < 0)) else 1
+    order, x = abs(order), abs(x)
+    term = Fraction(1)
+    for factor in range(1, order + 1):
+        term *= x / (2 * factor)
+    partial = term
+    tolerance = decimal_ulp(scale) / 100
+    square = x*x/4
+    for index in range(1, 2000):
+        ratio = square / (index * (order + index))
+        term *= -ratio
+        # Once the ratio is below one, all subsequent ratios decrease.
+        if ratio < 1 and abs(term) < tolerance:
+            return tuple(sorted((sign * partial, sign * (partial + term))))
+        partial += term
+    raise ValueError('Bessel rational enclosure did not converge')

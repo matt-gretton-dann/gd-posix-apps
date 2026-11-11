@@ -354,6 +354,59 @@ W; phase precision includes D and covers multiplication by the order. A
 conservative aggregate bound `10^6*(W+1)^2*10^D*u` remains below U/2. No
 unbounded divergent series is treated as convergent merely because a term grew.
 
+### Finite series near and above the turning order
+
+At entry scales 1 through 20, normalized arguments 16 < x <= 128 and
+orders n >= x use a finite Horner evaluation after the zero guards and
+Hankel selector. With y = x/2, set Q = y^2 and use
+`R_N=1; R_(k-1)=1-Q*R_k/(k*(n+k))` for k from N down to 1. The positive
+factor y^n/n! is computed downward by successive multiplication and
+division, then multiplied by R_0 before applying the usual symmetry and
+rounding.
+
+Each band (L,A] uses n >= L to bound the omitted tail. At the first omitted
+index k = N+1, the absolute term increases with x and decreases with n,
+since increasing n multiplies it by y/(n+k+1) <= 1. All subsequent terms
+contract by at most `(A*A/4)/((N+2)*(L+N+2))`. The tail is bounded by
+
+```text
+(A/2)^L * (A*A/4)^(N+1) /
+  ((N+1)! * (L+N+1)! * (1-(A*A/4)/((N+2)*(L+N+2))))
+```
+
+At scale S the degree is floor((h*S+p)/d).
+
+| L | A | h | p | d |
+|---:|---:|---:|---:|---:|
+| 16 | 24 | 10 | 275 | 11 |
+| 24 | 32 | 17 | 558 | 18 |
+| 32 | 48 | 15 | 665 | 14 |
+| 48 | 64 | 11 | 595 | 10 |
+| 64 | 96 | 10 | 848 | 9 |
+| 96 | 128 | 15 | 1542 | 13 |
+
+The normalized absolute series and its derivative in Q are bounded by
+exp(Q/(n+1)). The initial factor and any remaining leading-factor product
+are bounded by exp(y), since consecutive integer denominators dominate
+the corresponding factorial. As n >= x, the combined bound is
+exp(y+y*y/(n+1)) <= exp(3x/4). Use E = 10^(floor(21*x/64)+1) > exp(3x/4)
+from exp(16/7) < 10, and W = S + floor(21*x/64) + 1 + length(2*n+3) + 4.
+All these guard calculations run at scale zero.
+
+Each leading-factor step contributes at most 2u times the remaining
+positive weights, for a total of at most 2n*E*u. The weighted Horner
+roundoff contributes at most 2E*u and the truncated square at most E*u.
+The final multiply and the truncation of x/2 add less than 4u using
+`|J_n'(x)| <= 1`. The resulting `((2*n+3)*E+4)u` bound is below .0002U.
+The exact test checks the .004U tail allowance for all 120 band and scale
+combinations. Including final rounding, the error stays below .505U.
+
+For example, j(20,20) at scale 20 takes 43 Horner steps at 33 working
+places. These counts describe the algorithm. The ordinary ascending series
+continues to cover the other arguments and scales.
+
+### General ascending series
+
 Otherwise, evaluate the ascending recurrence, including the initial
 `(x/2)^n/n!`, with G = floor(7*x/16) + 1 and
 W = S + G + D + 2*d(S+G+D+1) + 32. Truncate the argument only if it has more
