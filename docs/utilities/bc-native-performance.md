@@ -263,3 +263,12 @@ retain the smaller representative cohort; schedule/manual runs remain broad.
 The branch convention changes corpus selection, not measured treatments or
 acceptance rules. Every first/confirmation loss and inconclusive control remains
 an adoption gate. No timing advantage is claimed by diagnostic normalization.
+
+## Artifact upload recovery
+
+The arithmetic and math trend workflows publish available evidence even when
+collection fails. A failed artifact upload gets one retry after 30 seconds in
+the same job. The retry uses the same evidence directory and artifact name
+without overwrite. It does not run a build, repeat a measurement, or change
+the collector outcome. If the second upload also fails, the job reports the
+failure. Preserve the run and job identities when the archive is unavailable.
