@@ -170,7 +170,14 @@ measurement payloads remain unchanged when packaging rules are corrected.
 Every warm-up and measured process must exit successfully, leave stderr empty,
 and match its independent expected output. Each invocation has a finite
 `--timeout` (30 seconds by default); Python kills and waits for its direct child
-on expiration. Ordinary classes send programs on stdin followed by EOF, without
+on expiration. The arithmetic controller `benchmark-ci.py` exposes this bound
+as `--child-timeout-seconds` and records it in `orchestration.json`. Declare
+the finite positive deadline before sampling. The same bound applies to all
+warmups, A/A controls, paired roles, confirmations and sparse workloads. The
+controller also bounds each benchmark command. A timed-out child fails the
+cohort and contributes no checked sample.
+
+Ordinary classes send programs on stdin followed by EOF, without
 `quit` or an open-input dependency. The `file_streaming` class instead appends the
 staged `.bc` path as one argv entry and supplies empty stdin, so the interpreter
 cannot wait for another input source after the file. Its manifest records

@@ -53,7 +53,7 @@ class NativeTrends(unittest.TestCase):
                                 purpose='checked sparse fixture')])
                        for role in ('base', 'candidate', 'aa')]
             builder = CI.load('build-bc-comparators').Builder(root, 30)
-            reports = CI.qualify_sparse(builder, evidence, entries)
+            reports = CI.qualify_sparse(builder, evidence, entries, child_timeout_seconds=45)
             self.assertEqual(len(reports), 8)
             self.assertTrue(all(row['status'] == 'inconclusive-duration-shortfall'
                                 for row in reports if row['preset'].endswith('-long')))
@@ -62,12 +62,14 @@ class NativeTrends(unittest.TestCase):
                 manifest = json.loads((target / 'manifest.json').read_text())
                 self.assertEqual(manifest['sparse_iteration_override'], count)
                 self.assertEqual(manifest['samples'], 31)
+                self.assertEqual(manifest['timeout'], 45)
                 samples = [json.loads(line) for line in (target / 'samples.jsonl').read_text().splitlines()]
                 self.assertTrue(all(row['checked'] for row in samples))
                 self.assertEqual(sum(row['phase'] == 'measurement' for row in samples), 93)
                 latency = evidence / (preset + '-sparse-latency')
                 manifest = json.loads((latency / 'manifest.json').read_text())
                 self.assertNotIn('sparse_iteration_override', manifest)
+                self.assertEqual(manifest['timeout'], 45)
                 self.assertEqual(manifest['samples'], 101)
                 self.assertEqual(manifest['corpus'][0]['parameters']['iterations'], count // 1000)
                 samples = [json.loads(line) for line in (latency / 'samples.jsonl').read_text().splitlines()]
@@ -175,7 +177,7 @@ class NativeTrends(unittest.TestCase):
                                  {case['group'] for case in cases})
 
     def exercise(self, fail=False, aa_first=None, aa_second=None, prepared=False,
-                 identical=False):
+                 identical=False, options=()):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name) / 'results'
@@ -255,7 +257,7 @@ class NativeTrends(unittest.TestCase):
             return original_load(name)
 
         argv = [str(PATH), '--source', str(Path(temporary.name)), '--base', 'a' * 40,
-                '--candidate', 'b' * 40, '--output', str(root)]
+                '--candidate', 'b' * 40, '--output', str(root), *options]
         if prepared:
             argv += ['--candidate-prepared-divisors']
         with mock.patch.object(CI, 'load', modules), mock.patch.object(CI, 'host_info', return_value={}), \
@@ -263,6 +265,24 @@ class NativeTrends(unittest.TestCase):
                 contextlib.redirect_stderr(io.StringIO()):
             result = CI.main()
         return root, calls, result
+
+    def test_declared_child_timeout_covers_control_pairing_and_confirmation(self):
+        for options, expected in (((), 30), (('--child-timeout-seconds', '75.5'), 75.5)):
+            with self.subTest(options=options):
+                root, calls, result = self.exercise(options=options)
+                self.assertEqual(result, 0)
+                samples = [call for call in calls if Path(call[1]).name == 'bench-bc.py']
+                self.assertEqual(len(samples), 3)
+                for call in samples:
+                    self.assertEqual(float(call[call.index('--timeout') + 1]), expected)
+                receipt = json.loads((root / 'evidence/orchestration.json').read_text())
+                self.assertEqual(receipt['child_timeout_seconds'], expected)
+
+    def test_invalid_child_timeout_fails_before_builds(self):
+        for value in ('0', '-1', 'nan', 'inf'):
+            with self.subTest(value=value), self.assertRaises(SystemExit) as failure:
+                self.exercise(options=('--child-timeout-seconds', value))
+            self.assertEqual(failure.exception.code, 2)
 
     def test_prepared_candidate_keeps_controls_ordinary_and_guards_before_timing(self):
         root, calls, result = self.exercise(prepared=True)
