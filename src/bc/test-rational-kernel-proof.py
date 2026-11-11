@@ -7,6 +7,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 from fractions import Fraction as F
 from math import factorial
+from pathlib import Path
+import re
 import random
 import unittest
 
@@ -195,6 +197,29 @@ class RationalKernelProof(unittest.TestCase):
                 arithmetic = F((2*nmax+3)*10**growth+4, 10**working)
                 self.assertLess(tail*10**scale, F(1, 250))
                 self.assertLess(F(1, 2)+(tail+arithmetic)*10**scale, F(505, 1000))
+
+    def test_bessel_turning_degree_rules_match_source_and_certify_tail(self):
+        source = Path(__file__).with_name('math-library.bc').read_text()
+        start = source.find('Order-aware Bessel degree rules')
+        self.assertNotEqual(start, -1)
+        block = source[start:source.index('k=(h*s+p)/d', start)]
+        entries = [tuple(map(int, match)) for match in re.findall(
+            r'if \(x<=([0-9]+)\) \{h=([0-9]+);p=([0-9]+);d=([0-9]+)\}', block)]
+        self.assertEqual([entry[0] for entry in entries], [128, 96, 64, 48, 32, 24])
+        lower = 16
+        for upper, slope, intercept, divisor in reversed(entries):
+            q = F(upper**2, 4)
+            for scale in range(1, 21):
+                degree = (slope*scale+intercept)//divisor
+                next_term = F(upper, 2)**lower*q**(degree+1)
+                next_term /= factorial(degree+1)*factorial(lower+degree+1)
+                self.assertLessEqual(F(upper, 2), lower+degree+2)
+                ratio = q/((degree+2)*(lower+degree+2))
+                self.assertLess(ratio, 1)
+                tail = next_term/(1-ratio)
+                self.assertLess(tail*10**scale, F(1, 250))
+                self.assertLess(F(1, 2)+tail*10**scale+F(2, 10**4), F(505, 1000))
+            lower = upper
 
     def test_exp_even_odd_evaluation_against_the_exact_rational_kernel(self):
         rng = random.Random(21719783)
