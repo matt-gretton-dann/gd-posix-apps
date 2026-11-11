@@ -129,9 +129,16 @@ class NativeMath(unittest.TestCase):
             regular = [row for row in rows if row['parameters']['scale'] == 100]
             self.assertEqual(len(regular), 20)
             self.assertEqual(len({(row['group'], row['parameters']['mode']) for row in regular}), 20)
-            extra = [row['parameters'] for row in rows if row['parameters']['scale'] != 100]
+            extra = [row['parameters'] for row in rows
+                     if row['parameters']['scale'] != 100 and row['parameters']['function'] != 'j']
             self.assertEqual([(p['function'], p['mode'], p['scale']) for p in extra],
                              [('a', 'repeated', 20), ('l', 'repeated', 20), ('l', 'repeated', 1000)])
+            bessel = {(row['group'], row['parameters']['mode']) for row in rows
+                      if row['parameters']['function'] == 'j' and row['parameters']['scale'] == 20}
+            self.assertEqual(bessel, {(group, mode) for group in
+                                      ('math_j_regular', 'math_j_turning', 'math_j_order_dominates',
+                                       'math_j_argument_dominates', 'math_j_near_root')
+                                      for mode in ('one_shot', 'repeated')})
             self.assertEqual(len(CI.selected_cases(bench, preset, True)), 60)
 
     def test_roles_pin_both_host_and_library_without_mutating_recipes(self):
