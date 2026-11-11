@@ -15,12 +15,14 @@
 #include <cstdlib>
 #include <deque>
 #include <functional>
+#include <new>
 #include <ostream>
 #include <type_traits>
 #include <utility>
 
 #include "bc.hh"
 #include "execution-plan.hh"
+#include "integer-recurrence.hh"
 #include "number.hh"
 #include "verification.hh"
 
@@ -273,26 +275,23 @@ public:
   FunctionCode(FunctionCode&&) noexcept = default;
   auto operator=(FunctionCode const&) -> FunctionCode& = default;
   auto operator=(FunctionCode&&) noexcept -> FunctionCode& = default;
-#if !defined(_WIN32)
-  auto view(bool full_checks, [[maybe_unused]] VariableMask locals) -> VerifiedInstructions
-#else
-  auto view(bool full_checks) -> VerifiedInstructions
-#endif
+  auto view(bool full_checks, VariableMask locals, Letter self) -> VerifiedInstructions
   {
     if (!full_checks && !prepared_) {
-      // Publish both plans together so a failed allocation leaves the
+      // Publish the plans together so a failed allocation leaves the
       // verified definition ready for another preparation attempt.
       auto consumption = plan_consumption(instructions_, true);
       auto slots = plan_result_slots(instructions_, sizeof(ResultSlot), consumption);
       auto layout = prepare_layout(instructions_, std::move(slots), true, true);
+      auto const recurrence = IntegerRecurrence::match(instructions_, locals, self);
 #if !GD_BC_PROFILE && !defined(_WIN32)
       auto parameter = prove_scalar_parameter();
       if (parameter && !locals.contains(*parameter)) {
         parameter.reset();
       }
-      prepared_.emplace(std::move(consumption), std::move(layout), parameter);
+      prepared_.emplace(std::move(consumption), std::move(layout), recurrence, parameter);
 #else
-      prepared_.emplace(std::move(consumption), std::move(layout));
+      prepared_.emplace(std::move(consumption), std::move(layout), recurrence);
 #endif
     }
     auto const& plans = prepared_ ? *prepared_ : empty_plans_;
@@ -350,6 +349,7 @@ private:
   {
     ConsumptionPlan consumption;
     ExecutionLayout layout;
+    std::optional<IntegerRecurrence> recurrence;
 #if !GD_BC_PROFILE && !defined(_WIN32)
     std::optional<Variable> scalar_parameter;
 #endif
@@ -449,6 +449,15 @@ struct VMState
                                             NativeExpression const& code,
                                             Number const* borrowed = nullptr) -> Number;
 #endif
+
+  // Keep the rare reduction and its Number temporaries out of ordinary calls.
+#if defined(_MSC_VER)
+  __declspec(noinline)
+#elif __has_cpp_attribute(gnu::noinline)
+  [[gnu::noinline]]
+#endif
+  auto try_integer_recurrence(IntegerRecurrence const& recurrence, Number const* borrowed)
+    -> std::optional<Number>;
 
   /** Push a new parameter pack onto the parameter stack.  */
   void push_param_pack();
@@ -1040,6 +1049,37 @@ void GD::Bc::Details::VMState::defer_library_function(Letter name, std::string_v
 }
 #endif
 
+auto GD::Bc::Details::VMState::try_integer_recurrence(IntegerRecurrence const& recurrence,
+                                                    Number const* borrowed)
+  -> std::optional<Number>
+{
+  if (param_marks_.empty())
+    return std::nullopt;
+  auto const& mark = param_marks_.back();
+  auto const count = parameters_.size() - mark.begin;
+  if (mark.next != mark.begin || count != (borrowed == nullptr ? 1U : 0U))
+    return std::nullopt;
+  auto const* argument = borrowed != nullptr ? borrowed : std::get_if<Number>(&parameters_.back());
+  if (argument == nullptr || argument->has_heap_storage() || argument->scale() != 0 ||
+      argument->length() > Number::base_log10_ || *argument < Number(0))
+    return std::nullopt;
+  try {
+    Number result;
+    auto const interrupted = +[] { return have_been_interrupted.test(std::memory_order_relaxed); };
+    if (recurrence.execute(argument->to_unsigned(), result, interrupted) && !interrupted()) {
+      // Publish the complete result only after every throwing operation.
+      static_assert(std::is_nothrow_move_constructible_v<Number>);
+      parameters_.resize(mark.begin);
+      param_marks_.pop_back();
+      return std::optional<Number>{std::move(result)};
+    }
+  }
+  catch (std::bad_alloc const&) {
+    // Neither the parameter pack nor the dynamic bindings were consumed.
+  }
+  return std::nullopt;
+}
+
 #if defined(GD_BC_NATIVE_FUNCTIONS)
 auto GD::Bc::Details::FunctionCode::native_leaf(VariableMask locals) -> NativeExpression const*
 {
@@ -1263,18 +1303,19 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
 #else
   auto const use_source = full_checks();
 #endif
-#if defined(_WIN32)
-  // Preserve the existing call path on Windows, where native comparisons
-  // found regressions in workloads outside the fused prologue.
-  auto func_instructions = std::get<0>(def).view(use_source);
-  auto locals = std::get<1>(def);
+  auto& code = std::get<0>(def);
+  auto const locals = std::get<1>(def);
+  auto const func_instructions = code.view(use_source, locals, func);
+  if (!use_source && code.prepared_->recurrence && code.prepared_->recurrence->self == func) {
+#if GD_BC_FORWARD_SCALAR_ARGUMENT
+    if (auto result = try_integer_recurrence(*code.prepared_->recurrence, argument))
 #else
-  auto locals = std::get<1>(def);
-  auto func_instructions = std::get<0>(def).view(use_source, locals);
+    if (auto result = try_integer_recurrence(*code.prepared_->recurrence, nullptr))
 #endif
+      return std::move(*result);
+  }
 
 #if GD_BC_FORWARD_SCALAR_ARGUMENT
-  auto const& code = std::get<0>(def);
   auto const parameter = code.prepared_ ? code.prepared_->scalar_parameter : std::nullopt;
   // A forwarded scalar can bind directly only when this is the entire
   // incoming pack and the callee's verified prologue supports direct binding.
@@ -1339,7 +1380,6 @@ auto GD::Bc::Details::VMState::call(Letter func, Location const& loc) -> GD::Bc:
     Instruction::Index start = 0;
 #if !GD_BC_PROFILE
 #  if !GD_BC_FORWARD_SCALAR_ARGUMENT
-    auto const& code = std::get<0>(def);
     auto const parameter = code.prepared_ ? code.prepared_->scalar_parameter : std::nullopt;
 #  endif
     if (parameter) {
