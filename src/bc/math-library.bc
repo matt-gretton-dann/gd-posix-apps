@@ -10,19 +10,34 @@
    rounds the guarded result to entry scale. Working-scale readback rejects
    a host that silently clamps the request, using an ordinary arithmetic error.
    See the accompanying numerical
-   error-budget document; a vanishing term alone is not an accuracy proof.
+   error-budget document and bc-bounded-rational-kernels.md; a vanishing
+   term alone is not an accuracy proof.
 */
 /* Single-digit constants keep initialization independent of the caller's base. */
 scale=2*A
 
-/* Arctangent: reciprocal and half-angle reduction, alternating series. */
+/* Arctangent: reduction, bounded rational kernel, generic alternating series. */
 define a(x) {
   auto b,i,k,n,p,q,r,s,t,u,v,w,y;
   /* b/s save base/scale; w is precision; n/v are sign/reciprocal flags.
      k reconstructs half angles; p is pi/2; y is the near-one correction.
-     q/t/u are ratio, power and term. */
+     q/t/u are squared ratio, power and term; i also selects a rational degree. */
   b=ibase
   ibase=A
+  /* The rounded unit results already have the default decimal scale.
+     Return before sign reduction and the general unit precision checks. */
+  if (scale==20) {
+    if (x==1) {
+      r=.78539816339744830962
+      ibase=b
+      return(r)
+    }
+    if (x== -1) {
+      r= -.78539816339744830962
+      ibase=b
+      return(r)
+    }
+  }
   s=scale
   n=0
   if (x<0) {
@@ -34,13 +49,6 @@ define a(x) {
      needs neither magnitude-dependent working scale nor reduction. */
   if (s<=144) {
     if (x==1) {
-      /* The rounded unit value already has the POSIX default scale. */
-      if (s==20) {
-        r=.78539816339744830962
-        if (n==1) r= -r
-        ibase=b
-        return(r)
-      }
       scale=s+1
       r=.7853981633974483096156608458198757210492923498437764552437361480769541015715522496570087063355292669955370216283205766617734611523876455579313398520321202793625
       r+=10^(-s)/2
@@ -52,7 +60,7 @@ define a(x) {
     }
   }
   scale=0
-  w=s+2*length(s+scale(x)+length(x)+1)+24
+  w=s+2*length(s+scale(x)+length(x)+1)+12
   scale=w
   if (scale!=w) return(1/0)
   v=0
@@ -80,10 +88,35 @@ define a(x) {
     x=x/(1+sqrt(1+x*x))
     k*=2
   }
-  q= -x*x
   t=x
   r=x
   i=3
+  /* At scales 1..20 the reduced argument is at most 1/9 in magnitude.
+     Exact Pade residual and signed-roundoff bounds permit this finite
+     kernel at s+14, after the unchanged higher-precision reduction. */
+  if (s>0) {
+    if (s<=20) {
+      if (t!=0) {
+        w=s+14
+        scale=w
+        if (scale!=w) return(1/0)
+        x=x/1
+        q=x*x
+        i=1
+        if (x>= -.01) {
+          if (x<=.01) {
+            r=x*(((64*q+735)*q+945)/((225*q+1050)*q+945))
+            i=0
+          }
+        }
+        if (i==1) {
+          r=x*(((((16384*q+638055)*q+3738735)*q+6831825)*q+3828825)/((((99225*q+1455300)*q+5675670)*q+8108100)*q+3828825))
+        }
+        t=0
+      }
+    }
+  }
+  if (t!=0) q= -x*x
   while (t!=0) {
     t=t*q
     u=t/i
@@ -102,11 +135,12 @@ define a(x) {
   return(r)
 }
 
-/* Exponential: positive small-argument series and repeated squaring. */
+/* Exponential: bounded rational/series kernel and repeated squaring. */
 define e(x) {
   auto b,i,k,n,r,s,t,w;
   /* b/s save base/scale; w is precision; n marks a negative argument.
-     k counts halvings; r/t/i are sum, Taylor term and factorial index. */
+     k counts halvings; r/t/i are sum, Taylor term and factorial index,
+     or the bounded kernel's odd/even polynomials and squared argument. */
   b=ibase
   ibase=A
   s=scale
@@ -128,9 +162,11 @@ define e(x) {
   /* For positive x, e^x < 10^(x/2). At scale zero, floor(floor(x)/2)+1
      exceeds x/2. Negative reconstruction needs no magnitude guard. */
   w=x/1
-  w=s+(1-n)*(w/2+1)+2*length(s+scale(x)+w+1)+24
+  w=s+(1-n)*(w/2+1)+2*length(s+scale(x)+w+1)+12
   scale=w
   if (scale!=w) return(1/0)
+  /* Charge a single excess-input truncation to the derivative bound. */
+  if (scale(x)>w) x=x/1
   k=0
   while (x>.125) {
     x=x/2
@@ -139,6 +175,22 @@ define e(x) {
   r=1
   t=1
   i=1
+  /* The [8/8] kernel has a positive denominator on [0,1/8]. Retain
+     the original precision, inversion and squaring. Seven halvings
+     bound the positive magnitude guard by nine decimal places. */
+  if (s>0) {
+    if (s<=20) {
+      if (k<=7) {
+        if (x!=0) {
+          i=x*x
+          t=(((i+2520)*i+831600)*i+60540480)*i+518918400
+          r=x*(((72*i+55440)*i+8648640)*i+259459200)
+          r=(t+r)/(t-r)
+          t=0
+        }
+      }
+    }
+  }
   while (t!=0) {
     t=t*x/i
     r+=t
@@ -178,15 +230,18 @@ define l(x) {
   m=length(x)
   u=scale(x)
   t=s+u+m+1
-  w=t-1+2*length(t)+24
   m-=u+1
+  /* Only a negative decimal exponent amplifies input truncation.
+     Keep stored width in the digit-count guard for reconstruction. */
+  w=s+2*length(t)+12
+  if (m<0) w-=m
   v=m
   if (v<0) v= -v
   h=0
   if (v>=64) {
     if (v>=64+s/2) {
       q=10^v
-      w=s+2*length(t)+24
+      w=s+2*length(t)+12
       h=1
     }
   }
@@ -198,6 +253,8 @@ define l(x) {
     if (m>0) x=x/q
     h=m*l(10)
   }
+  /* Normalize tiny values before clipping to the working precision. */
+  if (scale(x)>w) x=x/1
   /* Divide by two in this band to enter [.8,1.2] without roots.
      The 80-place lower bound is sufficient at working scales up to 64. */
   if (w<=64) {
@@ -229,6 +286,26 @@ define l(x) {
   if (s<1000) {
     r=t
     i=3
+    /* Keep root reduction and the offset at their old precision. The
+       bounded atanh rational kernel and reconstruction need s+14;
+       larger scales or root multipliers retain the generic series. */
+    if (s>0) {
+      if (s<=20) {
+        if (k<=1024) {
+          if (t!=0) {
+            w=s+14
+            scale=w
+            if (scale!=w) return(1/0)
+            t=t/1
+            q=t*t
+            r=((((-327680*q+19225635)*q-175855680)*q+552473922)*q-698377680)*q+305540235
+            u=((((-2401245*q+52026975)*q-312161850)*q+758107350)*q-800224425)*q+305540235
+            r=t*(r/u)
+            t=0
+          }
+        }
+      }
+    }
     while (t!=0) {
       t=t*q
       u=t/i
@@ -271,11 +348,12 @@ define l(x) {
   return(r)
 }
 
-/* Sine: dynamically computed period and bounded alternating series. */
+/* Sine: unchanged period reduction and bounded rational/series kernels. */
 define s(x) {
   auto b,i,k,n,p,q,r,t,u,v,w;
   /* b/u save base/scale; w is precision; v is integer magnitude.
-     n marks odd symmetry; p/k are period and quotient; q/t/r/i drive Taylor. */
+     n marks odd symmetry; p/k are period and quotient, then rational
+     polynomials; q/t/r/i drive the squared argument and generic Taylor. */
   b=ibase
   ibase=A
   u=scale
@@ -283,7 +361,7 @@ define s(x) {
   /* Integer magnitude controls reduction; fractional width does not. */
   v=length(x)-scale(x)
   if (v<1) v=1
-  w=u+v+2*length(u+v+scale(x)+1)+24
+  w=u+v+2*length(u+v+scale(x)+1)+12
   scale=w
   if (scale!=w) return(1/0)
   /* Coerce only excess input precision, keeping short factors short. */
@@ -305,10 +383,35 @@ define s(x) {
   }
   /* Evaluate at one fifth of the angle, then use the quintuple-angle identity. */
   x=x*.2
-  q= -x*x
   t=x
   r=x
   i=2
+  /* Check the actual reduced domain: a public redefinition of a() may
+     produce a different period. Outside it retain the generic series.
+     Phase reduction stays at its original magnitude-dependent scale. */
+  /* A redefined a() may change ibase; keep the old generic behavior. */
+  if (ibase==A) {
+    if (u>0) {
+      if (u<=20) {
+        if (x>= -.64) {
+          if (x<=.64) {
+            if (x!=0) {
+              w=u+14
+              scale=w
+              if (scale!=w) return(1/0)
+              x=x/1
+              q=x*x
+              p=((((-481959816488503*q+203385425766914820)*q-31712777908498486800)*q+2120649063015013090560)*q-54839355237791393068800)*q+363275871831577908403200
+              k=((((1230626892363*q+707177798947620)*q+219578286347980560)*q+44454031219351353600)*q+5706623400804924998400)*q+363275871831577908403200
+              r=x*(p/k)
+              t=0
+            }
+          }
+        }
+      }
+    }
+  }
+  if (t!=0) q= -x*x
   while (t!=0) {
     t=t*q/(i*(i+1))
     r+=t
@@ -326,11 +429,12 @@ define s(x) {
   return(r)
 }
 
-/* Cosine: dynamically computed period and bounded alternating series. */
+/* Cosine: unchanged period reduction and bounded rational/series kernels. */
 define c(x) {
   auto b,i,k,p,q,r,t,u,v,w;
   /* b/u save base/scale; w is precision; v is integer magnitude.
-     p/k are period and quotient; q/t/r/i drive the even Taylor recurrence. */
+     p/k are period and quotient, then rational polynomials; q/t/r/i
+     drive the squared argument and generic even Taylor recurrence. */
   b=ibase
   ibase=A
   u=scale
@@ -338,7 +442,7 @@ define c(x) {
   /* Integer magnitude controls reduction; fractional width does not. */
   v=length(x)-scale(x)
   if (v<1) v=1
-  w=u+v+2*length(u+v+scale(x)+1)+24
+  w=u+v+2*length(u+v+scale(x)+1)+12
   scale=w
   if (scale!=w) return(1/0)
   /* Coerce only excess input precision, keeping short factors short. */
@@ -356,10 +460,34 @@ define c(x) {
   }
   /* Evaluate at one eighth of the angle, then double it three times. */
   x=x*.125
-  q= -x*x
   t=1
   r=1
   i=1
+  /* The degree-five rational kernel covers |x|<=.4 after division by
+     eight. Keep the old public period call and generic fallback. */
+  /* A redefined a() may change ibase; keep the old generic behavior. */
+  if (ibase==A) {
+    if (u>0) {
+      if (u<=20) {
+        if (x>= -.4) {
+          if (x<=.4) {
+            if (x!=0) {
+              w=u+14
+              scale=w
+              if (scale!=w) return(1/0)
+              x=x/1
+              q=x*x
+              p=((((-5342316580775*q+1767200224481340)*q-204260164593685200)*q+9249069176002656000)*q-135355106332109664000)*q+280669698675663897600
+              k=((((2045322787*q+969954677340)*q+254519795209680)*q+44369900711136000)*q+4979743005722284800)*q+280669698675663897600
+              r=p/k
+              t=0
+            }
+          }
+        }
+      }
+    }
+  }
+  if (t!=0) q= -x*x
   while (t!=0) {
     t=t*q/(i*(i+1))
     r+=t
@@ -377,14 +505,15 @@ define c(x) {
   return(r)
 }
 
-/* Bessel J: exact symmetries, tiny-result bound and two evaluation regimes. */
+/* Bessel J: symmetries, certified classification and two evaluation regimes. */
 define j(n,x) {
   auto b,d,f,g,h,i,k,m,p,q,r,s,t,u,v,w;
   /* b/s save base/scale; v is symmetry parity; w is working precision.
      In the Hankel path: m=4*n*n, p/q are even/odd sums, t the coefficient,
      k its index, h its four-step sign cycle, i/g signed/absolute factors,
      f the contraction flag, u the phase and d the amplitude. r holds pi
-     temporarily and then the result. The ascending path reuses t/k/r. */
+     temporarily and then the result. Ascending reuses t/k/r and h for
+     its coefficient-length or integer-magnitude guard. */
   b=ibase
   ibase=A
   s=scale
@@ -421,7 +550,45 @@ define j(n,x) {
       }
     }
   }
-  w=s+scale(x)+length(x)+2*length(s+scale(x)+length(x)+length(n)+1)+32
+  /* At scale zero, certified half-crossing bounds classify J0/J1 in
+     the series-only range. Strict comparisons leave uncertain brackets
+     to the accepted series. Above eight retain public a/c/s calls and
+     ordinary redefinition semantics. Scale is already zero. */
+  if (s==0) {
+    if (n<2) {
+      if (x<=8) {
+        if (n==0) {
+          if (x<1.5211440576687651481513018730625235342837878902941129591913817089) {
+            ibase=b
+            return(1)
+          }
+          if (x>1.5211440576687651481513018730625235342837878902941129591913817090) {
+            ibase=b
+            return(0)
+          }
+        }
+        if (n==1) {
+          if (x<1.2067184630059078866565349810721299413472200414880472421508483780) {
+            ibase=b
+            return(0)
+          }
+          if (x>2.4881550851691471311579234121812087972033545580535080099003329208) {
+            ibase=b
+            return(0)
+          }
+          if (x>1.2067184630059078866565349810721299413472200414880472421508483781) {
+            if (x<2.4881550851691471311579234121812087972033545580535080099003329207) {
+              r=1
+              if (v==1) r= -r
+              ibase=b
+              return(r)
+            }
+          }
+        }
+      }
+    }
+  }
+  w=s+scale(x)+length(x)+2*length(s+scale(x)+length(x)+length(n)+1)+16
   /* DLMF 10.17.14-15 bounds the Hankel remainder by less than three
      first-omitted coefficients here. Abort if recurrence contraction is
      lost before the working-scale truncation budget is met. */
@@ -430,7 +597,8 @@ define j(n,x) {
      building a long asymptotic prefix that may be discarded. The
      contraction check still decides whether an attempted prefix is usable. */
   g=8*(n*n+1)
-  if (g<w) g=w
+  /* Preserve the original selector while reducing evaluation precision. */
+  if (g<w+16) g=w+16
   if (x>g) {
     scale=w
     if (scale!=w) return(1/0)
@@ -474,13 +642,99 @@ define j(n,x) {
     }
   }
   scale=0
-  /* Try the ascending series without guards for every input place.
-     DLMF 10.9.2 gives |J_n'(x)|<=1 for real x and integer n, so
-     truncating x at working precision adds less than one working unit. */
+  /* A finite weighted Horner polynomial covers positive scales 1..20
+     and 0<x<=128 after the unchanged Hankel attempt. The band upper
+     endpoint bounds the absolute weights and tail for every remaining
+     integer order; the earlier factorial guard bounds that order.
+     h/p/d encode N=floor((h*s+p)/d), without per-call tail searches. */
+  if (s>0) {
+    if (s<=20) {
+      if (x>0) {
+        if (x<=128) {
+          g=128
+          h=15
+          p=2430
+          d=14
+          if (x<=64) {g=64;h=19;p=1563;d=18}
+          if (x<=32) {g=32;h=16;p=748;d=17}
+          if (x<=16) {g=16;h=14;p=393;d=17}
+          if (x<=8) {g=8;h=9;p=166;d=13}
+          if (x<=4) {g=4;h=8;p=92;d=13}
+          if (x<=2) {g=2;h=8;p=64;d=15}
+          if (x<=1) {g=1;h=7;p=53;d=17}
+          if (x<=.5) {g=.5;h=5;p=30;d=14}
+          w=0
+          /* Order-aware Bessel degree rules for the turning region and
+             higher orders. Each upper endpoint uses the previous endpoint
+             as a lower bound on n. The weighted growth is <=exp(3*x/4). */
+          if (x>16) {
+            if (n>=x) {
+              h=15
+              p=1542
+              d=13
+              if (x<=96) {h=10;p=848;d=9}
+              if (x<=64) {h=11;p=595;d=10}
+              if (x<=48) {h=15;p=665;d=14}
+              if (x<=32) {h=17;p=558;d=18}
+              if (x<=24) {h=10;p=275;d=11}
+              w=s+(21*x)/64+1+length(2*n+3)+4
+            }
+          }
+          k=(h*s+p)/d
+          if (w==0) {
+            m=3*g
+            if (m<4*(s+1)) m=4*(s+1)
+            /* length(2*m) is ceil(log10(2*n_max+3)), n_max=m-1.
+               The guard exp(g)<10^ceil(7*g/16) uses exact integer
+               arithmetic; the half-unit band also rounds up to one. */
+            w=s+(7*g+15)/16+length(2*m)+4
+          }
+          scale=w
+          if (scale!=w) return(1/0)
+          u=x/2
+          t=1
+          for (i=1;i<=n;i++) {
+            t=t*u/i
+            if (t==0) break
+          }
+          r=t
+          if (t!=0) {
+            q=u*u
+            r=1
+            while (k>0) {
+              r=1-q*r/(k*(n+k))
+              k-=1
+            }
+            r=t*r
+          }
+          if (v==1) r= -r
+          t=10^(-s)/2
+          if (r>=0) r+=t
+          if (r<0) r-=t
+          scale=s
+          r=r/1
+          ibase=b
+          return(r)
+        }
+      }
+    }
+  }
+  /* Clip only beyond working precision. Derivative/absolute-series
+     bounds charge that perturbation to the same exponential guard. */
   /* Absolute recurrence weights sum to at most exp(x).
      exp(x) < 10^(7*x/16) for x>0. Round the digit budget up. */
   g=(7*x)/16+1
-  w=s+g+length(x)+2*length(s+g+length(x)+1)+32
+  /* Positive-scale guards need integer magnitude, not every fractional
+     coefficient digit. Keep the exact old scale-zero fallback arithmetic. */
+  h=length(x)
+  if (s>0) {
+    h-=scale(x)
+    if (h<1) h=1
+  }
+  /* Ten residual digits cover positive-scale recurrence error.
+     Retain all 32 in the certified scale-zero fallback. */
+  w=s+g+h+2*length(s+g+h+1)+10
+  if (s==0) w+=22
   scale=w
   if (scale!=w) return(1/0)
   if (scale(x)>w) x=x/1

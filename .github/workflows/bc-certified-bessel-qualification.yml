@@ -1,0 +1,129 @@
+name: bc certified Bessel declared qualification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/bc/**'
+      - '.github/workflows/bc-certified-bessel-qualification.yml'
+      - 'docs/utilities/bc-certified-bessel/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bc-certified-bessel-qualification-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  qualify:
+    # A distinct numerical candidate, declared only after all original #712 outcomes.
+    # Exposed input identities are controls; no measurements transfer between sources.
+    if: github.head_ref == 'codex/bc-zero-scale-bessel'
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [ubuntu-24.04, macos-15, windows-2025]
+        suite: [full-low-0, full-low-1, full-low-2, full-middle-0, full-middle-1, full-middle-2, full-high-0, full-high-1, full-high-2, holdout-low-0, holdout-low-1, holdout-low-2, holdout-middle-0, holdout-middle-1, holdout-middle-2, holdout-high-0, holdout-high-1, holdout-high-2, validation-low-0, validation-middle-0, validation-high-0, arithmetic-startup]
+    name: Certified Bessel / ${{ matrix.image }} / ${{ matrix.suite }}
+    runs-on: ${{ matrix.image }}
+    timeout-minutes: 360
+    env:
+      BC_CANDIDATE: ${{ github.event.pull_request.head.sha }}
+      BC_BASE: '3beebb1461ac7549832707f9b84e547127e3c14a'
+      BC_SUITE: ${{ matrix.suite }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.BC_CANDIDATE }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Record the prospective source and protocol
+        shell: python
+        run: |
+          import hashlib,json,os,shutil,subprocess
+          from pathlib import Path
+          if os.environ['GITHUB_RUN_ATTEMPT'] != '1':
+              raise SystemExit('A frozen cohort cannot be restarted for acceptance')
+          source=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          assert source==os.environ['BC_CANDIDATE']
+          root=Path('cohort');root.mkdir()
+          (root/'source.txt').write_text(source+'\n',encoding='utf-8')
+          (root/'comparison.txt').write_text(os.environ['BC_SUITE']+' base='+os.environ['BC_BASE']+
+              ' certified-bessel-runtime=ca75c979 native-scalar=default-OFF native-functions=default-OFF split=126\n',encoding='utf-8')
+          directory=Path('docs/utilities/bc-certified-bessel')
+          shutil.copyfile(directory/'qualification.md',root/'protocol.md')
+          shutil.copyfile(directory/'qualification-hashes.json',root/'qualification-hashes.json')
+          pinned=json.loads((directory/'qualification-hashes.json').read_text(encoding='utf-8'))
+          retained={}
+          for name,digest in pinned['files'].items():
+              raw=Path(name).read_bytes()
+              # Git checks out Windows text with CRLF; compare canonical source
+              # while retaining and hashing the actual native checkout bytes.
+              assert hashlib.sha256(raw.replace(b'\r\n',b'\n')).hexdigest()==digest,name
+              target=root/'source-inputs'/name
+              target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(raw)
+              retained[name]=hashlib.sha256(raw).hexdigest()
+          (root/'source-input-manifest.json').write_text(json.dumps(dict(source=source,files=retained,
+              scope='Actual native checkout bytes; canonical prospective source verified separately.'),indent=2)+'\n',encoding='utf-8')
+      - name: Establish native MSVC environment
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installation = & "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe" -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (!$installation) { throw 'Native x64 MSVC is unavailable' }
+          $variables = & cmd /c "`"$installation\Common7\Tools\VsDevCmd.bat`" -arch=x64 -host_arch=x64 >nul && set"
+          if ($LASTEXITCODE) { throw 'Cannot initialize MSVC' }
+          foreach ($line in $variables) {
+            if ($line -match '^(PATH|INCLUDE|LIB|LIBPATH|VCToolsInstallDir|VCINSTALLDIR|VSINSTALLDIR|WindowsSdkDir|WindowsSDKVersion|UniversalCRTSdkDir|UCRTVersion|Platform)=(.*)$') {
+              "$($matches[1])=$($matches[2])" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            }
+          }
+      - name: Collect the original elapsed and resource cohort
+        shell: python
+        run: |
+          import os,subprocess,sys
+          if os.environ['GITHUB_RUN_ATTEMPT'] != '1':
+              raise SystemExit('A frozen cohort cannot be restarted for acceptance')
+          suite=os.environ['BC_SUITE']
+          if suite=='arithmetic-startup':
+              import json
+              from pathlib import Path
+              subprocess.run([sys.executable,'src/bc/scripts/benchmark-ci.py',
+                  '--source',os.environ['GITHUB_WORKSPACE'],'--base',os.environ['BC_BASE'],
+                  '--candidate',os.environ['BC_CANDIDATE'],'--output','arithmetic-results',
+                  '--broad','--sparse-qualification','--compare-resources','--samples','31'],check=True)
+              roles=[json.loads(Path('arithmetic-results',role,'implementations.json').read_text())['implementations'][0]
+                     for role in ('base','aa','candidate')]
+              Path('cohort/startup-config.json').write_text(json.dumps(dict(implementations=roles),indent=2)+'\n')
+              subprocess.run([sys.executable,'src/bc/scripts/startup-calibration.py',
+                  '--config','cohort/startup-config.json','--output','startup-results',
+                  '--total-seconds','2400','--child-timeout-seconds','5'],check=True)
+              raise SystemExit(0)
+          family,partition,shard=suite.split('-')
+          preset='holdout' if family=='validation' else family
+          shards=1 if family=='validation' else 3
+          declared='cohort/declared-corpus'
+          subprocess.run([sys.executable,'src/bc/scripts/math-qualification-inputs.py',
+              '--family','validation' if family=='validation' else 'exposed',
+              '--preset',preset,'--partition',partition,'--shard',shard,'--shards',str(shards),
+              '--output',declared],check=True)
+          arguments=[sys.executable,'src/bc/scripts/benchmark-math-ci.py','--source',os.environ['GITHUB_WORKSPACE'],
+              '--base',os.environ['BC_BASE'],'--candidate',os.environ['BC_CANDIDATE'],
+              '--output','certified-results','--broad','--compare-resources','--samples','31',
+              '--broad-preset',preset,'--input-corpus',declared,
+              '--duration-seconds','.25','--calibration-seconds','.5',
+              '--child-timeout-seconds','600','--total-seconds','20000']
+          subprocess.run(arguments,check=True)
+      - name: Preserve every original outcome and available input
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bc-certified-qualification-${{ matrix.image }}-${{ matrix.suite }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            cohort/
+            certified-results/evidence/
+            arithmetic-results/evidence/
+            startup-results/
+          include-hidden-files: true
+          if-no-files-found: error

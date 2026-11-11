@@ -1,0 +1,979 @@
+{
+  "arithmetic_samples": 151,
+  "base": "01a3b4ff67737ac244d79f532a50fb03b1bb6573",
+  "declared_jobs": 180,
+  "files": {
+    ".github/workflows/bc-bessel-zero-correctness.yml": "3a53b387f035923cf307417093da052eb9e12e11878847946fb2fa06c635d3f0",
+    ".github/workflows/bc-certified-bessel-qualification.yml": "0367aa890fe81c0f93a4eb86ab2db3f619721fe8cdba1fe1ae04fa19a2e7041a",
+    ".github/workflows/bc-reconstruction-qualification.yml": "3b71450b3b76ee72981c4514d8d41f8384757524558b956e3b324b52ba22f372",
+    "CMakeLists.txt": "974eaa9b4444e5c74d30a04663a2f6dc383ae726c064a12ad9c692a431c938d2",
+    "docs/utilities/bc-bounded-rational-kernels.md": "e2e85d2315d100a6bc39876aa1db21e0bbe4aeb798ae2507bab1459b804f9d90",
+    "docs/utilities/bc-certified-bessel/qualification.md": "2538ae9c820bc9b4bc365cf8c8fe33299e524186f5b73cde46f8935ada1cf59c",
+    "docs/utilities/bc-function-slot-storage.md": "51492a7ca2279b2ad995f5ca072bcbab6f220ad7326eff2c27a61363537600cd",
+    "docs/utilities/bc-native-functions.md": "6486440af345bf3fc997a7ff1bd1c0dcc2cbc39480a8655c20305628b1ba7a3b",
+    "docs/utilities/bc-performance-acceptance.md": "dd3eedf473d5d9e07ba19e4d3bb0ca6d5da3eadbda104f3842a1a30af0a291d2",
+    "docs/utilities/bc-portable-math.md": "ab564f2a47daa0208133d000e559304248a20457b8f3011a08d5c0b21dec1d96",
+    "docs/utilities/bc-reconstruction-qualification/qualification.md": "a5d457d517ef349376c9d0123e6c0801007f35c6a84f109666feb36c6f464c00",
+    "src/bc/CMakeLists.txt": "cf268db68d7d9807914a9988302ad4fe193ccdf54e1d3af1fbbbf0a6796355dc",
+    "src/bc/bc.hh": "4fc67c5eeca4016a6d5905c194ebc6a98c9930a124aaf98dcbabeef7bb9280be",
+    "src/bc/digit-storage.hh": "3e94c8a5ee76309a0bbf42aa56bcc0df31441ddce7e84198d5474cedb051f812",
+    "src/bc/fixtures/.gitattributes": "6271e17d7e10d54e8c77faf6d2a248e203779cf901f4ebd59c1ed832541e35a7",
+    "src/bc/fixtures/math-benchmark-cases.json": "cd27265512c564e2b092d0eeea2162e954215a4ee7824853189e3feadf8498b0",
+    "src/bc/fixtures/math-benchmark-oracles.json": "7f9c0a40673d6d38ef4d595e35594a9ccc5bc4f355038c7787e399260943bb37",
+    "src/bc/fixtures/math-bessel-classification-oracles.json": "a256c8a4a13e0ec17e530485812db52be4d8273c90edac3cfc3c64fa30ac8337",
+    "src/bc/fixtures/math-certified-validation-inputs.json": "89b2defc59c743e4d3fb1ad5d159d68dd452d2cfc1c33a6c473016c2f9f8c693",
+    "src/bc/fixtures/math-library-decisions.json": "b995327e9228da0c14b7a910bdf0a1c04048d2f3f14221f9a0f582ee046035db",
+    "src/bc/fixtures/math-qualification-exposed-inputs.json": "834e651cf682be3820c5a9424e446c263a87705fcee19c2884ad870332b1d8df",
+    "src/bc/fixtures/math-rational-kernel-cases.json": "eb806f0df4f2e0ab7a9da6e1c15a74ba2b5c6a2048e6ed3ec8e14b2cf9321444",
+    "src/bc/fixtures/math-rational-kernel-oracles.json": "c993956d2a088722f9e00b806425736a5b231f710f7d58736e65feb84552191d",
+    "src/bc/fixtures/math-rational-validation-cases.json": "a725528747ea258d492bfd6d9e40c422f6db2e0de38f5aa694a8bc2070935184",
+    "src/bc/fixtures/math-rational-validation-oracles.json": "d45cdf8f82322506b47bf4dd20d36f79ed336d855b3b5c2f85746492d3c5ba83",
+    "src/bc/fixtures/math-reconstruction-validation-cases.json": "70181e4d4f45f2237ae6dfa6eb6f346e40e9fd7c4e8885d96bbffe9aaf3ffcb4",
+    "src/bc/fixtures/math-reconstruction-validation-oracles.json": "e0d324fa021c1771fcc737becfd7220d8fe47ebb0738e1eddbdadc1e922cb88b",
+    "src/bc/function-slot.hh": "10a84fe622fcb45985e1eb29c36f017bdbf3167eeb59f6ae858c83999196b3bb",
+    "src/bc/integer-recurrence.cc": "a44747728360473f95d686ac200838b402f104bfba4ac5e66707a6d6ac7d3f34",
+    "src/bc/integer-recurrence.hh": "9b874d0e85c8ff5491b1c5dd5a39f7ed76df57510b7558783da43d0753139e13",
+    "src/bc/math-library-image.hh": "7bc603ec26ce119fdd82e97916f20a3f1a2a32952c878f13a69a9f0722750281",
+    "src/bc/math-library.bc": "ee2005fd4824881e11d24440ea90683df0aef34e9b29714bf9d6ee7dc270311f",
+    "src/bc/math-library.cc": "13c7af98cbc4b2b1c9fcf4e12b39b1a9edf94b5a46ffb619defabd136338aac3",
+    "src/bc/math-library.hh.in": "7e2703588322e9a50af843f2fa0c79afab77acb76bf373dcc66a4eb66754edb9",
+    "src/bc/native-expression-arm64.cc": "f806db66cc1bfa6dc839c324866fb0d993775a2de5f59193dcdba39506108589",
+    "src/bc/native-expression-x64.cc": "67a898dcc7c288e6e6a9ed79cdb3e77cff102a78ddbcdca503cd72b605b26b40",
+    "src/bc/native-expression.hh": "a7113410cab118f3b0015d13751e17c9031db62c37983252024c5c3384cf95a6",
+    "src/bc/number.hh": "058ebff19eb1d05866a890679e269f021452750496b6f4e3ca548d1d4ac207f4",
+    "src/bc/preparse-math-library.cc": "4ea32e3379479bceb408d5723a471a95681bf0f264342fd2d8553c65d22cff65",
+    "src/bc/profiling.hh": "a39b18650ce248f8178c11ac57e4f1e6e5ffddc89f1c6644f8c4e143dfecbdce",
+    "src/bc/scripts/bench-bc.py": "45afe071f535569bf9fcdb71f039f4c25c670f49e6d8684e59b435e8a08cc109",
+    "src/bc/scripts/benchmark-ci.py": "2bfaa97945c7595b2bfc023de67d116ab1a694a23ddfef138ae8a1f9815be753",
+    "src/bc/scripts/benchmark-math-ci.py": "6dd1c14df5c9e7c6245fda4876dd259601195bd67ae22e1de98c5ef34ae9d8a7",
+    "src/bc/scripts/benchmark-policy.py": "fdd6adc4aca5e04d833f29208eee60a64bfa2cac10b2c5f1512b6ec416800eee",
+    "src/bc/scripts/build-bc-comparators.py": "0080ca14481e6baf43e79295ff7af7b4ab791d99f5d6ad53c917d12a32176a5d",
+    "src/bc/scripts/build-gd-bc.py": "8607536b74a5a8007ac16f98c3702b4683339901aec8ff28d444ffe150f31c32",
+    "src/bc/scripts/collect-bc-codegen.py": "6644b9276a8cd2aa7fe1ab1e7c65702f0d2eab0acedadabc523f456c78ebc8ed",
+    "src/bc/scripts/compare-bc-resources.py": "cb7eb196e6ddc87ff050b4f059e1c37720752fc23644d02ec5bc8b1169cc675c",
+    "src/bc/scripts/generate-math-case-list-oracles.py": "4cd6983beed69638da08f729bda054c4dc536a60e6991628ce1ac4b35168910d",
+    "src/bc/scripts/generate-math-oracles.py": "e8f664c9604a2db7e3ce6b0f9af8fc92219d79f72fd088b535103a5bda2def9d",
+    "src/bc/scripts/generate-reconstruction-declaration.py": "03dfdba4801f7e280d36e657fe31a27060f11ed9f3804189f1999eb9f4c7ead1",
+    "src/bc/scripts/integer-qualification-inputs.py": "1b8a0668bf2ab4c084ce813219f39b6bc2e2e1fa79de851aa90f54f60526f2a2",
+    "src/bc/scripts/math-qualification-inputs.py": "1af1e1203809f03894c7abcbcfd8ed1ab2959e2be684ca6eae94d4e0dffb4482",
+    "src/bc/scripts/math_library_coverage.py": "0020433eca6e55f6f018cec66369ba115ce8446814879f1c966045977f6e4b61",
+    "src/bc/scripts/math_oracle.py": "addc5373f2b61b6a237b0d7b9d320a184bd10ad87a9149f6b26eb3fccb0ae37e",
+    "src/bc/scripts/profile-bc.py": "bf5f4c80c49eeb8fbff58ab32c34b79d55334f01fa20ae37d7267a811fde93b3",
+    "src/bc/scripts/reconstruction-qualification-inputs.py": "d91b2247c9014bd7568e37604380bc3bd512f99f81f706b8d7e496cca25d3f29",
+    "src/bc/scripts/startup-calibration.py": "9ac1596095057f1653547d4a4a78702d6b3ef95d66984d53010dff6129a9a166",
+    "src/bc/scripts/verify-bessel-zero-evidence.py": "b27ccbb4fbf69ebd47e5721f77f8c15015ac0fe6d9b915163512434061156303",
+    "src/bc/test-benchmark-ci.py": "ec57f06eeedcf8232d1ff35fba4c84c03b946b686214f740a408db28642ce333",
+    "src/bc/test-benchmark-cli.py": "211c5939ece46ab2a4dee3d3756beaacfe9e26f4ff9ae186a92a4ee6503e1e9a",
+    "src/bc/test-benchmark-math-ci.py": "5388a1422efd848419cb3769467d93740e12bfbcac18762377c1eb24a9a4c4e4",
+    "src/bc/test-bessel-precision-proof.py": "5f34c9056ef7f2ae6c24f4bc57f824d1cd2c679f7d4fa2917bc2752c9494fcc3",
+    "src/bc/test-bessel-zero-evidence.py": "fe06a2648c8d8d0662977b6373a920ce59d1bd67b4b49e81d23f2fb6ea45955f",
+    "src/bc/test-bessel-zero-proof.py": "0a7f4da33749d782ffcefbe71738c0efa2a6811c1fcd0216ce7dffb817e21216",
+    "src/bc/test-function-slot.cc": "6275885dbd2b9983754498d47a25b37ab0d95b2d387aed994cb80cffaa29ff1c",
+    "src/bc/test-integer-qualification-inputs.py": "a299d5ff85b45f3455db24b83387459a23042ac21e78ca76f5362c005c6be17b",
+    "src/bc/test-integer-recurrence.cc": "270c84a3f059c2b83ed864bb8b8da07e6d5ad74d784d68906e0b4f62bfa7a3df",
+    "src/bc/test-math-budget-proof.py": "002f2a93b1d54854947367edeed11c44ff0e107eabf4aa451865d63a867f6568",
+    "src/bc/test-math-library-cli.py": "74cbb07e397ffa33fdb3139600a3bc488503885e20350340f14c323de683e6ed",
+    "src/bc/test-math-library-coverage.py": "a499919da806ed00a92406a4cf902f66080fa0ac041518cd8bf942ab8108e313",
+    "src/bc/test-math-oracle.py": "8eb2744234f6544b930a8a8b829a61449880519e6862c70fbc38cae371309820",
+    "src/bc/test-math-qualification-inputs.py": "aecb71c247e20dbe82d492ca862ecbf60129a3e1e988032aa876a38823cd8b79",
+    "src/bc/test-native-expression.cc": "d02fc0f36736e67f63dca028870deed64664e802c724338b512fa1e3977fd2c8",
+    "src/bc/test-number.cc": "ebc678ca4dea56c6eebee0ac7916486865c80b4f9900453c7a9bf06302146b5a",
+    "src/bc/test-rational-kernel-proof.py": "59f99a256948306cf5aae4875120f22ea48b41b2f4b8a13d8ab7cfca821f29ec",
+    "src/bc/test-reconstruction-declaration.py": "bf11359d0e1876dbd91d3c9c5ef1a5dc18eb282a0c899c7a5a47a5a6ba8cff8f",
+    "src/bc/test-reconstruction-hosted-limits.py": "bbcead2244770e84eb92656431c015b9955a6e2e91b8359020edcbe3294bc1e8",
+    "src/bc/test-reconstruction-inputs.py": "4e6320a8ba3c465600ebe82dbddd686e37b484ec50d0ecc229234509b8c3c1e6",
+    "src/bc/test-resource-comparison.py": "ae02986ab555bf377f8c1e8280468bd748619b146e9e8e803bd375b281ec84d3",
+    "src/bc/test-startup-calibration.py": "c0b965d95bf783ea43aa11a2fd4fdceaa375f0691882dedb51b630048cfa0f25",
+    "src/bc/test-vm-lifetime.cc": "a2ccd9faffe322c128166c22172120ffe933511017fed0e649abab3f0f8f737b",
+    "src/bc/vm.cc": "e60314fd9e2b51041d608d0f69e1c8a2b40a6b3c8723a8a41219c64b637b431b"
+  },
+  "fresh_integer_workloads": 5,
+  "fresh_math_records": 76,
+  "math_samples": {
+    "aa": 151,
+    "paired": 31
+  },
+  "mathematical_controls": 224,
+  "previous_validation_integer_workloads": 5,
+  "previous_validation_math_records": 76,
+  "schema": 2,
+  "scope": "Prospective canonical hashes only; excludes this manifest to avoid self-reference.",
+  "selected_inputs": {
+    "arithmetic-full": {
+      "names": [
+        "startup",
+        "loop_1000000",
+        "calls_200000",
+        "array_200000",
+        "compare_high_1000d_x100000",
+        "compare_low_1000d_x100000",
+        "compare_equal_1000d_x100000",
+        "fibonacci_1000_x100",
+        "fibonacci_10000_x10",
+        "factorial_1000_x50",
+        "factorial_5000_x5",
+        "multiply_100d_x100000",
+        "multiply_1000d_x10000",
+        "multiply_10000d_x1000",
+        "divide_scale100_x100000",
+        "divide_scale1000_x10000",
+        "divide_scale5000_x5000",
+        "sqrt_scale100_x5000",
+        "sqrt_scale1000_x50",
+        "sqrt_scale5000_x5",
+        "multiply_dense_1000d_x5000",
+        "multiply_dense_10000d_x500",
+        "multiply_unbalanced_10000d_100d_x2000",
+        "multiply_sparse_10000d_x1000",
+        "divide_multilimb_900d_450d_s100_x1000",
+        "divide_multilimb_1000d_900d_s1000_x500",
+        "modulo_1000d_350d_x3000",
+        "power_100d_e17_x1000",
+        "power_20d_e32_x2000",
+        "ibase_literal_flip_20000",
+        "recursion_50_x1000",
+        "sparse_array_200000",
+        "frontend_definitions_2000",
+        "decimal_input_4000d_x100",
+        "decimal_output_200d_x1000",
+        "streaming_statements_20000",
+        "square_100d_x100000",
+        "square_1000d_x10000",
+        "square_10000d_x500",
+        "literal_repeat_2000d_x2000",
+        "binary_output_1000d_x300",
+        "octal_output_1000d_x300",
+        "binary_input_100000d_x3",
+        "hex_input_100000d_x3",
+        "temporary_chain_1000d_x50000",
+        "file_statements_20000",
+        "sqrt_large_scale10000_x5",
+        "sqrt_tiny_scale1024_x30",
+        "sqrt_tiny_scale4096_x1",
+        "sqrt_integer_power2000_scale100_x10",
+        "divide_scaled_dense_s1000_t1000_x5000",
+        "divide_scaled_dense_s1000_t500_x5000",
+        "divide_scaled_dense_s1000_t2000_x5000",
+        "divide_scaled_trailing_zero_s1000_t1000_x5000",
+        "divide_scaled_trailing_zero_s1000_t500_x5000",
+        "divide_scaled_trailing_zero_s1000_t2000_x5000",
+        "modulo_scaled_numerator_s3_b7_t43_x1000",
+        "modulo_scaled_divisor_s97_b37_t43_x1000",
+        "divisor_changing_divide_600d_230d_x1000",
+        "divisor_changing_modulo_600d_230d_x1000",
+        "divisor_temporary_divide_600d_230d_x1000",
+        "divisor_temporary_modulo_600d_230d_x1000",
+        "divisor_periodic_divide_600d_230d_x1000",
+        "divisor_periodic_modulo_600d_230d_x1000",
+        "divisor_cold_divide_600d_230d_x1",
+        "divisor_cold_modulo_600d_230d_x1"
+      ],
+      "records": 66
+    },
+    "arithmetic-holdout": {
+      "names": [
+        "startup",
+        "loop_875000",
+        "calls_175000",
+        "array_175000",
+        "compare_high_1125d_x87500",
+        "compare_low_1125d_x87500",
+        "compare_equal_1125d_x87500",
+        "fibonacci_1125_x88",
+        "fibonacci_11250_x9",
+        "factorial_1125_x44",
+        "factorial_5625_x5",
+        "multiply_112d_x87500",
+        "multiply_1125d_x8750",
+        "multiply_11250d_x875",
+        "divide_scale112_x87500",
+        "divide_scale1125_x8750",
+        "divide_scale5625_x4375",
+        "sqrt_scale112_x4375",
+        "sqrt_scale1125_x44",
+        "sqrt_scale5625_x5",
+        "multiply_dense_1125d_x4375",
+        "multiply_dense_11250d_x438",
+        "multiply_unbalanced_11250d_112d_x1750",
+        "multiply_sparse_11250d_x875",
+        "divide_multilimb_1012d_506d_s112_x875",
+        "divide_multilimb_1125d_1012d_s1125_x438",
+        "modulo_1125d_393d_x2625",
+        "power_112d_e17_x875",
+        "power_22d_e32_x1750",
+        "ibase_literal_flip_17500",
+        "recursion_56_x875",
+        "sparse_array_175000",
+        "frontend_definitions_1750",
+        "decimal_input_4500d_x88",
+        "decimal_output_225d_x875",
+        "streaming_statements_17500",
+        "square_112d_x87500",
+        "square_1125d_x8750",
+        "square_11250d_x438",
+        "literal_repeat_2250d_x1750",
+        "binary_output_1125d_x263",
+        "octal_output_1125d_x263",
+        "binary_input_112500d_x3",
+        "hex_input_112500d_x3",
+        "temporary_chain_1125d_x43750",
+        "file_statements_17500",
+        "sqrt_large_scale11250_x5",
+        "sqrt_tiny_scale1152_x27",
+        "sqrt_tiny_scale4608_x1",
+        "sqrt_integer_power2250_scale112_x9",
+        "divide_scaled_dense_s1125_t1125_x4375",
+        "divide_scaled_dense_s1125_t562_x4375",
+        "divide_scaled_dense_s1125_t2250_x4375",
+        "divide_scaled_trailing_zero_s1125_t1125_x4375",
+        "divide_scaled_trailing_zero_s1125_t562_x4375",
+        "divide_scaled_trailing_zero_s1125_t2250_x4375",
+        "modulo_scaled_numerator_s4_b8_t48_x875",
+        "modulo_scaled_divisor_s109_b41_t48_x875",
+        "divisor_changing_divide_675d_258d_x875",
+        "divisor_changing_modulo_675d_258d_x875",
+        "divisor_temporary_divide_675d_258d_x875",
+        "divisor_temporary_modulo_675d_258d_x875",
+        "divisor_periodic_divide_675d_258d_x875",
+        "divisor_periodic_modulo_675d_258d_x875",
+        "divisor_cold_divide_675d_258d_x1",
+        "divisor_cold_modulo_675d_258d_x1"
+      ],
+      "records": 66
+    },
+    "arithmetic-integer-fresh": {
+      "manifest_sha256": "ccf1ea5d59b086df8998cf5de5c77f61662fe9b5f2a419000ae13fe2a3ea8765",
+      "names": [
+        "integer_successor_validation_word-square",
+        "integer_successor_validation_word-shift",
+        "integer_successor_validation_factorial",
+        "integer_successor_validation_stepped-product",
+        "integer_successor_validation_stepped-sum"
+      ],
+      "records": 5
+    },
+    "arithmetic-integer-validation": {
+      "manifest_sha256": "c0b010de5898330e15beceacb47bfb4fc45f3237b3d7bfb3c1699197b6baa192",
+      "names": [
+        "integer_validation_word-square",
+        "integer_validation_word-shift",
+        "integer_validation_factorial",
+        "integer_validation_stepped-product",
+        "integer_validation_stepped-sum"
+      ],
+      "records": 5
+    },
+    "fresh-high-0": {
+      "manifest_sha256": "5c1d23f864db0153599e3f6e798f3744253b8f0588b3e03eb4e1c5da3edc2a3f",
+      "names": [
+        "math_rational_validation_03_one_shot_x1",
+        "math_rational_validation_03_repeated_x2",
+        "math_rational_validation_15_one_shot_x1",
+        "math_rational_validation_15_repeated_x2",
+        "math_rational_validation_25_one_shot_x1",
+        "math_rational_validation_25_repeated_x2",
+        "math_rational_validation_37_one_shot_x1",
+        "math_rational_validation_37_repeated_x2"
+      ],
+      "records": 8
+    },
+    "fresh-high-1": {
+      "manifest_sha256": "4eb2557a05d2a0c4c35ff0a472fc909dee8e1e4ee6bd9eaf081fdec7d13a4ffa",
+      "names": [
+        "math_rational_validation_07_one_shot_x1",
+        "math_rational_validation_07_repeated_x2",
+        "math_rational_validation_19_one_shot_x1",
+        "math_rational_validation_19_repeated_x2",
+        "math_rational_validation_27_one_shot_x1",
+        "math_rational_validation_27_repeated_x2"
+      ],
+      "records": 6
+    },
+    "fresh-high-2": {
+      "manifest_sha256": "a83515491fa166c218dee0c6e77ae84026b82de14b0da368f9d840daaadca4b9",
+      "names": [
+        "math_rational_validation_11_one_shot_x1",
+        "math_rational_validation_11_repeated_x2",
+        "math_rational_validation_23_one_shot_x1",
+        "math_rational_validation_23_repeated_x2",
+        "math_rational_validation_35_one_shot_x1",
+        "math_rational_validation_35_repeated_x2"
+      ],
+      "records": 6
+    },
+    "fresh-low-0": {
+      "manifest_sha256": "80be346b67d705e1367ff97d81f3f5d53be34ce4901d09e2b14bdba5c685d942",
+      "names": [
+        "math_rational_validation_00_one_shot_x1",
+        "math_rational_validation_00_repeated_x2",
+        "math_rational_validation_05_one_shot_x1",
+        "math_rational_validation_05_repeated_x2",
+        "math_rational_validation_12_one_shot_x1",
+        "math_rational_validation_12_repeated_x2",
+        "math_rational_validation_17_one_shot_x1",
+        "math_rational_validation_17_repeated_x2",
+        "math_rational_validation_24_one_shot_x1",
+        "math_rational_validation_24_repeated_x2",
+        "math_rational_validation_29_one_shot_x1",
+        "math_rational_validation_29_repeated_x2",
+        "math_rational_validation_32_one_shot_x1",
+        "math_rational_validation_32_repeated_x2",
+        "math_rational_validation_36_one_shot_x1",
+        "math_rational_validation_36_repeated_x2"
+      ],
+      "records": 16
+    },
+    "fresh-low-1": {
+      "manifest_sha256": "6b86126b3da2eac944d5355617aed0edcd1f6b3f9f1130c0149e3df51941cb09",
+      "names": [
+        "math_rational_validation_01_one_shot_x1",
+        "math_rational_validation_01_repeated_x2",
+        "math_rational_validation_08_one_shot_x1",
+        "math_rational_validation_08_repeated_x2",
+        "math_rational_validation_13_one_shot_x1",
+        "math_rational_validation_13_repeated_x2",
+        "math_rational_validation_20_one_shot_x1",
+        "math_rational_validation_20_repeated_x2",
+        "math_rational_validation_26_one_shot_x1",
+        "math_rational_validation_26_repeated_x2",
+        "math_rational_validation_30_one_shot_x1",
+        "math_rational_validation_30_repeated_x2",
+        "math_rational_validation_33_one_shot_x1",
+        "math_rational_validation_33_repeated_x2"
+      ],
+      "records": 14
+    },
+    "fresh-low-2": {
+      "manifest_sha256": "2a17f0815454896818500f0200924c6a6d6d46b559466ed5cff286efb73ff66f",
+      "names": [
+        "math_rational_validation_04_one_shot_x1",
+        "math_rational_validation_04_repeated_x2",
+        "math_rational_validation_09_one_shot_x1",
+        "math_rational_validation_09_repeated_x2",
+        "math_rational_validation_16_one_shot_x1",
+        "math_rational_validation_16_repeated_x2",
+        "math_rational_validation_21_one_shot_x1",
+        "math_rational_validation_21_repeated_x2",
+        "math_rational_validation_28_one_shot_x1",
+        "math_rational_validation_28_repeated_x2",
+        "math_rational_validation_31_one_shot_x1",
+        "math_rational_validation_31_repeated_x2",
+        "math_rational_validation_34_one_shot_x1",
+        "math_rational_validation_34_repeated_x2"
+      ],
+      "records": 14
+    },
+    "fresh-middle-0": {
+      "manifest_sha256": "e5ce74fa704c4b49da7a8a42897dd8f8e5bdc421c061c55ec45d01684990c73f",
+      "names": [
+        "math_rational_validation_02_one_shot_x1",
+        "math_rational_validation_02_repeated_x2",
+        "math_rational_validation_14_one_shot_x1",
+        "math_rational_validation_14_repeated_x2"
+      ],
+      "records": 4
+    },
+    "fresh-middle-1": {
+      "manifest_sha256": "08a92a6ac9ebbe8430fad6cc04a46fd686220182508f9fdf1f298632ea8ae5c5",
+      "names": [
+        "math_rational_validation_06_one_shot_x1",
+        "math_rational_validation_06_repeated_x2",
+        "math_rational_validation_18_one_shot_x1",
+        "math_rational_validation_18_repeated_x2"
+      ],
+      "records": 4
+    },
+    "fresh-middle-2": {
+      "manifest_sha256": "7d0e9b15dbd563c87e3ea0670cb4309116a4a301732e7501a810bce0eb65db5e",
+      "names": [
+        "math_rational_validation_10_one_shot_x1",
+        "math_rational_validation_10_repeated_x2",
+        "math_rational_validation_22_one_shot_x1",
+        "math_rational_validation_22_repeated_x2"
+      ],
+      "records": 4
+    },
+    "full-high-0": {
+      "manifest_sha256": "0037539a9929461c2d7f3f1c8760004bcfa3a3a2dca322b9921c0332bd69d925",
+      "names": [
+        "math_regular_a-one_scale1000_one_shot_x1",
+        "math_regular_a-one_scale1000_repeated_x3",
+        "math_turning_j-turning_scale1000_one_shot_x1",
+        "math_turning_j-turning_scale1000_repeated_x3",
+        "math_horner_full_long_one_scale101_one_shot_x1",
+        "math_horner_full_long_one_scale101_repeated_x20"
+      ],
+      "records": 6
+    },
+    "full-high-1": {
+      "manifest_sha256": "3f5b0793876d8f69918acbdb73295d418eb33d811304d6a4ab6d7691f91fa0e4",
+      "names": [
+        "math_regular_c-one_scale1000_one_shot_x1",
+        "math_regular_c-one_scale1000_repeated_x3",
+        "math_regular_l-two_scale1000_one_shot_x1",
+        "math_regular_l-two_scale1000_repeated_x3",
+        "math_horner_full_small_one_scale101_one_shot_x1",
+        "math_horner_full_small_one_scale101_repeated_x20"
+      ],
+      "records": 6
+    },
+    "full-high-2": {
+      "manifest_sha256": "58ef6a893fe7de9025d9e627822b2b44d55c19deab80142b656f87e2baa31ecd",
+      "names": [
+        "math_regular_s-one_scale1000_one_shot_x1",
+        "math_regular_s-one_scale1000_repeated_x3",
+        "math_regular_e-one_scale1000_one_shot_x1",
+        "math_regular_e-one_scale1000_repeated_x3",
+        "math_horner_full_small_zero_scale101_one_shot_x1",
+        "math_horner_full_small_zero_scale101_repeated_x20"
+      ],
+      "records": 6
+    },
+    "full-high-3": {
+      "manifest_sha256": "a34c8d4c21ed5a8d14cc89de3eebc03bdea10f74d2f54a2aac9dc162f71866b6",
+      "names": [
+        "math_argument_dominates_j-argument-dominates_scale1000_one_shot_x1",
+        "math_argument_dominates_j-argument-dominates_scale1000_repeated_x3",
+        "math_near_root_j-near-root_scale1000_one_shot_x1",
+        "math_near_root_j-near-root_scale1000_repeated_x3"
+      ],
+      "records": 4
+    },
+    "full-high-4": {
+      "manifest_sha256": "c03263656ffd2c45c1c1909de69f307f2135265b0c038a93d37afc88828eb8e1",
+      "names": [
+        "math_order_dominates_j-order-dominates_scale1000_one_shot_x1",
+        "math_order_dominates_j-order-dominates_scale1000_repeated_x3",
+        "math_horner_full_generic_argument_scale101_one_shot_x1",
+        "math_horner_full_generic_argument_scale101_repeated_x20"
+      ],
+      "records": 4
+    },
+    "full-high-5": {
+      "manifest_sha256": "b77bb0ff5f025448f84821fa3c268a658304fb7457bc44e9dab32cacbcb74596",
+      "names": [
+        "math_regular_j-zero-one_scale1000_one_shot_x1",
+        "math_regular_j-zero-one_scale1000_repeated_x3",
+        "math_horner_full_generic_order_scale101_one_shot_x1",
+        "math_horner_full_generic_order_scale101_repeated_x20"
+      ],
+      "records": 4
+    },
+    "full-low-0": {
+      "manifest_sha256": "724e23374851c4477ea94d4795465199fdbcafbeaf4e6ce254dfae8d7040b2fa",
+      "names": [
+        "math_regular_a-one_scale20_one_shot_x1",
+        "math_regular_a-one_scale20_repeated_x50",
+        "math_order_dominates_j-order-dominates_scale20_one_shot_x1",
+        "math_order_dominates_j-order-dominates_scale20_repeated_x50",
+        "math_horner_full_long_one_scale20_one_shot_x1",
+        "math_horner_full_long_one_scale20_repeated_x50"
+      ],
+      "records": 6
+    },
+    "full-low-1": {
+      "manifest_sha256": "f77c1d2bfd7c749290b6c2fdffe082e95b38e91cd14d85148ffa88de2f3d10e6",
+      "names": [
+        "math_regular_c-one_scale20_one_shot_x1",
+        "math_regular_c-one_scale20_repeated_x50",
+        "math_regular_j-zero-one_scale20_one_shot_x1",
+        "math_regular_j-zero-one_scale20_repeated_x50",
+        "math_horner_full_midpoint_0_scale0_one_shot_x1",
+        "math_horner_full_midpoint_0_scale0_repeated_x50"
+      ],
+      "records": 6
+    },
+    "full-low-2": {
+      "manifest_sha256": "e2713e999ae339bc0cede50b8e811002f007505bd9e105d365cefc8908e29d29",
+      "names": [
+        "math_regular_e-one_scale20_one_shot_x1",
+        "math_regular_e-one_scale20_repeated_x50",
+        "math_turning_j-turning_scale20_one_shot_x1",
+        "math_turning_j-turning_scale20_repeated_x50",
+        "math_horner_full_midpoint_1_scale0_one_shot_x1",
+        "math_horner_full_midpoint_1_scale0_repeated_x50"
+      ],
+      "records": 6
+    },
+    "full-low-3": {
+      "manifest_sha256": "4f96067c68715eefb50d9f4415a2c781a9d2de4ef680531f213392047cb22120",
+      "names": [
+        "math_regular_l-two_scale20_one_shot_x1",
+        "math_regular_l-two_scale20_repeated_x50",
+        "math_argument_dominates_j-argument-dominates_scale20_one_shot_x1",
+        "math_argument_dominates_j-argument-dominates_scale20_repeated_x50",
+        "math_horner_full_small_one_scale20_one_shot_x1",
+        "math_horner_full_small_one_scale20_repeated_x50"
+      ],
+      "records": 6
+    },
+    "full-low-4": {
+      "manifest_sha256": "8279ad12371c0db17dfb1ff1e42c86606c772774c818e50b493df0cee8653155",
+      "names": [
+        "math_regular_s-one_scale20_one_shot_x1",
+        "math_regular_s-one_scale20_repeated_x50",
+        "math_horner_full_small_zero_scale20_one_shot_x1",
+        "math_horner_full_small_zero_scale20_repeated_x50",
+        "math_horner_full_generic_argument_scale20_one_shot_x1",
+        "math_horner_full_generic_argument_scale20_repeated_x50"
+      ],
+      "records": 6
+    },
+    "full-low-5": {
+      "manifest_sha256": "57ef977d1973109a334b7aab658e14b200abc7d2a49923756cf58163ecf833c7",
+      "names": [
+        "math_near_root_j-near-root_scale20_one_shot_x1",
+        "math_near_root_j-near-root_scale20_repeated_x50",
+        "math_horner_full_generic_order_scale20_one_shot_x1",
+        "math_horner_full_generic_order_scale20_repeated_x50"
+      ],
+      "records": 4
+    },
+    "full-middle-0": {
+      "manifest_sha256": "489dcc15308e781c699305d5a2861fc39578bea801134ac483142ee5d4520fe1",
+      "names": [
+        "math_regular_a-one_scale100_one_shot_x1",
+        "math_regular_a-one_scale100_repeated_x20",
+        "math_turning_j-turning_scale100_one_shot_x1",
+        "math_turning_j-turning_scale100_repeated_x20",
+        "math_horner_full_long_one_scale100_one_shot_x1",
+        "math_horner_full_long_one_scale100_repeated_x20"
+      ],
+      "records": 6
+    },
+    "full-middle-1": {
+      "manifest_sha256": "5a47ed6aa5039f795312fa7196250e96ab4c79ba9fd27e1bb0fc4ed76abc340d",
+      "names": [
+        "math_regular_c-one_scale100_one_shot_x1",
+        "math_regular_c-one_scale100_repeated_x20",
+        "math_regular_l-two_scale100_one_shot_x1",
+        "math_regular_l-two_scale100_repeated_x20",
+        "math_horner_full_small_one_scale100_one_shot_x1",
+        "math_horner_full_small_one_scale100_repeated_x20"
+      ],
+      "records": 6
+    },
+    "full-middle-2": {
+      "manifest_sha256": "d60f5870133419003bf6093aa10ef0d85b3946651cbf9b61214243c1407a403f",
+      "names": [
+        "math_regular_s-one_scale100_one_shot_x1",
+        "math_regular_s-one_scale100_repeated_x20",
+        "math_regular_e-one_scale100_one_shot_x1",
+        "math_regular_e-one_scale100_repeated_x20",
+        "math_horner_full_small_zero_scale100_one_shot_x1",
+        "math_horner_full_small_zero_scale100_repeated_x20"
+      ],
+      "records": 6
+    },
+    "full-middle-3": {
+      "manifest_sha256": "75101205bfe7f09c6412d660871ea43083fb1673aa16ce0669f6f291b93f4102",
+      "names": [
+        "math_argument_dominates_j-argument-dominates_scale100_one_shot_x1",
+        "math_argument_dominates_j-argument-dominates_scale100_repeated_x20",
+        "math_near_root_j-near-root_scale100_one_shot_x1",
+        "math_near_root_j-near-root_scale100_repeated_x20"
+      ],
+      "records": 4
+    },
+    "full-middle-4": {
+      "manifest_sha256": "25e274e771b13c213a283298b26eb67bdcff6358925c35cd8d7e92d7083b3199",
+      "names": [
+        "math_order_dominates_j-order-dominates_scale100_one_shot_x1",
+        "math_order_dominates_j-order-dominates_scale100_repeated_x20",
+        "math_horner_full_generic_argument_scale100_one_shot_x1",
+        "math_horner_full_generic_argument_scale100_repeated_x20"
+      ],
+      "records": 4
+    },
+    "full-middle-5": {
+      "manifest_sha256": "2c68bbe0aaf25ec7e22f4b4cf1af98a9efed3245bbc623542b937cf48abf42b4",
+      "names": [
+        "math_regular_j-zero-one_scale100_one_shot_x1",
+        "math_regular_j-zero-one_scale100_repeated_x20",
+        "math_horner_full_generic_order_scale100_one_shot_x1",
+        "math_horner_full_generic_order_scale100_repeated_x20"
+      ],
+      "records": 4
+    },
+    "holdout-high-0": {
+      "manifest_sha256": "55b3a3fe6215fdfb2ea675eb88ff4aeefb698404d5943d2e30dce090f6c421b1",
+      "names": [
+        "math_regular_held-s-nine-eighths_scale1000_one_shot_x1",
+        "math_regular_held-s-nine-eighths_scale1000_repeated_x2",
+        "math_regular_held-a-nine-eighths_scale1000_one_shot_x1",
+        "math_regular_held-a-nine-eighths_scale1000_repeated_x2",
+        "math_horner_holdout_small_zero_scale101_one_shot_x1",
+        "math_horner_holdout_small_zero_scale101_repeated_x18",
+        "math_certified_validation_6_scale1000_one_shot_x1",
+        "math_certified_validation_6_scale1000_repeated_x2"
+      ],
+      "records": 8
+    },
+    "holdout-high-1": {
+      "manifest_sha256": "0e803ef49d41256379e4b4e1a7dccb0a7ceb333c47367e2be89dbf823d6263e4",
+      "names": [
+        "math_regular_held-c-nine-eighths_scale1000_one_shot_x1",
+        "math_regular_held-c-nine-eighths_scale1000_repeated_x2",
+        "math_near_root_held-j-one-near-root_scale1000_one_shot_x1",
+        "math_near_root_held-j-one-near-root_scale1000_repeated_x2",
+        "math_certified_validation_7_scale1000_one_shot_x1",
+        "math_certified_validation_7_scale1000_repeated_x2"
+      ],
+      "records": 6
+    },
+    "holdout-high-2": {
+      "manifest_sha256": "44d8354c243d76dab28a92c5a87944d9edc0dea620a9b3c550309c6f076211b5",
+      "names": [
+        "math_regular_held-e-nine-eighths_scale1000_one_shot_x1",
+        "math_regular_held-e-nine-eighths_scale1000_repeated_x2",
+        "math_order_dominates_held-j-order113_scale1000_one_shot_x1",
+        "math_order_dominates_held-j-order113_scale1000_repeated_x2",
+        "math_horner_holdout_generic_argument_scale101_one_shot_x1",
+        "math_horner_holdout_generic_argument_scale101_repeated_x18"
+      ],
+      "records": 6
+    },
+    "holdout-high-3": {
+      "manifest_sha256": "ceffe5df16d123c397d7113cbb3aea5ad664e35ba19dfdedabc783d292ca335a",
+      "names": [
+        "math_regular_held-j-one-nine-eighths_scale1000_one_shot_x1",
+        "math_regular_held-j-one-nine-eighths_scale1000_repeated_x2",
+        "math_argument_dominates_held-j-argument112_scale1000_one_shot_x1",
+        "math_argument_dominates_held-j-argument112_scale1000_repeated_x2",
+        "math_horner_holdout_generic_order_scale101_one_shot_x1",
+        "math_horner_holdout_generic_order_scale101_repeated_x18"
+      ],
+      "records": 6
+    },
+    "holdout-high-4": {
+      "manifest_sha256": "a8cb7fbd635b921288bbbe3716687e74cd952d90ad5241c99d135318b4bc623d",
+      "names": [
+        "math_turning_held-j-turning23_scale1000_one_shot_x1",
+        "math_turning_held-j-turning23_scale1000_repeated_x2",
+        "math_horner_holdout_long_one_scale101_one_shot_x1",
+        "math_horner_holdout_long_one_scale101_repeated_x18",
+        "math_certified_validation_14_scale1000_one_shot_x1",
+        "math_certified_validation_14_scale1000_repeated_x2"
+      ],
+      "records": 6
+    },
+    "holdout-high-5": {
+      "manifest_sha256": "6fcfedc0a7e31811dd22ccccbb8d3ad2b352c648dcb41408a8f354625e2467ee",
+      "names": [
+        "math_regular_held-l-nine-fourths_scale1000_one_shot_x1",
+        "math_regular_held-l-nine-fourths_scale1000_repeated_x2",
+        "math_horner_holdout_small_one_scale101_one_shot_x1",
+        "math_horner_holdout_small_one_scale101_repeated_x18",
+        "math_certified_validation_15_scale1000_one_shot_x1",
+        "math_certified_validation_15_scale1000_repeated_x2"
+      ],
+      "records": 6
+    },
+    "holdout-low-0": {
+      "manifest_sha256": "d7ecba642ceb3495d858e4022aad022bc8938523310941a7046a93cc90868ca1",
+      "names": [
+        "math_regular_held-a-nine-eighths_scale20_one_shot_x1",
+        "math_regular_held-a-nine-eighths_scale20_repeated_x44",
+        "math_regular_held-l-nine-fourths_scale20_one_shot_x1",
+        "math_regular_held-l-nine-fourths_scale20_repeated_x44",
+        "math_horner_holdout_small_one_scale20_one_shot_x1",
+        "math_horner_holdout_small_one_scale20_repeated_x44",
+        "math_certified_validation_9_scale1_one_shot_x1",
+        "math_certified_validation_9_scale1_repeated_x2",
+        "math_certified_validation_10_scale20_one_shot_x1",
+        "math_certified_validation_10_scale20_repeated_x2"
+      ],
+      "records": 10
+    },
+    "holdout-low-1": {
+      "manifest_sha256": "69d6a07218a01502e588d23484890c268b08a0979ba7b1243631f03834f8d722",
+      "names": [
+        "math_regular_held-s-nine-eighths_scale20_one_shot_x1",
+        "math_regular_held-s-nine-eighths_scale20_repeated_x44",
+        "math_regular_held-c-nine-eighths_scale20_one_shot_x1",
+        "math_regular_held-c-nine-eighths_scale20_repeated_x44",
+        "math_horner_holdout_small_zero_scale20_one_shot_x1",
+        "math_horner_holdout_small_zero_scale20_repeated_x44",
+        "math_horner_holdout_generic_argument_scale20_one_shot_x1",
+        "math_horner_holdout_generic_argument_scale20_repeated_x44",
+        "math_certified_validation_11_scale20_one_shot_x1",
+        "math_certified_validation_11_scale20_repeated_x2"
+      ],
+      "records": 10
+    },
+    "holdout-low-2": {
+      "manifest_sha256": "4e0802d8aad041e6cfa86cf6e00ff967b7b7c4cadac192888b1d49a356e51a08",
+      "names": [
+        "math_regular_held-e-nine-eighths_scale20_one_shot_x1",
+        "math_regular_held-e-nine-eighths_scale20_repeated_x44",
+        "math_near_root_held-j-one-near-root_scale20_one_shot_x1",
+        "math_near_root_held-j-one-near-root_scale20_repeated_x44",
+        "math_horner_holdout_generic_order_scale20_one_shot_x1",
+        "math_horner_holdout_generic_order_scale20_repeated_x44",
+        "math_certified_validation_16_scale20_one_shot_x1",
+        "math_certified_validation_16_scale20_repeated_x2"
+      ],
+      "records": 8
+    },
+    "holdout-low-3": {
+      "manifest_sha256": "d0cf6088f3a1b5bcac7264cac32d5b2144972f2e09f45e402925818b4262bfb5",
+      "names": [
+        "math_order_dominates_held-j-order113_scale20_one_shot_x1",
+        "math_order_dominates_held-j-order113_scale20_repeated_x44",
+        "math_argument_dominates_held-j-argument112_scale20_one_shot_x1",
+        "math_argument_dominates_held-j-argument112_scale20_repeated_x44",
+        "math_horner_holdout_long_one_scale20_one_shot_x1",
+        "math_horner_holdout_long_one_scale20_repeated_x44",
+        "math_certified_validation_2_scale20_one_shot_x1",
+        "math_certified_validation_2_scale20_repeated_x2"
+      ],
+      "records": 8
+    },
+    "holdout-low-4": {
+      "manifest_sha256": "3a89c7b4745dbd8cb1ea0eeaf89abbce1874da39725417fa69ecf3a66baa6109",
+      "names": [
+        "math_regular_held-j-one-nine-eighths_scale20_one_shot_x1",
+        "math_regular_held-j-one-nine-eighths_scale20_repeated_x44",
+        "math_horner_holdout_midpoint_0_scale0_one_shot_x1",
+        "math_horner_holdout_midpoint_0_scale0_repeated_x44",
+        "math_certified_validation_0_scale0_one_shot_x1",
+        "math_certified_validation_0_scale0_repeated_x2",
+        "math_certified_validation_3_scale20_one_shot_x1",
+        "math_certified_validation_3_scale20_repeated_x2"
+      ],
+      "records": 8
+    },
+    "holdout-low-5": {
+      "manifest_sha256": "739eb1d86ea40eb49b7843b8c5e83d943df02a104094d7fa621a3ba5b3c4b8c2",
+      "names": [
+        "math_turning_held-j-turning23_scale20_one_shot_x1",
+        "math_turning_held-j-turning23_scale20_repeated_x44",
+        "math_horner_holdout_midpoint_1_scale0_one_shot_x1",
+        "math_horner_holdout_midpoint_1_scale0_repeated_x44",
+        "math_certified_validation_1_scale1_one_shot_x1",
+        "math_certified_validation_1_scale1_repeated_x2",
+        "math_certified_validation_8_scale0_one_shot_x1",
+        "math_certified_validation_8_scale0_repeated_x2"
+      ],
+      "records": 8
+    },
+    "holdout-middle-0": {
+      "manifest_sha256": "832f9e083c96b01dececc41488696a0e8ce2b38ad2f2cb4768a1e473cab3b9cd",
+      "names": [
+        "math_regular_held-a-nine-eighths_scale100_one_shot_x1",
+        "math_regular_held-a-nine-eighths_scale100_repeated_x18",
+        "math_regular_held-l-nine-fourths_scale100_one_shot_x1",
+        "math_regular_held-l-nine-fourths_scale100_repeated_x18",
+        "math_horner_holdout_small_one_scale100_one_shot_x1",
+        "math_horner_holdout_small_one_scale100_repeated_x18",
+        "math_certified_validation_17_scale100_one_shot_x1",
+        "math_certified_validation_17_scale100_repeated_x2"
+      ],
+      "records": 8
+    },
+    "holdout-middle-1": {
+      "manifest_sha256": "c83a0a19ccc42bbf3f4dc19f26e4bd1a915c105ee86d3d1b2f7c4cb9ec4bc7af",
+      "names": [
+        "math_regular_held-s-nine-eighths_scale100_one_shot_x1",
+        "math_regular_held-s-nine-eighths_scale100_repeated_x18",
+        "math_regular_held-c-nine-eighths_scale100_one_shot_x1",
+        "math_regular_held-c-nine-eighths_scale100_repeated_x18",
+        "math_horner_holdout_small_zero_scale100_one_shot_x1",
+        "math_horner_holdout_small_zero_scale100_repeated_x18",
+        "math_certified_validation_4_scale100_one_shot_x1",
+        "math_certified_validation_4_scale100_repeated_x2"
+      ],
+      "records": 8
+    },
+    "holdout-middle-2": {
+      "manifest_sha256": "cca92fc3d8e729b8f6cd6b509daab3ca872fc53317695e019df50cc696f11b79",
+      "names": [
+        "math_regular_held-e-nine-eighths_scale100_one_shot_x1",
+        "math_regular_held-e-nine-eighths_scale100_repeated_x18",
+        "math_near_root_held-j-one-near-root_scale100_one_shot_x1",
+        "math_near_root_held-j-one-near-root_scale100_repeated_x18",
+        "math_certified_validation_5_scale100_one_shot_x1",
+        "math_certified_validation_5_scale100_repeated_x2"
+      ],
+      "records": 6
+    },
+    "holdout-middle-3": {
+      "manifest_sha256": "c9e5a012e644ceb4a371bb585e94ff776ba406aa6cae05db1027f177296bfc66",
+      "names": [
+        "math_order_dominates_held-j-order113_scale100_one_shot_x1",
+        "math_order_dominates_held-j-order113_scale100_repeated_x18",
+        "math_argument_dominates_held-j-argument112_scale100_one_shot_x1",
+        "math_argument_dominates_held-j-argument112_scale100_repeated_x18",
+        "math_horner_holdout_generic_argument_scale100_one_shot_x1",
+        "math_horner_holdout_generic_argument_scale100_repeated_x18"
+      ],
+      "records": 6
+    },
+    "holdout-middle-4": {
+      "manifest_sha256": "77c971a16e6c58d32ab819ead2a7232927b337bd67d79fad6668b200559c31e9",
+      "names": [
+        "math_regular_held-j-one-nine-eighths_scale100_one_shot_x1",
+        "math_regular_held-j-one-nine-eighths_scale100_repeated_x18",
+        "math_horner_holdout_generic_order_scale100_one_shot_x1",
+        "math_horner_holdout_generic_order_scale100_repeated_x18",
+        "math_certified_validation_12_scale100_one_shot_x1",
+        "math_certified_validation_12_scale100_repeated_x2"
+      ],
+      "records": 6
+    },
+    "holdout-middle-5": {
+      "manifest_sha256": "d79ad695442bac3b1365e2d631cbdcdcc98308de87ea69a43bd2187d53280df3",
+      "names": [
+        "math_turning_held-j-turning23_scale100_one_shot_x1",
+        "math_turning_held-j-turning23_scale100_repeated_x18",
+        "math_horner_holdout_long_one_scale100_one_shot_x1",
+        "math_horner_holdout_long_one_scale100_repeated_x18",
+        "math_certified_validation_13_scale100_one_shot_x1",
+        "math_certified_validation_13_scale100_repeated_x2"
+      ],
+      "records": 6
+    },
+    "startup": {
+      "null_blocks": 60,
+      "pairs": 151,
+      "records": 0
+    },
+    "validation-high-0": {
+      "manifest_sha256": "cbaccac075393d782aa51a225866a477118931ec86efc2385f2a3b63a82c89ad",
+      "names": [
+        "math_reconstruction_validation_03_one_shot_x1",
+        "math_reconstruction_validation_03_repeated_x2",
+        "math_reconstruction_validation_15_one_shot_x1",
+        "math_reconstruction_validation_15_repeated_x2",
+        "math_reconstruction_validation_25_one_shot_x1",
+        "math_reconstruction_validation_25_repeated_x2",
+        "math_reconstruction_validation_37_one_shot_x1",
+        "math_reconstruction_validation_37_repeated_x2"
+      ],
+      "records": 8
+    },
+    "validation-high-1": {
+      "manifest_sha256": "d098a12ea191230478acbac638d8651acf2cfc4933ab7912ad737b555986cbc9",
+      "names": [
+        "math_reconstruction_validation_07_one_shot_x1",
+        "math_reconstruction_validation_07_repeated_x2",
+        "math_reconstruction_validation_19_one_shot_x1",
+        "math_reconstruction_validation_19_repeated_x2",
+        "math_reconstruction_validation_27_one_shot_x1",
+        "math_reconstruction_validation_27_repeated_x2"
+      ],
+      "records": 6
+    },
+    "validation-high-2": {
+      "manifest_sha256": "0358f408b1feba264aaeb5c874f38267ae8c0cc7bd66722b87507c55a24f62b7",
+      "names": [
+        "math_reconstruction_validation_11_one_shot_x1",
+        "math_reconstruction_validation_11_repeated_x2",
+        "math_reconstruction_validation_23_one_shot_x1",
+        "math_reconstruction_validation_23_repeated_x2",
+        "math_reconstruction_validation_35_one_shot_x1",
+        "math_reconstruction_validation_35_repeated_x2"
+      ],
+      "records": 6
+    },
+    "validation-low-0": {
+      "manifest_sha256": "493b47be60b67b9a1138beb96df36361756d1f9e1eb039951e939ac5cb06329c",
+      "names": [
+        "math_reconstruction_validation_00_one_shot_x1",
+        "math_reconstruction_validation_00_repeated_x2",
+        "math_reconstruction_validation_05_one_shot_x1",
+        "math_reconstruction_validation_05_repeated_x2",
+        "math_reconstruction_validation_12_one_shot_x1",
+        "math_reconstruction_validation_12_repeated_x2",
+        "math_reconstruction_validation_17_one_shot_x1",
+        "math_reconstruction_validation_17_repeated_x2",
+        "math_reconstruction_validation_24_one_shot_x1",
+        "math_reconstruction_validation_24_repeated_x2",
+        "math_reconstruction_validation_29_one_shot_x1",
+        "math_reconstruction_validation_29_repeated_x2",
+        "math_reconstruction_validation_32_one_shot_x1",
+        "math_reconstruction_validation_32_repeated_x2",
+        "math_reconstruction_validation_36_one_shot_x1",
+        "math_reconstruction_validation_36_repeated_x2"
+      ],
+      "records": 16
+    },
+    "validation-low-1": {
+      "manifest_sha256": "3b0a58111d2786f6ad26cf2419c7d7cae5f9c0b02694263f666a771ca3673de7",
+      "names": [
+        "math_reconstruction_validation_01_one_shot_x1",
+        "math_reconstruction_validation_01_repeated_x2",
+        "math_reconstruction_validation_08_one_shot_x1",
+        "math_reconstruction_validation_08_repeated_x2",
+        "math_reconstruction_validation_13_one_shot_x1",
+        "math_reconstruction_validation_13_repeated_x2",
+        "math_reconstruction_validation_20_one_shot_x1",
+        "math_reconstruction_validation_20_repeated_x2",
+        "math_reconstruction_validation_26_one_shot_x1",
+        "math_reconstruction_validation_26_repeated_x2",
+        "math_reconstruction_validation_30_one_shot_x1",
+        "math_reconstruction_validation_30_repeated_x2",
+        "math_reconstruction_validation_33_one_shot_x1",
+        "math_reconstruction_validation_33_repeated_x2"
+      ],
+      "records": 14
+    },
+    "validation-low-2": {
+      "manifest_sha256": "e3bf197bb03cafddcec5db27f9f56a3470cdf1e0e677e07dc2ca2b65ffc8af38",
+      "names": [
+        "math_reconstruction_validation_04_one_shot_x1",
+        "math_reconstruction_validation_04_repeated_x2",
+        "math_reconstruction_validation_09_one_shot_x1",
+        "math_reconstruction_validation_09_repeated_x2",
+        "math_reconstruction_validation_16_one_shot_x1",
+        "math_reconstruction_validation_16_repeated_x2",
+        "math_reconstruction_validation_21_one_shot_x1",
+        "math_reconstruction_validation_21_repeated_x2",
+        "math_reconstruction_validation_28_one_shot_x1",
+        "math_reconstruction_validation_28_repeated_x2",
+        "math_reconstruction_validation_31_one_shot_x1",
+        "math_reconstruction_validation_31_repeated_x2"
+      ],
+      "records": 12
+    },
+    "validation-middle-0": {
+      "manifest_sha256": "cd4a7eb6150232c4763c4b206f0ad40b2d16211b06eeaa51f40a839dcd1775b2",
+      "names": [
+        "math_reconstruction_validation_02_one_shot_x1",
+        "math_reconstruction_validation_02_repeated_x2",
+        "math_reconstruction_validation_14_one_shot_x1",
+        "math_reconstruction_validation_14_repeated_x2"
+      ],
+      "records": 4
+    },
+    "validation-middle-1": {
+      "manifest_sha256": "19aa320644d0014847b54c2d3ebbacea9dc2a64e81601ee3a6c1c31b4c5a3c6d",
+      "names": [
+        "math_reconstruction_validation_06_one_shot_x1",
+        "math_reconstruction_validation_06_repeated_x2",
+        "math_reconstruction_validation_18_one_shot_x1",
+        "math_reconstruction_validation_18_repeated_x2"
+      ],
+      "records": 4
+    },
+    "validation-middle-2": {
+      "manifest_sha256": "53572c65ca25dc6ff88f528536529c4cff671b8f5ccee728c6c4a68fdb9ba414",
+      "names": [
+        "math_reconstruction_validation_10_one_shot_x1",
+        "math_reconstruction_validation_10_repeated_x2",
+        "math_reconstruction_validation_22_one_shot_x1",
+        "math_reconstruction_validation_22_repeated_x2"
+      ],
+      "records": 4
+    },
+    "validation-sine-0": {
+      "manifest_sha256": "c7e2ce95f4a65f2d79ddee51677185e3c17a28a5e10c57294917b4f72ee96c10",
+      "names": [
+        "math_reconstruction_validation_34_one_shot_x1",
+        "math_reconstruction_validation_34_repeated_x2"
+      ],
+      "records": 2
+    }
+  },
+  "source_identity": "Exact immutable PR head recorded by each original job"
+}

@@ -866,6 +866,23 @@ class PairedStatistics(unittest.TestCase):
             self.assertEqual(summary['duration_target_met'], {'fast': False, 'slow': True})
             self.assertIn('shortfall', summary['duration_status'])
 
+    def test_prospective_calibration_margin_retains_the_measurement_floor(self):
+        module = self.module()
+        case = module.corpus('quick', suite='math')[1]
+        def checked(tool, trial, timeout):
+            return dict(seconds=trial['parameters']['iterations'] / 1000, checked=True)
+        with tempfile.TemporaryDirectory() as temporary, \
+                mock.patch.object(module, 'run_checked', side_effect=checked):
+            cases, report = module.calibrate_math([case], [dict(name='fixture')],
+                .016, 3, 32, 1, Path(temporary), duration_floor=.008)
+        self.assertEqual(report['target_seconds'], .016)
+        self.assertEqual(report['measurement_floor_seconds'], .008)
+        self.assertEqual(cases[0]['parameters']['iterations'], 16)
+        self.assertEqual(cases[0]['parameters']['duration_target_seconds'], .008)
+        for invalid in (0, -.1, .017):
+            with self.assertRaises(module.BenchmarkError):
+                module.calibrate_math([case], [], .016, 3, 32, 1, Path('.'), invalid)
+
     def test_calibration_cap_failure_preserves_checked_trials(self):
         module = self.module()
         case = module.corpus('quick', suite='math')[1]

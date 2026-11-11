@@ -109,7 +109,7 @@ if(_bc_native_source)
   target_sources(libbc PRIVATE native-scalar-plan.cc ${_bc_native_source})
   target_compile_definitions(libbc PRIVATE GD_BC_NATIVE_SCALAR=1)
 endif()
-option(ENABLE_BC_NATIVE_FUNCTIONS "Enable experimental cached native scalar functions" OFF)
+option(ENABLE_BC_NATIVE_FUNCTIONS "Enable cached scalar functions and pure integer reductions" ON)
 set(_bc_native_leaf_selected FALSE)
 if(ENABLE_BC_NATIVE_FUNCTIONS AND CMAKE_SIZEOF_VOID_P EQUAL 8)
   include(CheckCXXSourceCompiles)
@@ -138,6 +138,9 @@ if(ENABLE_BC_NATIVE_FUNCTIONS AND CMAKE_SIZEOF_VOID_P EQUAL 8)
     endif()
   endif()
 endif()
+if(_bc_native_leaf_selected)
+  target_sources(libbc PRIVATE integer-recurrence.cc)
+endif()
 set_warnings(libbc)
 gd_apply_ipo(libbc)
 
@@ -158,6 +161,13 @@ add_dependencies("libbc" "bc_messages_header")
 target_add_clang_format(libbc)
 
 if(RUN_UNIT_TESTS)
+  add_executable(test-bc-function-slot test-function-slot.cc)
+  set_property(TARGET test-bc-function-slot PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
+  set_property(TARGET test-bc-function-slot PROPERTY CXX_STANDARD_REQUIRED ON)
+  set_warnings(test-bc-function-slot)
+  target_add_clang_format(test-bc-function-slot)
+  add_test(NAME bc/function-slot COMMAND "$<TARGET_FILE:test-bc-function-slot>")
+  set_tests_properties(bc/function-slot PROPERTIES TIMEOUT 10)
   add_executable(test-bc-profiling profiling.cc test-profiling.cc)
   target_compile_definitions(test-bc-profiling PRIVATE GD_BC_PROFILE=1)
   add_executable(test-bc-profiling-disabled test-profiling-disabled.cc)
@@ -267,7 +277,7 @@ if(RUN_UNIT_TESTS)
     target_sources(test-libbc PRIVATE test-native-scalar.cc)
   endif()
   if(_bc_native_leaf_selected)
-    target_sources(test-libbc PRIVATE test-native-expression.cc)
+    target_sources(test-libbc PRIVATE test-native-expression.cc test-integer-recurrence.cc)
   endif()
   target_add_clang_format(test-libbc)
   add_executable(test-bc-signal test-vm-signal.cc)
@@ -343,6 +353,21 @@ if(ENABLE_BC_PREPARSED_LIBRARY AND NOT CMAKE_CROSSCOMPILING)
   target_sources(bc PRIVATE "${_bc_library_image}")
   target_compile_definitions(bc PRIVATE GD_BC_PREPARSED_LIBRARY=1)
   target_compile_definitions(libbc PRIVATE GD_BC_PREPARSED_LIBRARY=1)
+  if(RUN_UNIT_TESTS)
+    add_executable(test-bc-library-lifetime test-vm-lifetime.cc math-library.cc
+                   "${_bc_library_image}")
+    target_link_libraries(test-bc-library-lifetime PRIVATE libbc)
+    target_include_directories(test-bc-library-lifetime PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+    target_compile_definitions(test-bc-library-lifetime PRIVATE
+      GD_BC_TEST_LIBRARY_IMAGE=1 GD_BC_PREPARSED_LIBRARY=1)
+    set_property(TARGET test-bc-library-lifetime PROPERTY CXX_STANDARD "${CMAKE_CXX_STANDARD}")
+    set_property(TARGET test-bc-library-lifetime PROPERTY CXX_STANDARD_REQUIRED ON)
+    set_warnings(test-bc-library-lifetime)
+    target_add_clang_format(test-bc-library-lifetime)
+    gd_apply_ipo(test-bc-library-lifetime)
+    add_test(NAME bc/library-lifetime COMMAND "$<TARGET_FILE:test-bc-library-lifetime>")
+    set_tests_properties(bc/library-lifetime PROPERTIES TIMEOUT 30)
+  endif()
 endif()
 if(ENABLE_BC_PROFILE)
   target_sources(bc PRIVATE profiling-entry.cc)
@@ -390,6 +415,42 @@ endif()
 
 # These local CLI regressions run in both extension configurations and on Windows.
 if(RUN_INTEGRATION_TESTS)
+  add_test(NAME bc/bessel-zero-proof COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-bessel-zero-proof.py")
+  set_tests_properties(bc/bessel-zero-proof PROPERTIES TIMEOUT 10)
+  add_test(NAME bc/bessel-precision-proof COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-bessel-precision-proof.py")
+  set_tests_properties(bc/bessel-precision-proof PROPERTIES TIMEOUT 60)
+  add_test(NAME bc/math-budget-proof COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-math-budget-proof.py")
+  set_tests_properties(bc/math-budget-proof PROPERTIES TIMEOUT 20)
+  add_test(NAME bc/rational-kernel-proof COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-rational-kernel-proof.py")
+  set_tests_properties(bc/rational-kernel-proof PROPERTIES TIMEOUT 30)
+  add_test(NAME bc/reconstruction-inputs COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-reconstruction-inputs.py" "$<TARGET_FILE:bc>")
+  set_tests_properties(bc/reconstruction-inputs PROPERTIES TIMEOUT 120)
+  add_test(NAME bc/integer-qualification-inputs COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-integer-qualification-inputs.py" "$<TARGET_FILE:bc>")
+  set_tests_properties(bc/integer-qualification-inputs PROPERTIES TIMEOUT 30)
+  add_test(NAME bc/reconstruction-hosted-limits COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-reconstruction-hosted-limits.py")
+  set_tests_properties(bc/reconstruction-hosted-limits PROPERTIES TIMEOUT 10)
+  add_test(NAME bc/reconstruction-declaration-text COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-reconstruction-declaration.py")
+  set_tests_properties(bc/reconstruction-declaration-text PROPERTIES TIMEOUT 120)
+  add_test(NAME bc/reconstruction-declaration COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate-reconstruction-declaration.py" --check)
+  set_tests_properties(bc/reconstruction-declaration PROPERTIES TIMEOUT 120)
+  add_test(NAME bc/bessel-zero-evidence COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-bessel-zero-evidence.py")
+  set_tests_properties(bc/bessel-zero-evidence PROPERTIES TIMEOUT 10)
+  add_test(NAME bc/bessel-classification-oracles COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate-bessel-classification-oracles.py" --check)
+  set_tests_properties(bc/bessel-classification-oracles PROPERTIES TIMEOUT 60)
+  add_test(NAME bc/bessel-oracle-portability COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-bessel-oracle-portability.py")
+  set_tests_properties(bc/bessel-oracle-portability PROPERTIES TIMEOUT 300)
   # Native performance inputs use the 64-bit-host Number model's index range.
   # All layouts still have generic 8/16/32-bit storage tests on other targets.
   if(CMAKE_SIZEOF_VOID_P GREATER 4)
@@ -485,6 +546,12 @@ if(RUN_INTEGRATION_TESTS)
   add_test(NAME bc/math-benchmark-ci COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-benchmark-math-ci.py")
   set_tests_properties(bc/math-benchmark-ci PROPERTIES TIMEOUT 30)
+  add_test(NAME bc/math-qualification-inputs COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-math-qualification-inputs.py")
+  set_tests_properties(bc/math-qualification-inputs PROPERTIES TIMEOUT 60)
+  add_test(NAME bc/resource-comparison COMMAND "${Python_EXECUTABLE}"
+           "${CMAKE_CURRENT_SOURCE_DIR}/test-resource-comparison.py")
+  set_tests_properties(bc/resource-comparison PROPERTIES TIMEOUT 30)
   add_test(NAME bc/windows-image-probe COMMAND "${Python_EXECUTABLE}"
            "${CMAKE_CURRENT_SOURCE_DIR}/test-windows-image-probe.py" --bc "$<TARGET_FILE:bc>")
   set_tests_properties(bc/windows-image-probe PROPERTIES TIMEOUT 60)

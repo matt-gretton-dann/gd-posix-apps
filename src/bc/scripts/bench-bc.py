@@ -181,12 +181,17 @@ def math_iterations(case, count):
     return dict(case, name=name, program=program, parameters=parameters)
 
 
-def calibrate_math(cases, tools, target, samples, maximum, timeout, output):
+def calibrate_math(cases, tools, target, samples, maximum, timeout, output, duration_floor=None):
     """Choose each role's bounded duration count, then freeze their maximum.
 
     Calibration timings are separate diagnostics. No paired trial is used to
     tune counts, and later shortfall is reported rather than triggering reruns.
+    A separately declared measurement floor can leave a prospective margin
+    below the calibration target; both values remain in the retained report.
     """
+    floor = target if duration_floor is None else duration_floor
+    if not 0 < floor <= target:
+        raise BenchmarkError('measurement floor must be positive and no larger than calibration target')
     directory = output / 'calibration'
     programs = directory / 'workloads'
     programs.mkdir(parents=True)
@@ -225,11 +230,12 @@ def calibrate_math(cases, tools, target, samples, maximum, timeout, output):
             count = max(role['iterations'] for role in roles.values())
             frozen = math_iterations(case, count)
             frozen['parameters']['calibration'] = 'bounded per-role median duration; common maximum'
-            frozen['parameters']['duration_target_seconds'] = target
+            frozen['parameters']['duration_target_seconds'] = floor
             calibrated.append(frozen)
             chosen.append(dict(original=case['name'], frozen=frozen['name'], iterations=count,
                                status='frozen before paired trials', roles=roles))
-    report = dict(target_seconds=target, samples_per_count=samples, maximum_iterations=maximum,
+    report = dict(target_seconds=target, measurement_floor_seconds=floor,
+                  samples_per_count=samples, maximum_iterations=maximum,
                   method='independent per-role doubling, common maximum, no paired-data feedback',
                   cases=chosen)
     write_json(directory / 'summary.json', report)
@@ -971,6 +977,8 @@ def main():
     parser.add_argument('--calibrate-seconds', type=positive_timeout,
                         help='target per-role median duration for repeated math cases')
     parser.add_argument('--calibration-samples', type=positive_integer, default=3)
+    parser.add_argument('--duration-floor-seconds', type=positive_timeout,
+                        help='prospective paired duration floor, at most the initial calibration target')
     parser.add_argument('--calibration-max-iterations', type=positive_integer, default=1048576)
     parser.add_argument('--calibrate-only', action='store_true',
                         help='prepare the calibrated corpus without paired timing samples')
@@ -1005,6 +1013,9 @@ def main():
         parser.error("--config and --output are required unless --list is used")
     if args.bootstrap < 200:
         parser.error("--bootstrap must be at least 200")
+    if args.duration_floor_seconds is not None and (args.calibrate_seconds is None or
+            args.duration_floor_seconds > args.calibrate_seconds):
+        parser.error('--duration-floor-seconds requires a calibration target at least as large')
     if args.calibrate_only and args.calibrate_seconds is None:
         parser.error('--calibrate-only requires --calibrate-seconds')
     if args.replay_corpus and args.calibrate_seconds is not None:
@@ -1039,6 +1050,7 @@ def main():
             harness_sha256=digest_file(__file__), requested_suite=args.suite,
             requested_preset=args.preset, timeout=args.timeout,
             calibration_target_seconds=args.calibrate_seconds,
+            measurement_duration_floor_seconds=args.duration_floor_seconds,
             calibration_samples=args.calibration_samples,
             calibration_max_iterations=args.calibration_max_iterations))
         reference = args.reference or tools[0]["name"]
@@ -1061,7 +1073,7 @@ def main():
             cases, calibration = calibrate_math(cases, tools, args.calibrate_seconds,
                                                 args.calibration_samples,
                                                 args.calibration_max_iterations,
-                                                args.timeout, output)
+                                                args.timeout, output, args.duration_floor_seconds)
         programs = output / "workloads"
         programs.mkdir()
         for case in cases:
