@@ -28,7 +28,8 @@ on:
 jobs:
   analyze:
     name: Analyze
-    runs-on: ubuntu-latest
+    # Use the same pinned Linux image as the ordinary CI build.
+    runs-on: ubuntu-24.04
 
     strategy:
       fail-fast: false

@@ -11,13 +11,19 @@ env:
 
 jobs:
   posix-build:
-    name: Build and test on ${{ matrix.os }} - extensions enabled - ${{matrix.extensions}}
+    name: Build and test on ${{ matrix.check_os }} - extensions enabled - ${{matrix.extensions}}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-24.04, macos-latest]
         extensions: [OFF, ON]
+        include:
+          # Retain the established check names while pinning the Linux image.
+          - os: ubuntu-24.04
+            check_os: ubuntu-latest
+          - os: macos-latest
+            check_os: macos-latest
 
     steps:
       - uses: actions/checkout@v7
@@ -64,7 +70,7 @@ jobs:
         if: ${{ matrix.extensions == 'ON' }}
         run: python3 docs/utilities/bc-vm-reuse-evidence/test-verifier.py
       - name: Package install (Ubuntu)
-        if: ${{ matrix.os  == 'ubuntu-latest' }}
+        if: runner.os == 'Linux'
         run: |
           # Install test dependencies without upgrading unrelated runner
           # packages or pulling browser snaps before compilation starts.
