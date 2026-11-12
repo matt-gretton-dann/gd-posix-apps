@@ -159,13 +159,13 @@ define e(x) {
   return(r)
 }
 
-/* Logarithm: square-root reduction and a bounded atanh series. */
+/* Logarithm: square-root reduction with rational and series kernels. */
 define l(x) {
   auto b,i,k,m,q,r,s,t,u,v,w,h,p[];
   /* b/s save base/scale; w is precision; k reconstructs root reductions.
      m/v are the signed and absolute decimal exponent; h holds its log term.
      q/r are first the root bounds, then the squared ratio and sum.
-     t/u are the odd power and contribution. */
+     t/u are the odd power and contribution, or ratio and denominator. */
   b=ibase
   ibase=A
   s=scale
@@ -225,18 +225,40 @@ define l(x) {
     k*=2
   }
   t=(x-1)/(x+1)
-  q=t*t
   if (s<1000) {
     r=t
-    i=3
-    while (t!=0) {
-      t=t*q
-      u=t/i
-      r+=u
-      i+=2
+    /* A zero ratio needs no kernel, including the stored ln(2) case. */
+    if (t!=0) {
+      i=3
+      /* At S=1..20 use the bounded [5/5] atanh kernel at S+14.
+         Keep the original reduction and its offset at their old precision.
+         The error budget is in bc-portable-math.md. */
+      if (s>0) {
+        if (s<=20) {
+          if (k<=1024) {
+            w=s+14
+            scale=w
+            if (scale!=w) return(1/0)
+            t=t/1
+            q=t*t
+            r=((((-327680*q+19225635)*q-175855680)*q+552473922)*q-698377680)*q+305540235
+            u=((((-2401245*q+52026975)*q-312161850)*q+758107350)*q-800224425)*q+305540235
+            r=t*(r/u)
+            t=0
+          }
+        }
+      }
+      if (t!=0) q=t*t
+      while (t!=0) {
+        t=t*q
+        u=t/i
+        r+=u
+        i+=2
+      }
     }
   }
   if (s>=1000) {
+    q=t*t
     /* Factor each block of 16 odd powers into a shared polynomial
        in q and a signed leading power. Only the leading power
        advances between blocks. */
