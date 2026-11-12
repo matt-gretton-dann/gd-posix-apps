@@ -117,7 +117,7 @@ def main():
         model, model_decisions = instrument('\n'.join(lines) + '\n')
         assert model_decisions == decisions
         function = decision['function']
-        call = {'a': 'a(0)', 'e': 'e(0)', 'l': 'l(1)',
+        call = {'a': 'a(0)', 'e': 'e(0)', 'l': 'l(1.1)',
                 's': 's(4)', 'c': 'c(4)'}.get(function)
         if function == 'j':
             call = 'j(0,1000)' if decision['line'] == j_guards[0] else 'j(0,1)'
@@ -143,8 +143,12 @@ def main():
             # Positive Taylor terms, positive squaring and a positive
             # reciprocal cannot produce a negative exponential coefficient.
             expected = {'r>=0': {'false'}, 'r<0': {'true'}}
-            assert item['function'] == 'e' and missing == expected.get(item['expression']), item
-            item['exception'] = 'exponential coefficient remains nonnegative by construction'
+            if item['function'] == 'l' and item['expression'] == 'k<=1024':
+                assert missing == {'false'}, item
+                item['exception'] = 'low-scale normalization and ten roots bound the multiplier'
+            else:
+                assert item['function'] == 'e' and missing == expected.get(item['expression']), item
+                item['exception'] = 'exponential coefficient remains nonnegative by construction'
         report['decisions'].append(item)
     report['total_outcomes'] = 2 * len(decisions)
     report['observed_outcomes'] = sum(len(item['observed']) for item in report['decisions'])

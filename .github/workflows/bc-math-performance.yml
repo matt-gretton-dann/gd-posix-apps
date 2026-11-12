@@ -31,12 +31,12 @@ jobs:
       matrix:
         image: [ubuntu-24.04, windows-2025, macos-15]
         # Each broad preset gets the existing per-job bounds and same-job pairs.
-        preset: ${{ fromJSON((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (startsWith(github.ref, 'refs/heads/codex/bc-math-broad/') || startsWith(github.head_ref, 'codex/bc-math-broad/') || github.head_ref == 'codex/bc-217-current-integration') || startsWith(github.head_ref, 'codex/bc-native-prepared/')) && '["full","holdout"]' || '["full"]') }}
+        preset: ${{ fromJSON((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (startsWith(github.ref, 'refs/heads/codex/bc-math-broad/') || startsWith(github.head_ref, 'codex/bc-math-broad/') || github.head_ref == 'codex/bc-217-current-integration' || github.head_ref == 'codex/bc-217-bounded-logarithm') || startsWith(github.head_ref, 'codex/bc-native-prepared/')) && '["full","holdout"]' || '["full"]') }}
     env:
       BC_BASE: ${{ github.event.pull_request.base.sha || inputs.base || '78a732a6c1f995b45b140d4b86d8d3af57354804' }}
       BC_PRESET: ${{ matrix.preset }}
       BC_CANDIDATE: ${{ github.event.pull_request.head.sha || github.sha }}
-      BC_BROAD: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || startsWith(github.head_ref, 'codex/bc-native-prepared/') || (startsWith(github.ref, 'refs/heads/codex/bc-math-broad/') || startsWith(github.head_ref, 'codex/bc-math-broad/') || github.head_ref == 'codex/bc-217-current-integration') }}
+      BC_BROAD: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || startsWith(github.head_ref, 'codex/bc-native-prepared/') || (startsWith(github.ref, 'refs/heads/codex/bc-math-broad/') || startsWith(github.head_ref, 'codex/bc-math-broad/') || github.head_ref == 'codex/bc-217-current-integration' || github.head_ref == 'codex/bc-217-bounded-logarithm') }}
       # Opt in only this experimental topic; controls retain their source defaults.
       BC_PREPARED: ${{ startsWith(github.head_ref, 'codex/bc-native-prepared/') }}
       BC_PREPARSED_LIBRARY: ${{ github.head_ref == 'codex/bc-217-preparsed-library' || github.head_ref == 'codex/bc-217-defer-library-functions' }}

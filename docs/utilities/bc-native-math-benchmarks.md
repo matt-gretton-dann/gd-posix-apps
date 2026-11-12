@@ -143,6 +143,8 @@ This provides a reproducible opt-in route when Actions workflow dispatch is
 unavailable to a client. Ordinary PR jobs retain their representative subset;
 broad push and PR artifacts remain separate experiments with their own source
 and host identities. Preserve all per-class misses and failures from either.
+The standalone bounded-logarithm PR selects both presets so the ordinary
+full ln(2) case and the held-out nonzero ratio case stay in the comparison.
 
 
 ## Child and experiment deadlines

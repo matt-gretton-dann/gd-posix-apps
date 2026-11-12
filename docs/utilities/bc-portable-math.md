@@ -214,6 +214,32 @@ first omitted term times 9/8. Truncation of this constant at W adds less
 than u. The combined error is covered by the existing budget below.
 Other arguments and precisions retain square-root reduction.
 
+At requested scales 1 through 20, a nonzero reduced ratio uses a [5/5]
+Padé approximation to atanh(t)/t at W = S+14. The original root
+reduction, signed decimal exponent, and stored offset retain their
+original precision. A zero ratio skips the kernel, including the
+root-free ln(2) case. For q = t² the coefficient vectors, from constant
+to highest power, are
+
+    P = [305540235,-698377680,552473922,-175855680,19225635,-327680]
+    Q = [305540235,-800224425,758107350,-312161850,52026975,-2401245].
+
+Horner evaluation gives t*P(q)/Q(q). On |t| <= 1/9 the denominator
+has a positive lower bound and the atanh-series residual cancels
+through degree ten in q. The exact rational certificate bounds the
+remaining tail geometrically and the signed kernel truncation below 4u.
+Clipping t costs at most (81/80)u before reconstruction. The inherited
+reduction error is at most .00074U. With root multiplier k <= 1024
+and final rounding, the complete bound is below .505U.
+
+The multiplier guard preserves the generic fallback. For these scales,
+unnormalized |m| is below 74 and a normalized mantissa lies in [1,10).
+Thus |log(x)| is below 75*log(10) < 175 before the roots. The inherited
+root perturbation is below .001. Ten roots suffice because
+175/1024+.001 < 2/11 < log(1.2), and also < 2/9 < -log(.8). This bounds
+k even though the source checks it defensively. Scale zero and larger
+scales retain the ordinary series or the high-scale block evaluation.
+
 At scale 1000 and above, let t be the reduced ratio and q = t².
 Cache q⁰ through q¹⁵ and evaluate blocks of 16 consecutive terms.
 For a block starting at term j, multiply the sum of q^v/(2j+2v+1)

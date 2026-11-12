@@ -5,6 +5,7 @@ from decimal import Decimal, localcontext
 from fractions import Fraction
 import importlib.util
 import json
+from math import factorial
 import os
 import re
 from pathlib import Path
@@ -136,6 +137,69 @@ class LibraryCli(unittest.TestCase):
                 with self.subTest(binary=binary, scale=scale, argument=argument):
                     # The correctly rounded Decimal logarithm is enclosed
                     # by its adjacent representable values.
+                    with localcontext() as context:
+                        context.prec = scale + 64
+                        reference = Decimal(argument).ln()
+                        lower = Fraction(reference.next_minus())
+                        upper = Fraction(reference.next_plus())
+                    value = ORACLE.decimal_fraction(lines[3 * index])
+                    self.assertEqual(ORACLE.classify(value, lower, upper, scale), 'pass')
+                    self.assertEqual(lines[3 * index + 1:3 * index + 3], [str(scale), '10'])
+
+    def test_logarithm_rational_certificate(self):
+        source = Path(SOURCE).read_text(encoding='utf-8')
+        function = source.split('define l(x) {', 1)[1].split('define s(x) {', 1)[0]
+        coefficients = (
+            (305540235, -698377680, 552473922, -175855680, 19225635, -327680),
+            (305540235, -800224425, 758107350, -312161850, 52026975, -2401245),
+        )
+        for variable, values in zip(('r', 'u'), coefficients):
+            expression = str(values[-1]) + '*q'
+            for value in reversed(values[1:-1]):
+                expression = f'({expression}{value:+d})*q'
+            self.assertIn(f'{variable}={expression}{values[0]:+d}', function)
+        p, q = [[Fraction(v, coefficients[1][0]) for v in values]
+                for values in coefficients]
+        a, z = Fraction(1, 9), Fraction(1, 81)
+        lower = 1 - sum(-v*z**i for i, v in enumerate(q) if v < 0)
+        self.assertGreater(lower, 0)
+        residual = [sum(v/Fraction(2*(k-i)+1) for i, v in enumerate(q) if i <= k)
+                    - (p[k] if k < len(p) else 0) for k in range(65)]
+        self.assertEqual(residual[:11], [0]*11)
+        p_abs, q_abs = list(map(abs, p)), list(map(abs, q))
+        def polynomial(values):
+            return sum(v*z**i for i, v in enumerate(values))
+        def derivative(values):
+            return sum(i*v*z**(i-1) for i, v in enumerate(values) if i)
+        d = 1/(1-z)
+        self.assertLess(d/Fraction(10**15), coefficients[1][0]*lower/2)
+        roundoff = a*(2*d/(coefficients[1][0]*lower) +
+                      2*polynomial(p_abs)*d/(coefficients[1][0]*lower**2) + 1 +
+                      (derivative(p_abs)*polynomial(q_abs) +
+                       polynomial(p_abs)*derivative(q_abs))/lower**2) + 1
+        self.assertLess(roundoff, 4)
+        tail = (sum(abs(v)*z**i for i, v in enumerate(residual)) +
+                sum(q_abs)*z**65/(1-z))*a/lower
+        error = (Fraction(1, 2) + Fraction(74, 100000) +
+                 2048*(4+Fraction(81, 80))/10**14 + 2048*tail*10**20)
+        self.assertLess(error, Fraction(505, 1000))
+        # exp(7/3)>10 and the first atanh terms bound the root count.
+        self.assertGreater(sum(Fraction(7, 3)**i/factorial(i) for i in range(11)), 10)
+        self.assertLess(Fraction(175, 1024)+Fraction(1, 1000), Fraction(2, 11))
+
+    def test_logarithm_rational_entry_scale_boundaries(self):
+        arguments = ('.799999', '.8', '1', '1.00000000000000000000000000001',
+                     '1.2', '1.200001', '2', '2.25', '9' + '0'*74,
+                     '.' + '0'*74 + '9')
+        cases = [(scale, argument) for scale in range(22) for argument in arguments]
+        program = ''.join(f'scale={scale}\nr=l({argument})\nr\nscale(r)\nibase\n'
+                          for scale, argument in cases)
+        binaries = [BC] if OTHER_BC is None else [BC, OTHER_BC]
+        for binary in binaries:
+            lines = self.checked_lines(program, options=(), files=(SOURCE,), binary=binary)
+            self.assertEqual(len(lines), 3 * len(cases))
+            for index, (scale, argument) in enumerate(cases):
+                with self.subTest(binary=binary, scale=scale, argument=argument):
                     with localcontext() as context:
                         context.prec = scale + 64
                         reference = Decimal(argument).ln()
