@@ -1,0 +1,65 @@
+name: bc bounded logarithm startup
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened]
+    paths:
+      - '.github/workflows/bc-bounded-logarithm-startup.yml'
+      - 'docs/utilities/bc-bounded-logarithm-startup/**'
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    if: github.head_ref == 'codex/bc-bounded-logarithm-startup'
+    name: Bounded logarithm / ${{ matrix.image }} / ${{ matrix.suite }}
+    runs-on: ${{ matrix.image }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [ubuntu-24.04, macos-15, windows-2025]
+        suite: [startup]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Establish native MSVC environment
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installation = & "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe" -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (!$installation) { throw 'Native x64 MSVC is unavailable' }
+          $variables = & cmd /c "`"$installation\Common7\Tools\VsDevCmd.bat`" -arch=x64 -host_arch=x64 >nul && set"
+          if ($LASTEXITCODE) { throw 'Cannot initialize MSVC' }
+          foreach ($line in $variables) {
+            if ($line -match '^(PATH|INCLUDE|LIB|LIBPATH|VCToolsInstallDir|VCINSTALLDIR|VSINSTALLDIR|WindowsSdkDir|WindowsSDKVersion|UniversalCRTSdkDir|UCRTVersion|Platform)=(.*)$') {
+              "$($matches[1])=$($matches[2])" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            }
+          }
+      - name: Collect the fixed comparison partition
+        shell: pwsh
+        env:
+          BC_STUDY_SUITE: ${{ matrix.suite }}
+        run: |
+          python docs/utilities/bc-bounded-logarithm-startup/collect.py --suite $env:BC_STUDY_SUITE --output qualification
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Preserve original inputs and available evidence
+        if: always()
+        uses: ./.github/actions/bc-upload-evidence
+        with:
+          name: bc-log-startup-${{ matrix.image }}-${{ matrix.suite }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            qualification-collector.json
+            qualification/plan.json
+            qualification/driver/
+            qualification/startup-config.json
+            qualification/startup-images/
+            qualification/startup-results/
+            qualification/base/
+            qualification/aa/
+            qualification/candidate/
